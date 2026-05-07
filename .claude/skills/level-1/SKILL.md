@@ -74,9 +74,11 @@ Say:
 >
 > **The tool I recommend: Typeless.** Why this one over the others?
 > - I've tried Whisper Flow and Super Whisper. Both are good. Typeless is the one that works on **Mac, Windows, AND iPhone** — same product everywhere. I literally never type on my iPhone anymore.
-> - It saves me about **26 hours of typing per month** — almost a full work week back, every single month.
+> - It saves me **over 60 minutes a day** of typing — and I haven't even been using it a full month yet.
 >
 > **They have a free 30-day trial.** Free. Zero up-front cost. It would honestly be stupid not to at least try it.
+>
+> *Quick note before I keep going: I know this is starting to feel salesy. Genuinely though — I use this every single day. I don't type anymore. Typing honestly feels primitive to me now. It has been a game changer for me, and the 30-day free trial means there's literally zero risk to trying it.*
 >
 > Here's the link: https://www.typeless.com/?via=jacob-king
 >
@@ -169,6 +171,8 @@ Wait for "next."
 Say:
 
 > Step 3. Let's map every recurring thing you do.
+>
+> Quick why: I'm trying to see all the work that fills your week — every tool you use, every kind of person you deal with, every repeating task. The more I know about all of it, the more we can plug AI into the right places later. Levels 4 through 6 is when we connect everything; this is when we figure out what to connect.
 >
 > I'll walk you through 7 areas, one at a time. For each, just talk — don't filter, don't be polished. Ramble. The more complete this list, the better the rest of the program works.
 >
