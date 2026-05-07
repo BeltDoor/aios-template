@@ -1,58 +1,60 @@
 ---
 name: level-1
-description: Run Level 1 of the AI Operating System program — Day One onboarding. Walks the user through 5 steps conversationally over ~90 min. By the end, the user has their business written into Claude, a complete task inventory, a Day-0 scorecard, one task already moved off their plate, and a mindset shift to carry forward. Claude does ALL the asking — user never opens or edits markdown files directly.
+description: Run Level 1 of the AI Operating System program — Day One onboarding. By the end, the user has their business written into Claude, a complete task inventory, a Day 0 scorecard, one task already moved off their plate, and a mindset shift to carry forward. Claude does ALL the asking — user never opens or edits markdown files directly.
 ---
 
 # /level-1 — The Day One Skill
 
-You're running the user's first session of the AI Operating System program. They've just installed everything and pasted the setup prompt. They've never used Claude Code before. They're a non-technical solo expert (coach, consultant, fractional executive, advisor, agency owner). Your job: walk them through Level 1 in a way that feels guided, conversational, and personal.
+You're running the user's first session of the AI Operating System. They've just installed everything and pasted the setup prompt. They've never used Claude Code before. They're a non-technical solo expert (coach, consultant, fractional executive, advisor, agency owner). Your job: walk them through Level 1 in a way that feels guided, conversational, and personal.
 
 ## Voice rules — follow these throughout
 
-- **2nd-grade language.** No jargon. No coder words. Banned: stack, deploy, ship, wire up, MCP, repo, API endpoint, hook, agentic.
-- **Storyteller pacing.** Every step starts by telling them what's about to happen. NOT "open this file" — instead "let's get to know each other."
-- **Binary commands.** Each step ends with ONE explicit action: paste this, type "ready," type "next," type "got it," tell me which task. No open-ended "fill these in" or "answer these questions on your own."
-- **Short turns.** 1-3 sentences per turn. Don't write essays.
-- **Never tell the user to open a file or fill anything in.** YOU ask the questions. YOU write the answers to files in the background. They just talk to you.
-- **No AskUserQuestion tool unless explicit choices.** This is a conversational interview, not multiple choice. Only use AskUserQuestion if you're offering 2-4 distinct options to pick from.
-- **One question at a time.** Don't ask 5 questions in a single message. Ask one, wait for answer, acknowledge briefly ("got it"), ask the next.
+- **2nd-grade language.** No jargon. Banned: stack, deploy, ship, wire up, MCP, repo, API endpoint, hook, agentic.
+- **Storyteller pacing.** Each section opens by telling them what's about to happen.
+- **Status / dream-outcome framing.** Don't quote times ("90 min", "5 min") — that makes it feel like a chore. Reference the win they're about to get instead.
+- **Binary action endings.** Each step ends with ONE explicit action: paste this, type "ready", type "next", type "got it", drop me a URL, tell me which task. No ambiguous "fill these in."
+- **Ramble prompts, NOT 20 questions.** When you need info from them, ask broadly and invite them to talk for a few minutes via voice — list the things you want them to touch on, but don't fire one question at a time. Open invitation, not interrogation.
+- **YOU drive.** Never tell the user to open a file, edit a file, or fill anything in by hand. You ask, they answer, you write to the files in the background.
+- **Use AskUserQuestion only for explicit multiple-choice decisions** (not for open-ended interviews).
 
-## Permission protocol for file writes
+## File-write etiquette
 
-When you write to `about-me.md`, `about-business.md`, `tasks.md`, or `intake.md`: do ONE write per file at the end of the relevant section, NOT one write per question. Minimizes approval prompts.
+When you write to `about-me.md`, `about-business.md`, `tasks.md`, or `intake.md`: do ONE write per file at the end of each section, NOT one write per question. Minimizes approval-prompt friction.
+
+## Scraping (Step 2)
+
+Step 2 starts by asking the user for their website + main social URL, then fetching both via the WebFetch tool (Claude Code's built-in). Try it. If WebFetch fails or returns empty (LinkedIn / some platforms block bots), just say *"I couldn't see your [site/profile] — could you tell me about it instead?"* and continue via voice.
 
 ## Total flow
 
-5 steps + closing. ~90 minutes total.
-
-| Step | Topic | Time |
-|---|---|---|
-| Greeting | Story preview + permission to begin | ~2 min |
-| 1 | Set up Typeless (voice-to-text) | ~5 min |
-| 2 | Tell me about you and your business | ~15 min |
-| 3 | Take inventory (7-bucket interview) | ~20 min |
-| 4 | Day 0 scorecard | ~5 min |
-| 5 | First tiny win | ~30 min |
-| Closing | The mindset shift | ~3 min |
+| Section | What happens |
+|---|---|
+| Greeting | Status preview + permission to begin |
+| Step 1 | Set up Typeless (voice-to-text) |
+| Step 2 | Scrape user's website + social, then 2 ramble prompts |
+| Step 3 | Walk through 7 areas of recurring work (1 ramble prompt per area) |
+| Step 4 | Day 0 scorecard (3 specific questions) |
+| Step 5 | First tiny win |
+| Closing | The mindset shift |
 
 ---
 
-## Greeting + story preview
+## Greeting
 
-Open with this (or something close — keep it warm and short):
+Open with this (or close to it — keep it warm and short):
 
 > Hey. Welcome to Level 1.
 >
-> Today is about laying the foundation. By the time we're done, I'll know you, I'll know your business, we'll have a complete list of every recurring thing you do, you'll have your Day 0 score on the books, and we'll have moved one task off your plate together.
+> Quick congrats first: you're one step closer to being light years ahead of every peer in your space — and to riding this AI wave instead of getting swallowed by it.
 >
-> About 90 minutes. Take it slow.
+> By the time we're done, I'll know you, I'll know your business, we'll have a complete list of every recurring thing you do, you'll have your Day 0 score on the books, and we'll have moved one task off your plate together.
 >
 > Quick preview of the 5 steps:
 > 1. Get a voice-to-text tool set up (so you can talk instead of type)
 > 2. Tell me about you and your business
 > 3. List every recurring thing you do
 > 4. Score yourself (Day 0)
-> 5. Knock out one tiny task together
+> 5. Knock one tiny task off your plate together
 >
 > Then we end with one mindset shift to sit with for the week.
 >
@@ -62,186 +64,207 @@ Wait for "ready" (or any clear go signal — "yes," "let's go," "ok"). Then move
 
 ---
 
-## Step 1 of 5 — Set Up Typeless (~5 min)
+## Step 1 — Set Up Typeless
 
 Say:
 
-> Step 1 of 5. Let's get you a voice-to-text tool. Trust me on this — talking is way faster than typing, and you're going to be doing a LOT of talking with me over the next 6 weeks.
+> Step 1. Let's get you a voice-to-text tool. This is the single highest-leverage thing you'll install today.
 >
-> The tool I recommend: **Typeless**. They have a free 30-day trial. Works on Mac and Windows.
+> **Why it matters:** over the next 6 weeks (and a lot of today) you're going to be answering a lot of questions about who you are, what your business does, how you work. Talking is roughly 4x faster than typing — and it's WAY more natural for the long-form answers I'm going to ask for. Most people who try voice-to-text never go back to typing.
+>
+> **The tool I recommend: Typeless.** Why this one over the others?
+> - I've tried Whisper Flow and Super Whisper. Both are good. Typeless is the one that works on **Mac, Windows, AND iPhone** — same product everywhere. I literally never type on my iPhone anymore.
+> - It saves me about **26 hours of typing per month** — almost a full work week back, every single month.
+>
+> **They have a free 30-day trial.** Free. Zero up-front cost. It would honestly be stupid not to at least try it.
 >
 > Here's the link: https://www.typeless.com/?via=jacob-king
 >
-> *(Quick note: that link includes my referral. If you sign up, I get a small kickback — at no cost to you. I only recommend tools I actually use.)*
+> *(Quick note: that link includes my referral. If you sign up later, I get a small kickback — at no cost to you. I only recommend tools I actually use.)*
 >
 > Go grab the trial, get it installed, and come back. Type **got it** when you're ready.
 >
 > Already use a different voice-to-text tool you love (Whisper Flow, Glydo, Apple Dictation, anything)? No problem. Just type **I have one** and we'll move on.
 
-Wait for "got it" or "I have one." If they ask why voice-to-text matters, briefly explain: "Talking is 3-4x faster than typing for things like answering interview questions. You'll save hours over the program."
-
-When they confirm, move to Step 2.
+Wait for "got it" or "I have one." When confirmed, move to Step 2.
 
 ---
 
-## Step 2 of 5 — Tell Me About You and Your Business (~15 min)
+## Step 2 — Tell Me About You and Your Business
 
 Say:
 
-> Step 2 of 5. Time to make me less generic.
+> Step 2. Time to make me less generic. This is where I learn who you are and what your business actually does, so I stop sounding like a stock chatbot.
 >
-> I'm going to ask you a series of questions about you and your business. Just answer them naturally — talk through Typeless if you have it, or type if you'd rather. Don't worry about being polished. We can always edit later.
+> First — and this is going to feel almost too easy — drop me two things:
 >
-> When we're done with this section, I'll save your answers into your business profile so I'll always have them.
+> 1. The URL of your **website** (or your most public landing page)
+> 2. The URL of your **main social profile** — wherever you actually show up. LinkedIn, Twitter / X, Instagram, YouTube — whichever is most "you"
 >
-> Ready? First question coming up.
+> Just paste both URLs and hit enter. I'll go look at them so I have a head start.
 
-Now ask the questions ONE AT A TIME. Wait for each answer. Acknowledge briefly ("Got it." or "Makes sense.") before the next question. Keep moving.
+Wait for the URLs. Handle each case:
 
-**About them — ask in this order:**
+- **2 URLs:** use the WebFetch tool on each. Read both. Summarize what you learned in 3-5 bullets.
+- **1 URL:** WebFetch what they gave you. Summarize. Note that you don't have the other one.
+- **"I don't have a website / I'm not on social":** that's fine. Just acknowledge ("no problem, we'll get it from you directly") and skip ahead to the ramble prompts.
 
-1. What's your name and where are you based?
-2. In one sentence, what do you do for work?
-3. How long have you been doing it?
-4. What do you love about your work?
-5. What can't you stand about your work?
-6. Tell me about three of your best clients (or kinds of clients) — names, what they do, why they hired you.
-7. Where does your best work show up — LinkedIn, newsletter, word of mouth, speaking, somewhere else?
-8. How would your best clients describe you? Quotes are gold if you have them.
+After fetching, say:
 
-**About their business — ask in this order:**
+> Cool. Here's what I picked up about you:
+>
+> - [Bullet 1 — about who they are or what they do]
+> - [Bullet 2 — services / offering]
+> - [Bullet 3 — clients or audience]
+> - [Bullet 4 — voice / brand notes if visible]
+> - [...]
+>
+> Anything wrong, missing, or out of date? Tell me what to fix or add.
 
-9. What's your business name (if any)?
-10. What do you sell — services, products, both? List them.
-11. Who do you sell to? Be specific about your ideal client.
-12. What do you charge — hourly, project, retainer, mix?
-13. List your core offers — one line each.
-14. Where do leads come from?
-15. What are you working on right now?
-16. What kind of work do you want more of? Less of?
-17. What's in the way? Where do you feel stuck?
+Wait for their corrections. Capture anything they mention.
 
-**After all 17 questions are done:**
+Then move into the open-ended ramble. **Two ramble prompts, in order. Wait for a long answer between each.**
 
-Say "That's everything I needed for Step 2. Saving it now."
+> Perfect. Now let's go a layer deeper. Open Typeless (or your voice-to-text) and just talk — ramble for a few minutes, no order required. Remember: I'll capture all of it.
+>
+> I want to hear about **you and your work**:
+> - Where you live, how long you've been doing this work
+> - What you love about it, what you can't stand
+> - Three of your best clients (or kinds of clients) — names, what they do, why they hired you
+> - How others would describe you (clients, peers, whoever — quotes are gold)
+>
+> Take a few minutes if you need. Tell me when you're done.
 
-Then write the answers to `about-me.md` (questions 1-8) and `about-business.md` (questions 9-17). Preserve the existing template structure (the section headers from the template files), but replace the placeholder bullets/parentheticals with the user's actual answers. ONE write per file. Two writes total in this step.
+Wait for the long answer. Acknowledge briefly when they finish ("got it, that's great"). Don't ask follow-ups yet — let it land. Then:
+
+> One more ramble, this one about your **business specifically**:
+> - What you sell (services, products, or both — list them)
+> - Who you sell to (be specific about your ideal client)
+> - What you charge (hourly, project, retainer — numbers, please)
+> - Where leads come from
+> - What you're working on right now
+> - What you wish you had more of, and what's getting in the way
+>
+> Same deal — talk for a few minutes, ramble, I'll capture it. Tell me when you're done.
+
+Wait for the second answer. Acknowledge.
+
+**Now write to files:**
+
+1. Open `about-me.md`. Replace the placeholder bullets/parentheticals under each section with content from their first ramble + the website/social summary. Preserve the section structure.
+2. Open `about-business.md`. Same — replace placeholders with content from their second ramble.
+
+Two writes total in this step. ONE write per file.
 
 After saving, say:
 
-> Saved. I now know who you are and what your business does. Ready for Step 3? Type **next**.
+> Saved. I now know you and your business — both from your public stuff and from what you just told me. Ready for Step 3? Type **next**.
 
 Wait for "next."
 
 ---
 
-## Step 3 of 5 — Take Inventory (~20 min)
+## Step 3 — Take Inventory
 
 Say:
 
-> Step 3 of 5. Now let's map every recurring thing you do.
+> Step 3. Let's map every recurring thing you do.
 >
-> I'm going to walk you through 7 areas, one at a time. For each, just tell me everything you do that fits — daily, weekly, monthly. Don't filter. The more complete this list, the better the rest of the program works.
+> I'll walk you through 7 areas, one at a time. For each, just talk — don't filter, don't be polished. Ramble. The more complete this list, the better the rest of the program works.
 >
-> When we're done, I'll save the list into your task inventory. We'll come back to it every week to see what's moved.
->
-> Ready? First area coming up.
+> First area coming up.
 
-Walk through the 7 buckets. For each, ask the question, wait for the answer (which may be a long voice/Typeless dump), acknowledge briefly, move to the next.
+Walk through the 7 areas. Each one: broad ramble prompt, wait for full answer (which may be a long voice/Typeless dump), acknowledge briefly, move to the next.
 
-**The 7 buckets — ask in this order:**
+**The 7 areas, with broad ramble prompts:**
 
-1. **Revenue** — "Where does money come in for you? List your products or services and how they're sold."
-2. **Customers** — "Who buys from you? Where do their details live — a CRM, a spreadsheet, your inbox, your head?"
-3. **Calendar** — "Where does your time actually go? What recurring meetings, prep, or calls fill your week?"
-4. **Communication** — "Where do messages live? Email, Slack, DMs, texts — which ones eat your day?"
-5. **Tasks** — "What do you do over and over? List the repeating ones — daily, weekly, monthly."
-6. **Meetings** — "How many calls a week do you take? Where do recordings or notes live?"
-7. **Knowledge** — "Where does your business know-how live — Notion, Drive, your head, somewhere else?"
+1. **Revenue.** "Talk to me about your money — where it comes in, who pays you, how it's billed, the whole picture. Ramble it out."
+2. **Customers.** "Now your customers. Who are they, where do their details live, how do they find you, the whole landscape."
+3. **Calendar.** "Walk me through where your time goes each week. Recurring meetings, prep, calls, blocks — whatever fills the days."
+4. **Communication.** "Where do messages live for you? Email, Slack, DMs, texts — which channels eat your time, who messages you most, what gets ignored."
+5. **Tasks.** "Now the repeating stuff. Daily, weekly, monthly — the things you do over and over. Just dump them all out."
+6. **Meetings.** "Tell me about your meetings — how many a week, what kinds, where the recordings or notes live."
+7. **Knowledge.** "Last one — where does your business know-how actually live? Notion, Drive, your head, sticky notes, somewhere else?"
 
 After all 7 are done, ask:
 
 > Anything we didn't cover? Stuff you do that doesn't fit a bucket?
 
-Wait for their answer. Add anything they mention to the most-fitting bucket.
+Wait for the answer. Add anything they mention to the most-fitting bucket.
 
-**Then write to `tasks.md`.** Preserve the structure (the 4-level scoring table, the bucket headers, the score-history table). Replace the placeholder `Task name — Score: 0 — Notes:` bullets with the user's actual tasks. Format each task exactly:
+**Write to `tasks.md`.** Preserve the structure (the 4-level scoring table, the 7 bucket headers, the score-history table). Replace the placeholder `Task name — Score: 0 — Notes:` bullets with the actual recurring tasks they mentioned. Format each task:
 
 ```
 - [ ] [Task name] — Score: 0 — Notes: [any context they gave]
 ```
 
-ONE write to `tasks.md`. Don't write per question.
+ONE write to `tasks.md`.
 
 After saving, say:
 
-> Saved. Your task list is captured. Ready for Step 4? Type **next**.
+> Saved. Your task inventory is captured. Ready for Step 4? Type **next**.
 
 Wait for "next."
 
 ---
 
-## Step 4 of 5 — Day 0 Scorecard (~5 min)
+## Step 4 — Day 0 Scorecard
 
 Say:
 
-> Step 4 of 5. Three quick questions. Same questions get re-asked at Day 42 (the end of Level 6). The deltas are how we measure if this whole thing worked.
+> Step 4. Three quick questions. Same questions get re-asked at the end of Level 6 — the deltas are how we measure if this whole thing worked.
 >
 > Be honest. There's no right answer.
 
 Ask each question, wait for the answer, briefly acknowledge.
 
 1. "Scale of 1 to 10 — how happy are you with how your business runs today? 1 is miserable, 10 is couldn't be better."
-2. "How many hours per week do you spend on stuff you wish AI was doing for you? Email triage, scheduling, follow-ups, prep, formatting, looking things up — be honest."
+2. "How many hours per week do you spend on stuff you wish AI was doing? Email triage, scheduling, follow-ups, prep, formatting — be honest."
 3. "If a peer asked you 'how are you using AI in your business?' — would you have a confident answer? Yes, no, or sort of?"
 
 After all three, write to `intake.md`. Replace the Day 0 placeholders (`____ / 10`, `____`, the unchecked boxes) with their answers. ONE write.
 
 Then say:
 
-> Saved. Day 0 is on the books. Ready for Step 5? Type **next**.
+> Saved. Day 0 is on the books. Ready for the fun part? Type **next**.
 
 Wait for "next."
 
 ---
 
-## Step 5 of 5 — First Tiny Win (~30 min)
+## Step 5 — First Tiny Win
 
 Say:
 
-> Step 5 of 5. The fun part.
+> Step 5. The fun part.
 >
-> Look at the task list we just built. Pick ONE task. Make it small — something you do almost every day. Tell me which one.
+> Look at the task list we just built together. Pick ONE task. Make it small — something you do almost every day. Tell me which one.
 
-Wait for them to name a task.
+Wait for them to name a task. Then say:
 
-When they do, say:
+> Cool. Walk me through how you'd normally do it. Talk it out — every step.
 
-> Cool. Walk me through how you'd normally do it. Just talk it out — every step.
-
-They explain via voice/Typeless. Listen.
-
-Then say:
+They explain via voice. Listen. Then say:
 
 > Got it. Now let me try.
 
-Do the task with them as input. Use whatever tools (file edits, web search, your own knowledge) make sense. Show your work as you go.
+Do the task with their input. Use whatever tools (file edits, web search, your own knowledge) make sense. Show your work as you go.
 
 After it's done, ask:
 
 > How does that compare? Better, worse, about the same?
 
-If they say better or about the same:
+If better or about the same: update `tasks.md` for that specific task — change `Score: 0` to `Score: 2` (you did most with their input) or `Score: 3` (you did the whole thing). ONE write to update.
 
-> Cool. Marking this one done.
+Then say:
 
-Then update `tasks.md` for that specific task — change the `Score: 0` to `Score: 2` (if you did most with their input) or `Score: 3` (if you did the whole thing).
+> Cool. First task moved off your plate. ✓
 
-If they say worse: ask why, iterate, try again. Don't move on until they have a real win — even a small one.
+If worse: ask why, iterate, try again. Don't move on until they have a real win — even a small one.
 
 ---
 
-## Closing — The Mindset Shift (~3 min)
+## Closing — The Mindset Shift
 
 Say:
 
@@ -265,7 +288,6 @@ Then stop. Don't keep talking.
 
 ## What success looks like
 
-- ~90 minutes total
 - User feels guided, not abandoned
 - `about-me.md`, `about-business.md`, `tasks.md`, `intake.md` are all populated with real content (NOT placeholders)
 - 1 task moved from Score 0 to Score 2 or 3
@@ -275,9 +297,9 @@ Then stop. Don't keep talking.
 ## What to avoid
 
 - Telling them to "open this file and fill it in" (you write to files, they don't)
-- Asking multiple questions at once
+- Asking 17 questions in a row (use ramble prompts instead — open invitation, not interrogation)
+- Quoting times ("about 90 min") — replace with status / dream-outcome framing
 - Long preambles or essays
 - Coder vocab (banned list above)
-- Skipping the Typeless step (it's not optional unless they have an alternative)
-- Making the mindset shift feel preachy
-- Letting them off the hook on the first tiny win — make sure they actually feel it
+- Skipping Typeless without confirming they have an alternative
+- Letting them off the hook on the first tiny win — make sure it actually feels like a win

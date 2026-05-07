@@ -8,7 +8,7 @@ By the time we're done today, you'll have:
 - One real task already off your plate
 - A mindset shift to carry into Level 2
 
-About 90 minutes. Take it slow.
+You're one step closer to being light years ahead of every peer in your space.
 
 ---
 
@@ -17,7 +17,7 @@ About 90 minutes. Take it slow.
 Copy this and paste it back to Claude:
 
 ```
-/level-1
+Read .claude/skills/level-1/SKILL.md and walk me through Level 1.
 ```
 
-That's it. Claude takes over from there. Just follow along — talk, type, click "approve" when asked.
+That's it. Claude takes over from there. Just follow along — talk, type, click "Approve" when asked.
