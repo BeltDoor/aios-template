@@ -23,7 +23,13 @@ When you write to `about-me.md`, `about-business.md`, `tasks.md`, or `intake.md`
 
 ## Scraping (Step 2)
 
-Step 2 starts by asking the user for their website + main social URL, then fetching both via the WebFetch tool (Claude Code's built-in). Try it. If WebFetch fails or returns empty (LinkedIn / some platforms block bots), just say *"I couldn't see your [site/profile] — could you tell me about it instead?"* and continue via voice.
+Step 2 fetches both URLs the user provides. Different tools for different URL types:
+
+- **Website URL (any non-LinkedIn site):** use the `WebFetch` tool. Most public sites work fine.
+- **LinkedIn URL (`linkedin.com/in/...`):** WebFetch is blocked by LinkedIn anti-bot. Use the **Apify call** described in Step 2 below — a single Bash curl invocation against the bundled HarvestAPI actor. Always works; cost is ~$0.004 per profile, charged to a token bundled with this template.
+- **Other social URLs (X / Twitter, Instagram, YouTube, etc.):** try WebFetch. If results are thin, ask the user to summarize their content focus instead.
+
+If the Apify call ever returns an error or empty array (extremely rare): tell the user *"I had trouble pulling your LinkedIn directly — could you paste your LinkedIn About text or headline so I can work from that?"* and continue.
 
 ## Total flow
 
@@ -105,11 +111,31 @@ Say:
 >
 > Just paste both URLs and hit enter. I'll go look at them so I have a head start.
 
-Wait for the URLs. Handle each case:
+Wait for the URLs. Fetch them — different tools for different URL types.
 
-- **2 URLs:** use the WebFetch tool on each. Read both. Summarize what you learned in 3-5 bullets.
-- **1 URL:** WebFetch what they gave you. Summarize. Note that you don't have the other one.
-- **"I don't have a website / I'm not on social":** that's fine. Just acknowledge ("no problem, we'll get it from you directly") and skip ahead to the ramble prompts.
+**Website URL (any non-LinkedIn site):** use the `WebFetch` tool. Most public sites work.
+
+**LinkedIn URL (`linkedin.com/in/...`):** WebFetch is blocked by LinkedIn. Use the bundled HarvestAPI Apify actor via Bash. Substitute the user's LinkedIn URL in place of `<USER_LINKEDIN_URL>`:
+
+```
+curl -sS -X POST \
+  "https://api.apify.com/v2/acts/harvestapi~linkedin-profile-scraper/run-sync-get-dataset-items?token=apify_api_Ef17GkosgNitVO5dQEHxjcceDffLNA3OHhpc" \
+  -H "Content-Type: application/json" \
+  -d '{"queries":["<USER_LINKEDIN_URL>"]}'
+```
+
+The token is intentionally bundled with this template (Jacob's call — distribution risk dismissed). Cost is ~$0.004 per profile against his Apify account. Sync call usually returns in under 30 seconds.
+
+The response is a JSON array of profile objects — fields include `firstName`, `lastName`, `headline`, `about` (or `summary`), `experience` (array), `education` (array), `skills`, `location`. Read it the same way you'd read a WebFetch result.
+
+**Other social URLs (X / Twitter, Instagram, YouTube):** try WebFetch. If the result is thin or blocked, just ask the user to tell you what they post about.
+
+**Handle the cases the user sends you:**
+
+- **Website + LinkedIn (most common):** WebFetch the website, Apify the LinkedIn, combine both into the summary.
+- **Website + other social:** WebFetch both. If the social fetch is thin, ask the user to summarize.
+- **1 URL only:** fetch what they gave you, note that you don't have the other.
+- **"I don't have a website / I'm not on social":** acknowledge ("no problem, we'll get it from you directly") and skip ahead to the ramble prompts.
 
 After fetching, say:
 
