@@ -6,6 +6,11 @@ Fill in what you can. You don't have to do this all at once. Skip anything you d
 
 (Your full name)
 
+## Businesses
+
+- (Business 1 name) — (URL) — (Role)
+- (Add a row per business if you run more than one)
+
 ## Where I am
 
 (City, state)

@@ -37,3 +37,34 @@ Fill in what you can. Claude reads this every time you start working in here. Ad
 ## What's in the way
 
 (Where are you stuck? What feels broken?)
+
+---
+
+## Where things live (added in Level 1 Step 2)
+
+These sections track WHERE your business info currently lives — so we can connect, import, or pull from those sources in later levels. Filled in by Claude during Level 1 from your Step 2 answers.
+
+### People
+
+- **Clients live in:** (CRM, spreadsheet, head, paper)
+- **Partners & collaborators live in:** (same)
+- **Conversations & meeting notes live in:** (Otter, Fireflies, email, memory)
+
+### Offer & pricing sources
+
+- **Pricing & offers live in:** (Stripe, proposal doc, website, head)
+- **Notes:** (anything specific worth flagging)
+
+### Brand assets
+
+- **Logo, photos, colors live in:** (Drive folder, Canva, brand guide PDF, only on website, scattered)
+- **Notes:** (what was scraped from website + what's still missing)
+
+### Goals — (year)
+
+- **Goals live in:** (V/TO, OKRs, Google Doc, sticky notes, head)
+- **Headline goals:** (what they actually said)
+
+### Current focus
+
+- **Thing I'm trying to figure out right now:** (the open question that's keeping them up)

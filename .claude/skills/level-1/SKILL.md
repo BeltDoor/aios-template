@@ -98,22 +98,47 @@ Wait for "got it" or "I have one." When confirmed, move to Step 2.
 
 ---
 
-## Step 2 — Tell Me About You and Your Business
+## Step 2 — Where Your Business Lives
 
 Say:
 
-> Step 2. Time to make me less generic. This is where I learn who you are and what your business actually does, so I stop sounding like a stock chatbot.
+> Step 2. Time to make me less generic. This is where I learn where your business actually lives — your books, your people, your offers, your goals — so I stop sounding like a stock chatbot and start sounding like I know you.
 >
-> First — and this is going to feel almost too easy — drop me two things:
->
-> 1. The URL of your **website** (or your most public landing page)
-> 2. The URL of your **main social profile** — wherever you actually show up. LinkedIn, Twitter / X, Instagram, YouTube — whichever is most "you"
->
-> Just paste both URLs and hit enter. I'll go look at them so I have a head start.
+> Quick frame for what we're about to do: we're going to walk through three areas — what shapes your thinking, where your people live, and where your business itself lives. The goal isn't for you to give me everything right now. It's for me to find out where the truth already lives — in your CRM, in a book on your shelf, in a Google Doc, in your head — so I can plug into the right sources over the next few weeks.
 
-Wait for the URLs. Fetch them — different tools for different URL types.
+### Step 2.0 — Multi-business gate
 
-**Website URL (any non-LinkedIn site):** use the `WebFetch` tool. Most public sites work.
+Say:
+
+> Quick question before we pull anything — do you run more than one business?
+>
+> Lots of solo experts do. Coaching practice plus an agency. Consulting firm plus a side SaaS. CEO of one, COO of another. If that's you, just paste all the URLs and your role at each. Format like:
+>
+> ```
+> Maple Creek Coaching — maplecreekcoaching.com — Owner / Coach
+> BUILD My Business — buildmybusiness.com — Founder
+> ```
+>
+> If it's just one business, just paste the one URL.
+
+Wait for their answer. Store each `Business Name — URL — Role` entry. Then move to URL ask.
+
+### Step 2.1 — URL ask + scrape
+
+Say:
+
+> Now the URLs. Two things to paste:
+>
+> 1. **Your website URL** (or most public landing page — paste one per business if you have multiple)
+> 2. **Your main social profile URL** — wherever you actually show up
+>
+> For LinkedIn (most established folks): looks like `linkedin.com/in/your-name`. Can't find yours? Go to linkedin.com → click your profile photo top right → "View Profile" → copy the URL from the address bar. Don't have one? Just say "no LinkedIn" and we'll skip it.
+>
+> Paste both and hit enter.
+
+Wait for the URLs. Fetch each one — different tools for different URL types.
+
+**Website URL (any non-LinkedIn site):** use the `WebFetch` tool. Most public sites work. Capture (in addition to general business summary): logo URL if visible in HTML/og:image meta, brand colors if visible in CSS or hero imagery (best-effort), About / Bio text verbatim if found.
 
 **LinkedIn URL (`linkedin.com/in/...`):** WebFetch is blocked by LinkedIn. Use the bundled HarvestAPI Apify actor via Bash. Substitute the user's LinkedIn URL in place of `<USER_LINKEDIN_URL>`:
 
@@ -133,13 +158,14 @@ The response is a JSON array of profile objects — fields include `firstName`, 
 **Handle the cases the user sends you:**
 
 - **Website + LinkedIn (most common):** WebFetch the website, Apify the LinkedIn, combine both into the summary.
+- **Multiple websites + LinkedIn:** WebFetch each website, Apify the LinkedIn.
 - **Website + other social:** WebFetch both. If the social fetch is thin, ask the user to summarize.
 - **1 URL only:** fetch what they gave you, note that you don't have the other.
-- **"I don't have a website / I'm not on social":** acknowledge ("no problem, we'll get it from you directly") and skip ahead to the ramble prompts.
+- **"I don't have a website / I'm not on social":** acknowledge ("no problem, we'll get it from you directly") and skip ahead to the themes.
 
 After fetching, say:
 
-> Cool. Here's what I picked up about you:
+> Cool. Here's what I picked up:
 >
 > - [Bullet 1 — about who they are or what they do]
 > - [Bullet 2 — services / offering]
@@ -147,46 +173,88 @@ After fetching, say:
 > - [Bullet 4 — voice / brand notes if visible]
 > - [...]
 >
-> Anything wrong, missing, or out of date? Tell me what to fix or add.
+> Anything wrong, missing, or out of date? Websites are often years behind reality — I'd rather hear from you what's actually true today than assume what's on the page is current. Tell me what to fix or add.
 
 Wait for their corrections. Capture anything they mention.
 
-Then move into the open-ended ramble. **Two ramble prompts, in order. Wait for a long answer between each.**
+### Step 2.2 — Theme 1: Methodology & Mind
 
-> Perfect. Now let's go a layer deeper. Open Typeless (or your voice-to-text) and just talk — ramble for a few minutes, no order required. Remember: I'll capture all of it.
+Say:
+
+> Now I want to get into your head a little bit — specifically, what shapes how you think about running your business.
 >
-> I want to hear about **you and your work**:
-> - Where you live, how long you've been doing this work
-> - What you love about it, what you can't stand
-> - Three of your best clients (or kinds of clients) — names, what they do, why they hired you
-> - How others would describe you (clients, peers, whoever — quotes are gold)
+> Quick frame so you know why I'm asking: I'm based on what Alex Hormozi writes about in *$100 Million Offers*. When Jacob (who set this up for you) is working on a new offer, he has me reference that book directly — chapter by chapter — because it's already loaded in his AI Operating System. That's the kind of thing we want to find for you.
 >
-> Take a few minutes if you need. Tell me when you're done.
+> So tell me — **what books are like the Bible for how you run your business?** And **what frameworks do you operate by?** Common ones I hear: EOS / Traction, StoryBrand, $100M Offers, Culture Index, Atomic Habits, John Maxwell — but it could be anything. Don't filter. Even half-remembered stuff counts. We'll track them down later.
 
-Wait for the long answer. Acknowledge briefly when they finish ("got it, that's great"). Don't ask follow-ups yet — let it land. Then:
+Wait for the answer. Acknowledge briefly ("got it, that's gold").
 
-> One more ramble, this one about your **business specifically**:
-> - What you sell (services, products, or both — list them)
-> - Who you sell to (be specific about your ideal client)
-> - What you charge (hourly, project, retainer — numbers, please)
-> - Where leads come from
-> - What you're working on right now
-> - What you wish you had more of, and what's getting in the way
+### Step 2.3 — Theme 2: People & Relationships
+
+Say:
+
+> Now I want to talk about the people in your business — clients, partners, collaborators.
 >
-> Same deal — talk for a few minutes, ramble, I'll capture it. Tell me when you're done.
+> Quick frame: I have a folder called `clients/` with 45 files in it — one for every client. Each file has everything I know about them, and every meeting I have with them gets dropped in there too. That's how I can ask my AI *"what did Sarah say last week about the proposal?"* and get a real answer instead of a guess. We want to find where YOUR people currently live.
+>
+> Three quick probes:
+>
+> **Where do your clients live today?** A CRM (HubSpot, Salesforce, Notion, Trello, Pipedrive)? A spreadsheet? Your head? Sticky notes? Wherever the truth actually is, name it.
+>
+> **Where do your referral partners and collaborators live?** Separate CRM? LinkedIn connections you keep in mind? Email signatures you remember? A different notes app?
+>
+> **Where do your meeting notes and conversations live?** Otter? Fireflies? Granola? Email recaps you send yourself? In your memory? *("Nowhere" is also a real answer.)*
+>
+> Talk through all three. Don't filter. If something lives in your head, that's a real answer — we'll figure out how to get it out of there in Level 2.
 
-Wait for the second answer. Acknowledge.
+Wait for the answer. Acknowledge.
 
-**Now write to files:**
+### Step 2.4 — Theme 3: Business Shape & Direction
 
-1. Open `about-me.md`. Replace the placeholder bullets/parentheticals under each section with content from their first ramble + the website/social summary. Preserve the section structure.
-2. Open `about-business.md`. Same — replace placeholders with content from their second ramble.
+Say:
 
-Two writes total in this step. ONE write per file.
+> Last big theme — your business shape, and where you're trying to take it.
+>
+> Quick frame: I keep my offers in a folder with every version dated, so when I'm refining an offer my AI references what I've tried before. My brand assets — logo, photos, colors — all live in one place so anything visual we make stays on-brand without me re-uploading. My goals are in an EOS V/TO doc I update quarterly, so my AI always knows what I'm growing toward this year.
+>
+> Four quick probes:
+>
+> **Where does your offer and pricing info live?** A proposal doc? Stripe products? Your website pricing page? In your head? Different prices for different clients you keep in a spreadsheet?
+>
+> **Where do your brand assets live?** A brand guide PDF somewhere? A Drive or Canva folder? Just on your website? Scattered across email and design tools? *(I already pulled what I could from the URL scrape — we're looking for the rest now.)*
+>
+> **What are your business goals this year, and where do they live?** EOS V/TO? OKRs? A Google Doc you re-read monthly? Sticky notes on your monitor? Or just a feeling in your gut about where you want to be?
+>
+> **One open one: what's the one thing you're trying to figure out in your business right now?** The thing that's keeping you up.
+
+Wait for the answer. Acknowledge.
+
+### Step 2.5 — Wrap-up wishlist
+
+Say:
+
+> One last thing before we move on — open-ended:
+>
+> **What do you wish AI could do for you?** Email triage? Drafting follow-ups? Watching your calendar? Generating proposals? Filling out forms? Catching things that slip through the cracks? Whatever you've been wishing for. Doesn't have to be realistic — I'll tell you if it's not. *(Spoiler: most of it is.)*
+>
+> This becomes your wishlist for what we actually build in Levels 4 through 6.
+
+Wait for their wishlist.
+
+**Now write to files. SIX writes total:**
+
+1. **`about-me.md`** — fill the multi-business header from the gate + URL ask answers. Fill the bio / story / key traits sections from the URL scrape.
+2. **`about-business.md`** — fill the existing sections (what you sell, who you sell to, etc.) from URL scrape + theme answers. Fill the NEW "Where things live" sections (People, Offer & pricing sources, Brand assets, Goals, Current focus) from the matching theme probes.
+3. **`methodology.md`** — fill Books I operate by + Frameworks I use from Theme 1 answer.
+4. **`to-source.md`** — log every book and framework named in Theme 1 + the V/TO doc / proposal template / brand guide named in Theme 3 (anything that needs Jacob's sourcing work in Level 2).
+5. **`to-connect.md`** — log every CRM / conversation source / brand source / offer source / goals source named across Themes 2 and 3 (anything that needs connecting or migrating).
+6. **`to-build.md`** — log the wishlist answers from the wrap-up.
+
+ONE write per file at the end of Step 2.
 
 After saving, say:
 
-> Saved. I now know you and your business — both from your public stuff and from what you just told me. Ready for Step 3? Type **next**.
+> Saved. I now know where everything in your business lives — and what we'll connect, source, and build over the next few levels. Ready for Step 3? Type **next**.
 
 Wait for "next."
 
