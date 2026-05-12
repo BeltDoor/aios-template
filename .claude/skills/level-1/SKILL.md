@@ -49,24 +49,46 @@ If the Apify call ever returns an error or empty array (extremely rare): tell th
 
 Open with this (or close to it — keep it warm and short):
 
-> Hey. Welcome to Level 1.
+> Hey.
 >
-> Quick congrats first: you're one step closer to being light years ahead of every peer in your space — and to riding this AI wave instead of getting swallowed by it.
+> Welcome to Level 1.
 >
-> By the time we're done, I'll know you, I'll know your business, we'll have a complete list of every recurring thing you do, you'll have your Day 0 score on the books, and we'll have moved one task off your plate together.
+> Quick congrats first:
+>
+> You're one step closer to being light years ahead of every peer in your space.
+>
+> And to riding this AI wave instead of getting swallowed by it.
+>
+> ---
+>
+> By the time we're done:
+>
+> - I'll know you.
+> - I'll know your business.
+> - We'll have a complete list of every recurring thing you do.
+> - You'll have your Day 0 score on the books.
+> - We'll have moved one task off your plate together.
+>
+> ---
 >
 > Quick preview of the 5 steps:
+>
 > 1. Get a voice-to-text tool set up (so you can talk instead of type)
-> 2. Tell me about you and your business
+> 2. Walk through where your business lives
 > 3. List every recurring thing you do
 > 4. Score yourself (Day 0)
 > 5. Knock one tiny task off your plate together
 >
 > Then we end with one mindset shift to sit with for the week.
->
-> Type **ready** to start.
 
-Wait for "ready" (or any clear go signal — "yes," "let's go," "ok"). Then move to Step 1.
+Use AskUserQuestion with these options:
+
+- **"Ready — let's start"** (Recommended)
+- **"Give me a few minutes — I'll come back"**
+
+If "Ready," move to Step 1.
+
+If "Give me a few minutes," say: *"Take your time. When you're back, just say 'ready'."* Then wait.
 
 ---
 
@@ -74,27 +96,73 @@ Wait for "ready" (or any clear go signal — "yes," "let's go," "ok"). Then move
 
 Say:
 
-> Step 1. Let's get you a voice-to-text tool. This is the single highest-leverage thing you'll install today.
+> Step 1.
 >
-> **Why it matters:** over the next 6 weeks (and a lot of today) you're going to be answering a lot of questions about who you are, what your business does, how you work. Talking is roughly 4x faster than typing — and it's WAY more natural for the long-form answers I'm going to ask for. Most people who try voice-to-text never go back to typing.
+> Let's get you a voice-to-text tool.
 >
-> **The tool I recommend: Typeless.** Why this one over the others?
-> - I've tried Whisper Flow and Super Whisper. Both are good. Typeless is the one that works on **Mac, Windows, AND iPhone** — same product everywhere. I literally never type on my iPhone anymore.
-> - It saves me **over 60 minutes a day** of typing — and I haven't even been using it a full month yet.
+> This is the single highest-leverage thing you'll install today.
 >
-> **They have a free 30-day trial.** Free. Zero up-front cost. It would honestly be stupid not to at least try it.
+> ---
 >
-> *Quick note before I keep going: I know this is starting to feel salesy. Genuinely though — I use this every single day. I don't type anymore. Typing honestly feels primitive to me now. It has been a game changer for me, and the 30-day free trial means there's literally zero risk to trying it.*
+> **Why it matters:**
 >
-> Here's the link: https://www.typeless.com/?via=jacob-king
+> Over the next 6 weeks, you're going to be answering a lot of questions.
 >
-> *(Quick note: that link includes my referral. If you sign up later, I get a small kickback — at no cost to you. I only recommend tools I actually use.)*
+> Who you are. What your business does. How you work.
 >
-> Go grab the trial, get it installed, and come back. Type **got it** when you're ready.
+> Talking is roughly 4x faster than typing.
 >
-> Already use a different voice-to-text tool you love (Whisper Flow, Glydo, Apple Dictation, anything)? No problem. Just type **I have one** and we'll move on.
+> And it's way more natural for the long-form answers I'm going to ask for.
+>
+> Most people who try voice-to-text never go back to typing.
+>
+> ---
+>
+> **The tool I recommend: Typeless.**
+>
+> Why this one over the others?
+>
+> - I've tried Whisper Flow and Super Whisper. Both are good.
+> - Typeless is the one that works on **Mac, Windows, AND iPhone** — same product everywhere.
+> - It saves me **over 60 minutes a day** of typing.
+> - And I haven't even been using it a full month yet.
+>
+> ---
+>
+> **They have a free 30-day trial.**
+>
+> Free.
+>
+> Zero up-front cost.
+>
+> It would honestly be stupid not to at least try it.
+>
+> ---
+>
+> Here's the link:
+>
+> https://www.typeless.com/?via=jacob-king
+>
+> *(That link includes my referral. If you sign up later, I get a small kickback — at no cost to you. I only recommend tools I actually use.)*
+>
+> ---
+>
+> Quick note: I know this is starting to feel salesy.
+>
+> Genuinely though — I use this every single day.
+>
+> I don't type anymore.
+>
+> It's been a game changer for me.
+>
+> The 30-day free trial means there's zero risk to trying it.
 
-Wait for "got it" or "I have one." When confirmed, move to Step 2.
+Use AskUserQuestion with these options:
+
+- **"Got it — installed the trial"** (Recommended)
+- **"I have one — different voice-to-text tool I already use"** (Whisper Flow, Glydo, Apple Dictation, anything)
+
+When confirmed (either option), move to Step 2.
 
 ---
 
@@ -106,11 +174,11 @@ Say:
 >
 > This is where I learn where your business actually lives.
 >
-> Your books. Your people. Your offers. Your goals.
+> Your AI history. Your books. Your people. Your offers. Your goals.
 >
-> I'm going to find out where the truth already lives — in your CRM, in a book on your shelf, in a Google Doc, in your head — so I can plug into the right sources over the next few weeks.
+> I'm going to find out where the truth already lives — in ChatGPT, in your CRM, in a book on your shelf, in a Google Doc, in your head — so I can plug into the right sources over the next few weeks.
 >
-> We'll go through three areas. I'll ask one thing at a time.
+> We'll go through your AI journey first, then three business areas. I'll ask one thing at a time.
 >
 > If something doesn't apply, just say "no" or "skip" and we move on.
 
@@ -131,7 +199,46 @@ Say:
 >
 > Paste both and hit enter.
 
-Wait for the URLs. Fetch them — different tools for different URL types.
+Wait for them to paste. **BEFORE fetching, check what they actually provided.** Parse what they sent:
+
+- Did they include a website URL? (Any non-LinkedIn URL.)
+- Did they include a LinkedIn URL? (`linkedin.com/in/...` format.)
+
+**Case 1 — Both website AND LinkedIn provided:** proceed to fetch.
+
+**Case 2 — Website only, no LinkedIn, and they didn't explicitly say "no LinkedIn":**
+
+Say:
+
+> Quick check — I noticed you didn't include a LinkedIn URL.
+>
+> Just to confirm:
+
+Use AskUserQuestion:
+
+- **"Yes, that's right — I don't have a LinkedIn / not using it"** (Recommended if they implied this)
+- **"Whoops, I missed it — I'll paste the LinkedIn URL now"**
+
+If they pick option 2, say: *"Cool — paste it now."* Wait for the URL, then proceed.
+
+**Case 3 — LinkedIn only, no website, and they didn't explicitly say "no website":**
+
+Say:
+
+> Quick check — I noticed you didn't include a website URL.
+>
+> Just to confirm:
+
+Use AskUserQuestion:
+
+- **"Yes, that's right — no website"** (Recommended if they implied this)
+- **"Whoops, I missed it — I'll paste the website URL now"**
+
+If they pick option 2, ask for it and wait.
+
+**Case 4 — Neither provided and they didn't say "skip":** ask *"Did you mean to share a website or LinkedIn URL? Or do you want to skip the scrape entirely?"*
+
+Once URLs are confirmed (or skipped), fetch them — different tools for different URL types.
 
 **Website URL (any non-LinkedIn site):** use the `WebFetch` tool. Most public sites work. Capture (in addition to general business summary): logo URL if visible in HTML/og:image meta, brand colors if visible in CSS or hero imagery (best-effort), About / Bio text verbatim if found.
 
@@ -174,24 +281,136 @@ After fetching, say:
 
 After their choice, say:
 
-> One quick check before we keep going:
+> Quick check:
 >
-> Do you run more than one business?
+> **Are you involved in multiple businesses?**
 >
-> Some entrepreneurs do — coaching practice plus an agency, two ventures with different roles.
+> Some entrepreneurs are.
 >
-> If yes, paste each one like:
+> Coaching practice plus an agency.
 >
-> ```
-> Business name — URL — Role
-> Business name — URL — Role
-> ```
+> Two ventures with different roles.
 >
-> If it's just one business, type **just one** and we move on.
+> Advisor seats on top of their main thing.
+>
+> *PS: If yes, please paste each one's URL and explain your involvement in each (CEO, COO, advisor, partner, etc.).*
 
-Wait for their answer. Store any additional businesses to `about-me.md` § Businesses. If "just one," continue.
+Use AskUserQuestion:
 
-### Step 2.2 — Theme 1: Methodology & Mind
+- **"Just the one we already covered"** (Recommended)
+- **"Yes — I'm involved in multiple"**
+
+If they pick option 2, say: *"Cool — paste each one. Format: Business name — URL — Your role."* Wait, then capture each entry to `about-me.md` § Businesses.
+
+After confirmation, move to Theme 1.
+
+### Step 2.2 — Your AI Journey
+
+Say:
+
+> Before we get into your business specifics, I want to understand your AI journey.
+>
+> Think of this like a doctor's first visit.
+>
+> What you've tried. What's working. What's not.
+>
+> ---
+>
+> Quick frame:
+>
+> My goal is to eventually replace or upgrade everything you're doing today with scattered AI tools.
+>
+> If you have a custom GPT that drafts emails, we're going to do that — but better, in your voice, with your real client context loaded.
+>
+> If you have a Claude project for proposals, we're going to do that too — but with all your past proposals and offer iterations as reference.
+>
+> The AI Operating System is a full replacement for the scattered tools you're using today.
+>
+> So I need to know what you've got.
+
+Then probe 1:
+
+> First question:
+>
+> **What AI tools are you actively using today?**
+>
+> Examples: ChatGPT, Claude (free or Pro), Gemini, Perplexity, NotebookLM, Microsoft Copilot, ElevenLabs, Midjourney, Cursor, others.
+>
+> Just list them. Don't filter — even the ones you don't love.
+
+Wait. For each tool named, probe contextually:
+
+- **ChatGPT** → "Free or Plus? Daily user, or occasional? What do you mostly use it for?"
+- **Claude** → "Pro subscription or free? Mostly chat, or do you use projects?"
+- **Gemini** → "Which Gemini — the Google Workspace one, the free one, or AI Studio?"
+- **Perplexity** → "What kind of searches — research, fact-checking, sourcing?"
+- **NotebookLM** → "How many notebooks? What's in them?"
+- **Microsoft Copilot** → "Word and Excel mostly, or also Teams?"
+- **Any tool not listed** → "What do you use it for, and how often?"
+
+AskUserQuestion gate:
+
+- **"More tools to add"** → loop
+- **"Next: custom setups"** (Recommended)
+
+Probe 2:
+
+> Now the deeper question:
+>
+> **Do you have any custom GPTs, Claude projects, Gemini gems, or NotebookLM notebooks you actively use?**
+>
+> Examples: a custom GPT trained on your writing style, a Claude project loaded with client docs, a Gemini gem for sales emails, a NotebookLM with your meeting transcripts.
+>
+> If yes, walk me through each one — what it does, what files you put into it, how often you actually use it.
+>
+> If none, that's totally fine. Most people haven't gone that deep yet.
+
+Wait. For EACH custom setup they name, probe deeper:
+
+- What does it do specifically?
+- What files or instructions did you put into it?
+- How often do you actually use it?
+- What's working about it? What's not?
+
+**Educate as you go:** when they name a custom GPT, frame it: *"Got it. We're going to replace that with something better in your AIOS — same job, but with your real client context, your real voice, and the ability to actually act in your tools instead of just suggesting."*
+
+AskUserQuestion gate:
+
+- **"More custom setups to add"** → loop
+- **"Next: what hasn't worked"** (Recommended)
+
+Probe 3:
+
+> One more for this step:
+>
+> **What have you tried with AI that didn't work?**
+>
+> Examples:
+>
+> - A tool you bought and stopped using.
+> - A workflow you tried to automate that kept breaking.
+> - A time you trusted AI on something important and it bit you.
+> - A custom GPT or project that just didn't deliver.
+>
+> Anything counts. We want to know your scars so we don't repeat them.
+
+Wait. Probe lightly — don't dwell.
+
+Then show the captured summary:
+
+> Quick recap of your AI Journey:
+>
+> - **Tools you use today:** [list]
+> - **Custom setups:** [list with brief descriptions]
+> - **Things that didn't work:** [list]
+>
+> All of this is heading to `ai-journey.md` when we wrap up Step 2.
+>
+> This is your baseline. The AIOS is going to surpass all of it.
+>
+> Now Theme 1.
+
+### Step 2.3 — Theme 1: Methodology & Mind
 
 Say:
 
@@ -221,7 +440,6 @@ After probing the book(s), use AskUserQuestion:
 
 - **"Got more books to add"** → loop back, ask if more
 - **"Move on to frameworks"** (Recommended after first book named)
-- **"Skip ahead to next theme"**
 
 Then probe 2:
 
@@ -239,9 +457,20 @@ Wait. Probe contextually. AskUserQuestion gate:
 
 - **"Got more frameworks"** → loop
 - **"Move on to Theme 2"** (Recommended after first)
-- **"Skip remaining themes"**
 
-### Step 2.3 — Theme 2: People & Relationships
+After they pick "Move on to Theme 2," show the captured summary BEFORE Theme 2 begins:
+
+> Quick recap of Methodology & Mind:
+>
+> - **Books named:** [list what they named]
+> - **Frameworks named:** [list]
+> - **To track down later (Level 2):** [any specific titles to find]
+>
+> All of this is heading to `methodology.md` and `to-source.md` when we wrap up Step 2.
+>
+> Now Theme 2.
+
+### Step 2.4 — Theme 2: People & Relationships
 
 Say:
 
@@ -271,7 +500,6 @@ Wait. Probe contextually (e.g., Google Sheets → which fields matter most?). As
 
 - **"More to say about clients"** → loop
 - **"Next: partners and collaborators"** (Recommended)
-- **"Skip the rest of this theme"**
 
 Probe 2:
 
@@ -283,7 +511,10 @@ Probe 2:
 >
 > Could be one place. Could be scattered. Could be nowhere.
 
-Wait. Probe contextually. Gate (loop / next probe / skip).
+Wait. Probe contextually. AskUserQuestion gate:
+
+- **"More to say about partners"** → loop
+- **"Next: meeting notes"** (Recommended)
 
 Probe 3:
 
@@ -295,9 +526,24 @@ Probe 3:
 >
 > "Nowhere" is a real answer.
 
-Wait. Probe contextually. Gate (loop / next theme / skip).
+Wait. Probe contextually. AskUserQuestion gate:
 
-### Step 2.4 — Theme 3: Business Shape & Direction
+- **"More to say about meeting notes"** → loop
+- **"Move on to Theme 3"** (Recommended)
+
+After they pick "Move on to Theme 3," show the captured summary BEFORE Theme 3 begins:
+
+> Quick recap of People & Relationships:
+>
+> - **Clients live in:** [source]
+> - **Partners & collaborators live in:** [source]
+> - **Meeting notes live in:** [source]
+>
+> Heading to `about-business.md` (People section) and `to-connect.md` when we wrap up.
+>
+> Now Theme 3.
+
+### Step 2.5 — Theme 3: Business Shape & Direction
 
 Say:
 
@@ -323,7 +569,10 @@ Probe 1:
 >
 > If pricing's all over the place, that's fine — most operators are there.
 
-Wait. Probe contextually. Gate.
+Wait. Probe contextually. AskUserQuestion gate:
+
+- **"More to say about offers"** → loop
+- **"Next: brand assets"** (Recommended)
 
 Probe 2:
 
@@ -335,7 +584,10 @@ Probe 2:
 >
 > Reminder: I already pulled what I could from the URL scrape — we're looking for the rest now.
 
-Wait. Probe contextually. Gate.
+Wait. Probe contextually. AskUserQuestion gate:
+
+- **"More to say about brand"** → loop
+- **"Next: goals"** (Recommended)
 
 Probe 3:
 
@@ -347,7 +599,10 @@ Probe 3:
 >
 > If goals are vague right now, tell me anyway — we'll sharpen them in later levels.
 
-Wait. Probe contextually. Gate.
+Wait. Probe contextually. AskUserQuestion gate:
+
+- **"More to say about goals"** → loop
+- **"Next: current focus"** (Recommended)
 
 Probe 4 — open, no further probing:
 
@@ -359,9 +614,22 @@ Probe 4 — open, no further probing:
 >
 > Not a system question. Just whatever's on your mind.
 
-Wait for their answer. Acknowledge by restating it back ("Got it — so the thing you're trying to figure out is [X]. Locked. We'll come back to this in Level 3."). Then move to wrap-up.
+Wait for their answer. Acknowledge by restating it back ("Got it — so the thing you're trying to figure out is [X]. Locked. We'll come back to this in Level 3.").
 
-### Step 2.5 — Wrap-up wishlist
+Then show the Theme 3 captured summary:
+
+> Quick recap of Business Shape & Direction:
+>
+> - **Offers/pricing live in:** [source]
+> - **Brand assets live in:** [source]
+> - **Goals live in:** [source]
+> - **Current focus:** [restated]
+>
+> Heading to `about-business.md` (Where things live cluster), `to-source.md`, and `to-connect.md` when we wrap up.
+>
+> One more thing — your AI wishlist.
+
+### Step 2.6 — Wrap-up wishlist
 
 Say:
 
@@ -383,19 +651,38 @@ Say:
 
 Wait for their wishlist.
 
-**Now write to files. SIX writes total:**
+Then show the captured summary:
 
-1. **`about-me.md`** — fill the Businesses header from URL ask + the multi-business follow-up. Fill bio sections from the URL scrape.
-2. **`about-business.md`** — fill existing sections (what you sell, who you sell to, etc.) from URL scrape. Fill the "Where things live" sections (People, Offer & pricing sources, Brand assets, Goals, Current focus) from the matching theme probes.
-3. **`methodology.md`** — Books I operate by + Frameworks I use from Theme 1.
-4. **`to-source.md`** — every book and framework named in Theme 1 + the V/TO doc / proposal template / brand guide named in Theme 3 (anything that needs sourcing work in Level 2).
-5. **`to-connect.md`** — every CRM / conversation source / brand source / offer source / goals source named across Themes 2 and 3 (anything that needs connecting or migrating).
-6. **`to-build.md`** — wishlist answers from the wrap-up.
+> Captured for your wishlist:
+>
+> - [list of wishes]
+>
+> Heading to `to-build.md` when we wrap up.
+
+**Now write to files. SEVEN writes total:**
+
+1. **`about-me.md`** — Businesses header from URL ask + multi-business follow-up. Bio sections from URL scrape.
+2. **`about-business.md`** — existing sections (what you sell, etc.) from URL scrape + Where things live cluster (People, Offers, Brand, Goals, Current focus) from themes.
+3. **`methodology.md`** — Books + Frameworks from Theme 1.
+4. **`ai-journey.md`** — Tools, custom setups, things that didn't work — from Step 2.2 AI Journey.
+5. **`to-source.md`** — books + frameworks named + business assets to track down.
+6. **`to-connect.md`** — all sources named across themes that need connecting.
+7. **`to-build.md`** — wishlist answers.
 
 ONE write per file at the end of Step 2.
 
 After saving, say:
 
+> Saving everything now:
+>
+> - **`about-me.md`** — businesses + bio
+> - **`about-business.md`** — what you sell + people sources + offers + brand + goals + current focus
+> - **`methodology.md`** — books + frameworks
+> - **`ai-journey.md`** — AI tools you use + custom setups + things that didn't work
+> - **`to-source.md`** — list of things to track down in Level 2
+> - **`to-connect.md`** — list of sources to connect in Levels 2-4
+> - **`to-build.md`** — your wishlist for Levels 4-6
+>
 > Saved.
 >
 > I now know where everything in your business lives — and what we'll connect, source, and build over the next few levels.
@@ -534,7 +821,39 @@ Then stop. Don't keep talking.
 
 When the user names something specific during a Step 2 probe, dig deeper using these patterns BEFORE moving on. Ask ONE follow-up at a time. Never fire two questions in one turn. If the user says "skip" or "move on" at any point, respect it immediately.
 
-After every probe-answer cycle, use AskUserQuestion with three options: keep probing this / next probe / skip ahead.
+After every probe-answer cycle, use AskUserQuestion with **two options only**: keep probing this thing OR move to the adjacent next probe. Never offer "skip ahead to next theme" as a menu option — if the user wants to skip, they'll say so verbally.
+
+### AI Tools named (Step 2.2 — Your AI Journey, Probe 1)
+
+| Tool | Follow-up |
+|------|-----------|
+| ChatGPT | "Free or Plus? Daily user, or occasional? What do you mostly use it for?" |
+| Claude | "Pro subscription or free? Mostly chat, or do you use projects?" |
+| Gemini | "Which Gemini — the Google Workspace one, the free one, or AI Studio?" |
+| Perplexity | "What kind of searches — research, fact-checking, sourcing?" |
+| NotebookLM | "How many notebooks? What's in them? Are you using the audio overview feature?" |
+| Microsoft Copilot | "Word and Excel mostly, or also Teams? Which version — free, Pro, or Microsoft 365 Copilot?" |
+| ElevenLabs | "Voice cloning, narration, or both? How often?" |
+| Midjourney | "What kind of images — branded, social, exploratory? Where do they end up?" |
+| Cursor | "Are you actively coding, or trying to learn? What language?" |
+| Tool I don't recognize | "What is it, what do you use it for, how often, and is it free or paid?" |
+
+### Custom setups named (Step 2.2 — Your AI Journey, Probe 2)
+
+When the user names a custom GPT, Claude project, Gemini gem, or NotebookLM notebook, probe FOR EACH ONE separately. Don't batch.
+
+| Setup type | Follow-ups (ask one at a time) |
+|------------|---------------------------------|
+| Custom GPT | (1) What does it do specifically? (2) What instructions did you give it in the system prompt? (3) What files did you upload as knowledge? (4) How often do you actually use it? (5) What's working / not? |
+| Claude Project | (1) What's the project about? (2) What files are loaded into it? (3) What are your project instructions? (4) How often do you use it? (5) What's working / not? |
+| Gemini Gem | (1) What does this gem do? (2) What's the system prompt? (3) How often do you reach for it? (4) What's working / not? |
+| NotebookLM notebook | (1) What's in the notebook? (2) What do you use it for — research, summarization, audio overview? (3) How often? (4) Is it private or shared? |
+
+After probing each setup, EDUCATE briefly:
+
+> Got it. We're going to replace [setup name] with something better in your AIOS — same job, but with your real client context, your real voice, and the ability to actually act in your tools instead of just suggesting.
+>
+> We'll sequence the transfer across Levels 2-5.
 
 ### Books named (Theme 1, Probe 1)
 
@@ -550,6 +869,16 @@ After every probe-answer cycle, use AskUserQuestion with three options: keep pro
 | 7 Habits (Covey) | "Which habit's been hardest to actually integrate?" |
 | Scaling Up / Rockefeller Habits (Harnish) | "Do you have your One-Page Strategic Plan saved?" |
 | Good to Great (Collins) | "What's your Hedgehog look like right now, if you had to name it?" |
+| Never Split the Difference (Voss) | "Do you use his tactical empathy / mirroring in client calls? Any specific phrases you reach for?" |
+| Start With Why (Sinek) | "Have you worked out your Why? Where's it written down?" |
+| The 4-Hour Workweek (Ferriss) | "Are you running an 80/20 audit on clients or revenue? Outsourcing setup yet?" |
+| Getting Things Done / GTD (Allen) | "Are you doing the full GTD system? What tool — Things, Todoist, OmniFocus, plain text?" |
+| Deep Work (Newport) | "Are you blocking deep work time on your calendar, or just trying to?" |
+| The 12 Week Year (Moran) | "Are you running 12-week sprints? Where's your current plan?" |
+| Extreme Ownership (Willink) | "Has 'ownership' shaped how you talk to clients? Any specific scenarios?" |
+| The 5 Dysfunctions of a Team (Lencioni) | "Are you applying it to client teams, or your own? Do you reference the pyramid in conversations?" |
+| Measure What Matters (Doerr) | "Are you running OKRs? Where do they live?" |
+| Influence (Cialdini) | "Which of the 6 principles do you use most — reciprocity, scarcity, anything else?" |
 | Book I don't recognize | "Tell me the one idea from it that actually changed how you operate." |
 
 ### Frameworks named (Theme 1, Probe 2)
@@ -562,6 +891,11 @@ After every probe-answer cycle, use AskUserQuestion with three options: keep pro
 | Culture Index / Predictive Index | "Do you have your team's assessment results saved? Where?" |
 | OKRs | "Quarterly or annual? In a tool (Lattice, 15Five) or just a doc?" |
 | Scaling Up / Rockefeller | "Where's your One-Page Strategic Plan?" |
+| SMART Goals | "Where do your SMART goals live — a doc, a wall, an app?" |
+| 80/20 / Pareto | "Have you done a recent 80/20 audit on clients or revenue? When was the last one?" |
+| SWOT | "How often do you actually run a SWOT? Where do the results live?" |
+| Eisenhower Matrix | "Are you using it for task triage daily, or more as a mental model?" |
+| DISC / CliftonStrengths / Working Genius | "Have you done the assessment? Where are the results saved?" |
 | Framework I don't recognize | "Walk me through how you use it on a typical week." |
 
 ### "Where do your clients live?" (Theme 2, Probe 1)
@@ -577,7 +911,7 @@ After every probe-answer cycle, use AskUserQuestion with three options: keep pro
 | Airtable | "Linked tables, or one big sheet?" |
 | Monday / ClickUp / Asana | "Is it set up like a CRM, or more like a task tracker that happens to have client info?" |
 | "In my head" | "Roughly how many — 5, 20, 50? We'll turn this into a real folder system over the next few levels." |
-| "On paper / index cards" | "How long have you been doing it that way? We can digitize gradually." |
+| "On paper / index cards" | "How is it organized — same format every time? What happens to the paper after — does it get filed, scanned, transcribed? Are you the only one who reads them?" |
 
 ### "Where do your partners and collaborators live?" (Theme 2, Probe 2)
 
@@ -598,6 +932,7 @@ After every probe-answer cycle, use AskUserQuestion with three options: keep pro
 | Granola | "How do you like it compared to other tools?" |
 | Email recaps you send yourself | "Smart. Do you send them to yourself or to clients? Where are they searchable?" |
 | "In my memory" | "Totally fine. What's the most important call you can remember from last week?" |
+| "On paper" | "Same notebook every time, or scattered? What happens after the meeting — does the paper get filed, scanned, transcribed? Or just sit somewhere?" |
 | Nowhere | "We'll start a meeting-notes system in Level 2. Which tool sounds least painful — Otter, Fireflies, Granola?" |
 
 ### "Where do offers and pricing live?" (Theme 3, Probe 1)
@@ -651,18 +986,24 @@ Do NOT probe further on this one. The answer is usually personal. Restate it bac
 
 ## What success looks like
 
-- User feels guided, not abandoned
-- `about-me.md`, `about-business.md`, `tasks.md`, `intake.md` are all populated with real content (NOT placeholders)
-- 1 task moved from Score 0 to Score 2 or 3
+- User feels guided like at a doctor's visit — never abandoned, never overwhelmed
+- These files all populated with real content (NOT placeholders): `about-me.md`, `about-business.md`, `methodology.md`, `ai-journey.md`, `to-source.md`, `to-connect.md`, `to-build.md`, `tasks.md`, `intake.md`
+- 1 task moved from Score 0 to Score 2 or 3 in Step 5
 - User ends with something like "wow, that was actually useful"
 - User leaves understanding the default-shift question
 
 ## What to avoid
 
-- Telling them to "open this file and fill it in" (you write to files, they don't)
-- Asking 17 questions in a row (use ramble prompts instead — open invitation, not interrogation)
+- Firing multiple probes in one turn — ONE probe + contextual follow-up + AskUserQuestion gate, then move on
+- Generic acknowledgments like *"got it, Google Sheets"* with no follow-up — always use the Probe library to dig deeper
+- Offering "skip ahead to next theme" as an AskUserQuestion option — skip is a verbal command, not a menu
+- Religious language ("books like the Bible") — use "go-to playbook" instead
+- Wall-of-text prompts — vertical white space, one thought per line, examples on own lines, "no is fine" in every probe
+- Showing Maple Creek / Josh / any client-specific example — use Jacob's own AIOS as the anchor ($100M Offers chapter setup, 45-client folder, EOS V/TO doc)
+- Failing to confirm if LinkedIn or website is missing from the URL paste — always check before fetching
+- Telling the user to "open this file and fill it in" — you write to files, they don't
 - Quoting times ("about 90 min") — replace with status / dream-outcome framing
-- Long preambles or essays
+- Long preambles or essays before getting to the point
 - Coder vocab (banned list above)
 - Skipping Typeless without confirming they have an alternative
 - Letting them off the hook on the first tiny win — make sure it actually feels like a win
