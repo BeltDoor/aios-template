@@ -40,9 +40,9 @@ Fill in what you can. Claude reads this every time you start working in here. Ad
 
 ---
 
-## Where things live (added in Level 1 Step 2)
+## Where things live
 
-These sections track WHERE your business info currently lives — so we can connect, import, or pull from those sources in later levels. Filled in by Claude during Level 1 from your Step 2 answers.
+These sections track WHERE your business info currently lives — so each slice knows what to connect. Claude fills these in slice by slice, as each part of your business gets mapped. Empty sections just mean that slice hasn't run yet.
 
 ### People
 

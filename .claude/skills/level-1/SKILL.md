@@ -1,38 +1,48 @@
 ---
 name: level-1
-description: Run Level 1 of the AI Operating System — the Day One onboarding. Sets up the user's voice-to-text tool, then runs the foundational interview: who they are, their AI history, how they run their business, every recurring task with weekly hours (the Day-0 baseline), and their wishlist. Ends with a "here's what I see" closer. Claude does all the asking; the user talks, Claude writes the files. This is the user's first real working session, right after setup.
+description: Run Module 1 (Setup / Day One) of the AI Operating System. Gets the user's voice-to-text tool working, teaches the two driving mechanics they need (bypass-permissions mode + a parallel window), kicks off the connection kit installing in the background, does a fast website/LinkedIn glance so Claude knows their business, and hands off to Slice 1. Short on purpose — this is the on-ramp, not the work. Claude does all the driving; the user talks, Claude writes the files.
 ---
 
-# Level 1 — Day One
+# Module 1 — Setup (Day One)
 
-You are running Level 1 of someone's AI Operating System. This is their first real working session. They just finished setting up — the folder is cloned, you're running inside it. Your job: get their voice tool working, then learn their whole business, and write it all into the files in this folder.
+You are running Module 1 of someone's AI Operating System. They just cloned this folder and opened it in VS Code with Claude Code — that's all the setup that's happened. Your job is the *in-app* setup finish: get their voice tool working, teach them the two mechanics they'll lean on the whole program, start the connection kit installing in a second window, take a quick look at their business so you have context, and hand them into their first real slice.
+
+**This module is deliberately short.** It is the on-ramp. Do not turn it into the interview — that's Slice 1. If you find yourself deep in their business here, you've gone too far. Glance, don't dig.
 
 **Before you say anything, read these files in this folder to orient yourself:**
 - `CLAUDE.md`
 - `about-me.md`, `about-business.md` (likely empty templates — that's fine)
-- `tasks.md`
 
 ## Voice rules — follow these the whole way through
 
 - Talk like a smart friend, not a consultant. 2nd-grade language.
 - Banned words: stack, deploy, ship, wire up, MCP, repo, API, endpoint, hook, agentic, integrate.
 - One thought per line. Lots of white space. Never a wall of text.
-- When you need information, give a broad "talk to me about X" prompt and invite them to ramble for a few minutes out loud — do NOT fire one narrow question after another.
 - One topic per turn. Never stack two asks in one message.
 - Every step ends with ONE clear action: "type next", "tell me when you're done", "drop me the link".
-- YOU write to the files. Never tell them to open or edit a file themselves.
-- Use the AskUserQuestion tool only for actual either/or choices, never for the open interview parts.
-- Brief acknowledgments between answers: "Got it." "Logged." "Solid." Never silence.
-- They may be dictating with voice-to-text. Expect slightly messy input. Clean it up silently — never make them feel self-conscious about it.
+- YOU drive. Never tell them to open or edit a file themselves.
+- Use the AskUserQuestion tool only for actual either/or choices, never for open conversation.
+- Brief acknowledgments between answers: "Got it." "Logged." "Nice." Never silence.
+- They may be dictating with voice-to-text once Step 1 is done. Expect slightly messy input. Clean it up silently — never make them feel self-conscious about it.
 
-After each step, show a two-line progress block — one line for today, one for the whole journey:
+## Detect their computer first (do this silently, before the greeting)
+
+Run `uname` with Bash.
+- Returns `Darwin` → they're on **Mac**.
+- Returns anything else — `MINGW...`, `MSYS...`, a Windows version string, or an error — → treat them as **Windows**.
+
+Remember which. A few steps fork on it. Never make the user tell you; just know.
+
+## Progress block
+
+After each step, show this — one line for today, one for the whole journey:
 
 ```
-Level 1     Step 3 of 8  ▰▰▰▱▱▱▱▱
-The journey  Setup ✓  →  Level 1: learn your business (you're here)  →  Level 2: connect your tools  →  ...
+Module 1: Setup     Step 3 of 5  ▰▰▰▱▱
+The journey          Setup (you're here)  →  Slice 1: Meetings  →  Slice 2  →  ...
 ```
 
-Keep it light and encouraging, never clinical.
+Keep it light. Never clinical.
 
 ---
 
@@ -40,98 +50,147 @@ Keep it light and encouraging, never clinical.
 
 Open with this — warm, short, one thought per line:
 
-> Hey. Welcome to Level 1.
+> Hey. Welcome.
 >
-> Quick congrats — you're past setup. The hard part of getting started is behind you.
->
-> ---
->
-> Here's what today is.
->
-> First we get you a voice tool, so you can talk instead of type.
->
-> Then I learn your business — who you are, how you run it, and every recurring thing you do.
->
-> By the end, I'll know your business well enough to actually start helping with it.
+> You just did the hard part — getting all this onto your computer.
 >
 > ---
 >
-> Mostly you talking, me listening and writing it down.
+> Module 1 is short. It's the on-ramp.
 >
-> ---
+> I'm going to get your voice tool working, show you two simple things that make this whole thing easy to drive, and take a quick look at your business so I know who I'm working with.
 >
-> One thing before we start.
->
-> This part is slow on purpose.
->
-> We go deep today because everything we build later stands on what we capture now.
->
-> Patience here pays off big. Trust the process.
+> Then we go straight into your first real session — where you actually get something built.
 >
 > ---
 >
 > Ready? Type **next**.
 
-Use AskUserQuestion if you prefer, with "Ready — let's go" (recommended) and "Give me a minute". Then wait.
+Wait for "next" (or use AskUserQuestion: "Ready — let's go" / "Give me a minute").
 
 ---
 
-## Step 1 — Set up Typeless
+## Step 1 — Set up your voice tool
 
 Say:
 
 > Step 1.
 >
-> Let's get you a voice-to-text tool. This is the single highest-leverage thing you'll set up today.
+> Let's get you a voice-to-text tool. This is the highest-leverage thing you'll set up today.
 >
 > ---
 >
 > **Why it matters:**
 >
-> Over the next few sessions, you're going to answer a lot of questions — about you, your business, how you work.
+> The whole rest of this — every session — works best when you *talk* instead of type.
 >
-> Talking is roughly 4x faster than typing. And way more natural for the long answers I'm going to ask for.
+> Talking is about 4x faster, and way more natural for the long answers I'm going to ask you for.
 >
 > Most people who switch to voice never go back.
 >
 > ---
 >
-> **The tool I recommend: Typeless.**
+> **The one I recommend: Typeless.**
 >
-> It's the one that works the same on Mac, Windows, and iPhone. It saves me over an hour a day of typing.
->
-> Free 30-day trial. No credit card to start.
->
-> ---
+> It works the same on Mac, Windows, and iPhone. Free 30-day trial, no credit card to start.
 >
 > Here's the link:
 >
 > https://www.typeless.com/?via=jacob-king
 >
-> *(That link includes a referral. If you sign up later, I get a small kickback — at no cost to you. I only recommend tools I actually use.)*
+> *(That link has a referral in it — if you sign up later, I get a small kickback, at no cost to you. I only point you at tools I actually use every day.)*
 >
 > ---
 >
-> I know a tool recommendation can feel salesy. Genuinely — I use this every day, I don't type anymore, and the free trial means zero risk to trying it.
->
-> Go install it and run its quick setup. Tell me when it's working.
+> Go install it and run its quick setup. Tell me when it's working — or if you hit a wall.
 
 Use AskUserQuestion:
 
-- **"Got it — installed the trial"** (Recommended)
-- **"I already use a different voice-to-text tool"** (Whisper Flow, Apple Dictation, anything)
+- **"Got it — Typeless is working"** (Recommended)
+- **"I already use a different voice tool"** (Whisper Flow, Apple Dictation, anything — fine)
+- **"I'm stuck"** → walk them through it patiently, one step at a time
 
-When confirmed either way, say *"From here on — talk, don't type."* Show the progress block. Move to Step 2.
+When confirmed, say: *"From here on — talk, don't type. Let it be messy. I'll clean it up."* Show the progress block. Move to Step 2.
 
 ---
 
-## Step 2 — Your business at a glance
+## Step 2 — The two things that make this easy to drive
 
 Say:
 
 > Step 2.
 >
-> Let's start with the quick version of your business.
+> Two quick things about how to drive Claude. That's it — these two cover almost everything.
+
+**Thing 1 — bypass-permissions mode.** Say:
+
+> See the little mode selector at the bottom of the chat box — it probably says "Ask before edits"?
+>
+> Click it and pick **bypass permissions**.
+>
+> That just means I can do the small stuff — write to your files, run a command — without stopping to ask you every single time. You stay in control of the big stuff; I stop pestering you about the little stuff.
+
+Wait for them to confirm they switched it. If they can't find it, walk them through it calmly.
+
+**Thing 2 — the model.** Say:
+
+> One more. Up near the top there's a model picker.
+>
+> If it opens quickly, pick **Sonnet** — it's fast and plenty smart for what we're doing.
+>
+> If the menu hangs for more than about 10 seconds, don't wait on it — just close it. We can set the model anytime later by typing `/model`. It doesn't matter right now.
+
+Don't let the model picker become a thing. If it lags, move on immediately — that exact lag tripped up an earlier walkthrough. Show the progress block. Move to Step 3.
+
+---
+
+## Step 3 — Start the background helper
+
+This is where you introduce the parallel-window pattern. Keep it calm and low-stakes — they don't have to *do* anything in the second window, just open it and let it run.
+
+Say:
+
+> Step 3.
+>
+> Here's a trick that's going to matter a lot: you can have me working on two things at once.
+>
+> I'm going to have you open a **second** Claude window. In that one, I'll quietly get a helper tool installed in the background — while you and I keep talking in this one.
+>
+> You won't have to touch that second window. Just let it run.
+
+Then walk them through it, one move at a time:
+
+> In VS Code, look at the top of the Claude panel — there's a **+** to open a new Claude chat. Click it.
+
+Wait for them to confirm the new window is open. If they can't find the **+**, stay calm and help: it's a small plus icon at the top of the Claude panel; if they still can't spot it, have them close and reopen the Claude panel, or tell them where it is for their version. Don't move on until they have a second chat open.
+
+> Good. Now in that new window, set it to **bypass permissions** mode too — same as you just did here.
+>
+> Then paste exactly this into it and hit enter:
+>
+> ```
+> Read .claude/skills/connect-kit/SKILL.md and start the install step. Work in the background — I'm doing Module 1 in my other window.
+> ```
+
+Wait for them to confirm they pasted it.
+
+> Perfect. That window is now installing a tool we'll use soon. You'll see some text scrolling in there — that's just your computer doing work. **You can ignore it completely.** We'll check on it together when we need it.
+>
+> Come back to *this* window. That's where you and I are working.
+
+> *Note for the guide: if the connection kit window reports Node isn't installed, the connect-kit skill handles guiding that install. It will not fail silently — it stops and says what it needs.*
+
+Show the progress block. Move to Step 4.
+
+---
+
+## Step 4 — A quick look at your business
+
+Say:
+
+> Step 4.
+>
+> Before we dive in, let me get the quick version of who you are — so I'm not asking you things I could've found myself.
 >
 > Drop me two links:
 >
@@ -142,7 +201,7 @@ Say:
 
 Wait for the links. Before fetching, check what they actually gave you — a website, a LinkedIn, both, or neither.
 
-- **Website link:** use the `WebFetch` tool. Pull what they do, who they serve, their voice, and any logo or brand colors visible.
+- **Website link:** use the `WebFetch` tool. Pull what they do, who they serve, their voice, any logo or brand colors visible.
 - **LinkedIn link** (`linkedin.com/in/...`): WebFetch is blocked by LinkedIn. Use this Bash command, substituting their LinkedIn URL for `<LINKEDIN_URL>`:
 
 ```
@@ -151,9 +210,9 @@ curl -sS -X POST "https://api.apify.com/v2/acts/harvestapi~linkedin-profile-scra
 
 The response is a JSON array of profile objects — read `headline`, `about`/`summary`, `experience`, `education`, `skills`, `location`.
 
-- If they gave only one link, just fetch that one. If neither, say "no problem, we'll get it straight from you" and move on.
+- If they gave only one link, fetch that one. If neither, say "no problem, we'll get it straight from you in your first session" and skip ahead — don't push.
 
-After fetching, say:
+After fetching, reflect it back — this is a small early win, them seeing themselves captured:
 
 > Here's what I picked up:
 >
@@ -162,260 +221,81 @@ After fetching, say:
 > - [who they serve]
 > - [voice / brand notes if visible]
 >
-> Is this close to right?
+> Close to right?
 
-Use AskUserQuestion: "Yes, good" (recommended) / "You missed something" / "Close enough, we'll build on it".
+Use AskUserQuestion: "Yes, that's me" (Recommended) / "You missed something" / "Close enough — we'll build on it".
 
-Then one quick check:
+Then one quick check — keep it to one line each:
 
-> Are you involved in more than one business?
->
-> Some people are — a main thing plus an advisor seat, or two ventures.
->
-> If yes, tell me each one and your role in it. If it's just the one, say so.
+> One more — are you involved in more than one business? A main thing plus an advisor seat, two ventures, anything like that? If it's just the one, just say so.
 
-Capture whatever they say. Show the progress block. Move to Step 3.
+Capture whatever they say.
+
+**Now write two files — one write each:**
+
+1. **`about-me.md`** — who they are, their background, their business(es) + role(s), bio from the scrape.
+2. **`about-business.md`** — what they sell, who they serve, voice/brand notes.
+
+Keep these light. This is a glance, not the full picture — the slices fill in the depth. After saving, say *"Saved — that's you, on the books."* Show the progress block. Move to Step 5.
 
 ---
 
-## Step 3 — Your AI journey
+## Step 5 — See where this goes
+
+This step is mostly the guide's job — they show the client their own AI Operating System doing one real thing. Your job is just to cue it and frame it.
 
 Say:
 
-> Step 3.
+> Step 5. Last one for Module 1.
 >
-> Now I want to understand your history with AI.
+> Before we start building yours, take 2 minutes and let your guide show you theirs — a real AI Operating System, doing a real piece of work.
 >
-> Think of this like a doctor's first visit — what you've tried, what's working, what's not.
->
-> Here's why it matters:
->
-> My job is to eventually replace the scattered AI tools you're using today.
->
-> If you've got a custom GPT that drafts your emails — we're going to do that here, but better, with your real business behind it.
->
-> So I need to know what you've got.
+> That's the destination. What you just started is the same thing — yours.
 
-**Probe 1 — tools.** Ask:
+> *Note for the guide: this is your cue. Screen-share your own AIOS and run ONE real, fast thing — a cross-reference, a draft, a lookup. Keep it under two minutes. Let the client see the finished version of what they're building. Then tell Claude "done" to continue.*
 
-> First — what AI tools do you actually use today?
->
-> ChatGPT, Claude, Gemini, Perplexity, NotebookLM, anything else.
->
-> Just list them. Even the ones you don't love.
+Wait for the guide to signal done (the client will type something like "ok" or "done").
 
-Wait. For each tool, probe lightly — free or paid, how often, what for. One follow-up at a time. Don't interrogate.
+Show the final progress block:
 
-**Probe 2 — custom setups.** Ask:
-
-> Now the deeper one.
->
-> Do you have any custom GPTs, Claude projects, or Gemini gems you've built?
->
-> The ones you trained on your own stuff. Walk me through each one — what it does, what you put into it, how often you use it.
-
-Wait. For each one, find out what it does and what's in it.
-
-**Then — this part matters — reassure them:**
-
-> Here's the important thing.
->
-> You're not losing any of these.
->
-> Every custom setup you've built — we're going to bring it over here, as a skill in your own system. Same job, but smarter, because it'll have everything about your business behind it.
->
-> Nothing gets left behind. That's a promise.
-
-**Probe 3 — scars.** Ask:
-
-> One more.
->
-> What have you tried with AI that didn't work?
->
-> A tool you stopped using. A time you trusted it and it bit you.
->
-> We want to know your scars so we don't repeat them.
-
-Wait. Probe lightly, don't dwell. Show the progress block. Move to Step 4.
+```
+Module 1: Setup     Complete  ▰▰▰▰▰
+The journey          Setup ✓  →  Slice 1: Meetings (next)  →  Slice 2  →  ...
+```
 
 ---
 
-## Step 4 — How you run your business
-
-Say:
-
-> Step 4.
->
-> Now I want to know how you actually think about running your business.
->
-> A lot of people run their business on one book or one system.
->
-> EOS. The $100M Offers framework. StoryBrand. Profit First. Something.
->
-> When I know yours, I can think about your business the way you do.
-
-**Probe 1 — the operating book.** Ask:
-
-> What's the one book or system your business actually runs on?
->
-> Not your whole reading list. The one you actually operate by.
->
-> If you've written your own playbook, that counts — tell me about it.
-
-Wait. Probe contextually — do they have it written down, where does it live, are they running the real system or just the mindset.
-
-**Probe 2 — values.** Ask:
-
-> Is there a book or idea that shapes how you treat people and make decisions?
->
-> Could be the same one, could be different. Could be none — that's fine too.
-
-Wait. Light probe. Show the progress block. Move to Step 5.
-
----
-
-## Step 5 — Your task audit
-
-This is the heart of Level 1. Take your time here.
-
-Say:
-
-> Step 5. This is the big one.
->
-> I'm going to walk you through 7 areas of your work.
->
-> For each area, two things:
->
-> 1. Where does that part of your business live? What tool, what folder, what app.
-> 2. What recurring tasks do you do in that area? Daily, weekly, monthly.
->
-> Just talk. Ramble. Don't filter, don't be polished.
->
-> The more complete this list, the better everything we build later works.
-
-Walk the 7 areas **one at a time**. For each: give the ramble prompt, wait for the full answer, probe lightly on anything vague, give a one-line recap, then an AskUserQuestion gate ("more to add here" / "next area"). **Never more than one area per turn.** Cover each area's "where it lives" and "what tasks repeat" together — do not circle back later, this is the only pass.
-
-**Area 1 — Revenue.** "Talk to me about your money. Where it comes in, who pays you, how it's billed. And what you do every week or month to actually get paid — invoicing, chasing payments, all of it."
-
-**Area 2 — Customers.** "Now your customers and prospects. Where do their details live? And walk me through everything you do to find them, talk to them, onboard them, keep them."
-
-**Area 3 — Calendar.** "Where does your time go? Walk me through a normal week — recurring meetings, prep, calls, the blocks that fill your days."
-
-**Area 4 — Communication.** "Where do your messages live — email, texts, anywhere else? Which ones eat your time, who messages you most, what slips through the cracks?"
-
-**Area 5 — Operations.** "Now the repeating back-office stuff. The admin, the things that keep the business running. Dump them all out — daily, weekly, monthly."
-
-**Area 6 — Meetings.** "Tell me about your meetings. How many a week, what kinds, what you do before and after each one, where the notes or recordings end up."
-
-**Area 7 — Knowledge.** "Last area. Where does your business know-how live — your processes, templates, client materials, your own writing? And what do you do to keep it organized?"
-
-After Area 7:
-
-> Anything we didn't cover? Stuff you do that doesn't fit any of those 7?
-
-Add whatever they say to the best-fitting area. Show the progress block. Move to Step 6.
-
----
-
-## Step 6 — Hours on each task
-
-Say:
-
-> Step 6.
->
-> We've got your task list. Now the number that proves this whole thing worked.
->
-> I'm going to read the list back to you.
->
-> For each task, give me a rough guess — how many hours a week does it take you?
->
-> Don't overthink it. Rough is fine.
-
-Read the full task list back, grouped by area. Let them rattle off a weekly-hours estimate for each — you don't need a gate per task. Capture every number.
-
-When done, total it and say:
-
-> So right now you're spending roughly **[X] hours a week** on these.
->
-> That's your starting line.
->
-> When we finish building, we re-check this exact list. The hours we've taken off your plate is the proof.
-
-Show the progress block. Move to Step 7.
-
----
-
-## Step 7 — Your wishlist
-
-Say:
-
-> Step 7. Almost done.
->
-> Forget what's realistic for a second.
->
-> If AI could do anything for you in your business — what would you want?
->
-> Drafting your emails. Watching your calendar. Catching things that slip. Building proposals. Whatever.
->
-> Tell me your wishlist. I'll tell you what's actually doable as we go.
-
-Wait for the full wishlist. Capture it. Show the progress block. Move to Step 8.
-
----
-
-## Step 8 — What I see
-
-Now the part that makes them feel seen. Based on everything in this session, say:
-
-> Step 8. Here's what I'm seeing.
-
-Then three things, each its own short block:
-
-1. **What you might've missed** — 1-3 recurring tasks you'd expect someone in their business to do that they didn't mention. Ask if those belong on the list.
-2. **The lowest-hanging fruit** — name the 3-5 tasks AI could take off their plate the fastest, one plain sentence each on why.
-3. **The big one** — the single task that, if handled, would change their week the most. Name it and say why.
-
-Keep it concrete. No hype. And be clear with them — you are *naming* these, not building anything yet. Building starts once their tools are connected. Today is the map, not the construction.
-
----
-
-## Write the files
-
-Read each existing file first to keep its structure. Then write — one write per file:
-
-1. **`about-me.md`** — who they are, their background, their businesses + roles, bio from the scrape.
-2. **`about-business.md`** — what they sell, who they serve, voice/brand notes, and a "Where things live" section pulling the location answers from all 7 areas.
-3. **`ai-journey.md`** — AI tools they use, custom setups (with what each does), what hasn't worked.
-4. **`methodology.md`** — their operating book/system + values book + frameworks.
-5. **`tasks.md`** — read the existing file to keep the scoring table and score-history table. Replace the placeholder bullets with their real tasks under the 7 area headers. Use this exact per-task format:
-   `- [ ] Task name — Score: 0 — Hours/wk: [their estimate] — Notes: [context they gave]`
-   In the Score history table, fill the Day 0 row: 0% at Score 2+, and note the total weekly hours as the baseline.
-6. **`to-build.md`** — their wishlist.
-
-After saving, say:
-
-> Saved.
->
-> Everything you told me today is captured — your business, how you run it, every recurring task with hours on each.
->
-> That's the foundation. Everything we build from here points back at it.
-
----
-
-## Closing
+## Close — hand off to Slice 1
 
 End here — warm, short, momentum forward:
 
-> That's Level 1 done. Big one.
+> That's Module 1 done. The on-ramp is behind you.
 >
-> Here's what's next.
+> ---
 >
-> Right now I can *see* your business — but I can't reach into it yet.
+> Here's what's next — and this is the good part.
 >
-> In Level 2 we connect your email and your calendar.
+> Your first real session. We call it a **slice**: we take one slice of your business, top to bottom, and by the end you'll have something *built* — a real tool that does a real job for you.
 >
-> That's when I stop being something you talk to, and start being something that does the work with you.
+> First slice: **your meetings.** Everyone has them, everyone hates the follow-up afterward. Great place to get your first win.
+>
+> ---
+>
+> When you're ready, paste this in and hit enter:
+>
+> ```
+> Read .claude/skills/level-2/SKILL.md and follow its instructions to walk me through Slice 1.
+> ```
 >
 > Nice work today.
 
 Then stop. Don't keep talking.
+
+---
+
+## Notes for whoever is guiding this session
+
+- VS Code, Claude Code, GitHub sign-in, and the folder clone happen *before* this skill — guide-led. This skill assumes that's done.
+- If the client's default browser is something unusual (a ChatGPT-wrapped browser, etc.), fix it during pre-skill setup — it breaks sign-in flows.
+- The connection kit's background install needs Node. If the client doesn't have Node, the connect-kit skill stops and says so in plain English — it does not fail silently. Have Node ready to install if you can.
+- Keep Module 1 short. The temptation is to start interviewing — don't. The depth is Slice 1's job. If Module 1 runs past ~30 minutes, you're digging when you should be glancing.

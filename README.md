@@ -2,11 +2,11 @@
 
 Welcome. This folder is yours.
 
-It's the start of your AI Operating System — the place where you teach AI everything about you, your business, and how you work, so it can start handling more and more of your day.
+It's the start of your AI Operating System — the place where you teach AI everything about you, your business, and how you work, so it can take more and more off your plate.
 
 ## Start here
 
-You've got setup done. Now you do Level 1 — your first real session.
+Your tools are installed and this folder is open. Now you do **Day One** — a short setup session that gets you ready to actually work.
 
 **In the chat box, type this and hit enter:**
 
@@ -14,34 +14,31 @@ You've got setup done. Now you do Level 1 — your first real session.
 Read .claude/skills/level-1/SKILL.md and follow its instructions to walk me through Level 1.
 ```
 
-That's it. Claude takes over from there. You just talk — out loud, using your voice tool. Claude listens and writes everything down for you.
+That's it. Claude takes over from there. You talk — out loud, using your voice tool — and Claude does the rest.
 
-## The journey
+## How this works
 
-You build this up one level at a time. Each level is small and ends with a real win.
+You build this up in **slices**. A slice takes one part of your business — top to bottom — and ends with a real, working tool you own. Not a lesson. A thing that does a job for you.
 
-- **Setup** — get the tools on your computer. *(done — your guide ran this with you)*
-- **Level 1 — Day One** — Claude learns your whole business. *(start above)*
-- **Level 2 — Connect** — plug Claude into your email and calendar.
-- **Level 3 — Voice** — teach Claude how you sound when you write.
-- **Level 4 — Per-client folders** — a place for each of your clients.
-- **Level 5 — First automation** — Claude takes its first real task off your plate.
-- **Level 6 — Build a skill** — you make your own tool.
-- **Level 7 — Run forever** — things start running on their own.
+- **Day One** — get your voice tool working, learn the two simple things that drive Claude, a quick look at your business. Short. *(start above)*
+- **Slice 1 — Meetings** — your first real session. We build a tool that does your after-meeting work for you: summary, next steps, follow-up.
+- **Slice 2 — Customers** — the follow-ups, the people who slip through the cracks.
+- **Slice 3, 4, 5…** — same pattern, one part of your business at a time.
+- **Run Forever** — things start running on their own. Graduation.
+
+Every slice works the same way: you talk, Claude maps it, connects what's needed, and builds you something. You walk out of every session with a win.
 
 ## What's in this folder
 
 - `CLAUDE.md` — what Claude reads about your business every time. Fills in as you go.
-- `about-me.md` — who you are.
-- `about-business.md` — what your business does.
-- `tasks.md` — every recurring task in your business, with hours on each.
-- `intake.md` — your starting-line numbers.
-- `voice/` — examples of how you write. Fills in later.
-- `clients/`, `projects/`, `recipes/` — folders that fill up as you go.
-- `.claude/skills/` — the guided levels, built into this folder.
+- `about-me.md` / `about-business.md` — who you are, what your business does.
+- `tasks.md` — every recurring task in your business, with hours on each. The proof number.
+- `intake.md` — your starting line.
+- `.claude/skills/` — the guided sessions, built into this folder. `connect-kit/` is the part that connects your outside tools.
+- `clients/`, `projects/`, `recipes/`, `voice/` — folders that fill up as you go.
 
 ## When you get stuck
 
-Type into Claude: *"Explain like I'm an idiot."*
+Type into Claude: **"Explain like I'm an idiot."**
 
-That's the magic phrase. If Claude is doing something you don't understand, use that line and it'll slow down and explain plainly.
+That's the magic phrase. If Claude is doing something you don't follow, use that line — it'll slow down and explain plainly. No jargon.

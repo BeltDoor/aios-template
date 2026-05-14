@@ -1,0 +1,22 @@
+# Secrets — connected-tool keys. NEVER commit these.
+.env
+.env.*
+*.key
+
+# The browser helper's installed files — these are big and machine-specific.
+# The connection kit re-installs them; they don't belong in version control.
+node_modules/
+package-lock.json
+
+# Connection-kit state — local status files, regenerated as you go.
+.claude/skills/connect-kit/state/*.json
+
+# Pulled meeting data and other local working files.
+meetings/
+custom-gpts/
+
+# OS + editor noise
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/

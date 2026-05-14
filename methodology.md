@@ -1,15 +1,15 @@
 # Methodology & Mind
 
-(Captured in Level 1, Step 2, Theme 1. Empty until your first session.)
+The book or system your business actually runs on, and the ideas that shape how you make decisions. Claude fills this in when a slice surfaces it. Empty until then.
 
 ## Books I operate by
 
-- (Claude will fill these in from your Step 2 answers)
+- (the one book or system the business actually runs on — EOS, $100M Offers, StoryBrand, Profit First, your own playbook)
 
 ## Frameworks I use
 
-- (Same — populated during Level 1)
+- (methodologies, leadership systems, sales processes you actively use)
 
 ## How my AI uses this
 
-When you ask me to write an offer, structure a meeting, or think about your business, I reference these books and frameworks the same way Jacob references *$100M Offers* in his own AI Operating System.
+When you ask me to write an offer, structure a meeting, or think about your business, I reference these the same way Jacob references *$100M Offers* in his own AI Operating System.

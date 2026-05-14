@@ -1,54 +1,26 @@
-# Day 0 Scorecard
+# Your Starting Line
 
-Today's date: ____________
+This is the number the whole program is measured against.
 
-These are your Day 0 baseline. We re-ask the same questions on Day 42 (end of Level 6) to see what changed. Score the deltas. Use them as proof.
+As you work through slices, Claude adds up the weekly hours from `tasks.md` — every recurring task you do, with a rough hours-per-week guess on each. That total is your starting line. Near the end of the program, you re-check the same list. The hours that came off your plate are the proof it worked.
 
----
-
-## Three questions
-
-### 1. Happiness with how the business runs today (1-10)
-
-- 1 = miserable, you dread Mondays, the business runs you
-- 10 = couldn't be better, the business is humming, you have time
-
-**Day 0 Score:** ____ / 10
+You don't fill this in by hand — Claude updates it as slices get done.
 
 ---
 
-### 2. Hours per week you spend on stuff you wish AI was doing
+## The scoreboard
 
-Be honest. Email triage, scheduling, follow-ups, prep, formatting, transcribing, looking things up.
+| Checkpoint | Date | Total hours/wk on tracked tasks | % of tasks at Score 2+ | Notes |
+|---|---|---|---|---|
+| Starting line | | | 0% | After your first slice. |
+| | | | | |
+| | | | | |
+| Final | | | | Re-checked near graduation. |
 
-**Day 0 hours/week:** ____
+## At graduation
 
----
+- Hours taken off your plate per week: ______
+- Would you recommend this to someone like you? (1-10): ______
+- The biggest thing that changed:
 
-### 3. If a peer asked: "How are you using AI in your business?" — would you have a confident answer?
-
-- [ ] Yes
-- [ ] No
-- [ ] Sort of
-
----
-
-## Day 42 retest
-
-Filled in at the end of Level 6.
-
-| Question | Day 0 | Day 42 | Change |
-|---|---|---|---|
-| Happiness 1-10 | | | |
-| Hours/week wished AI was doing | | | |
-| AI confidence (Yes / No / Sort of) | | | |
-
-**Day 42 only:**
-
-- Would you recommend this to a peer? (1-10 NPS) ____
-- Biggest thing that changed in the last 6 weeks:
-  ____________________________________________
-
-  ____________________________________________
-
-  ____________________________________________
+  ______________________________________________

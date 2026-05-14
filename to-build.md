@@ -1,5 +1,5 @@
-# To Build — Wishlist for Levels 4-6
+# To Build — your wishlist
 
-What you said you wish AI could do for you. Captured in Level 1, Step 2 wrap-up. Prioritized when we reach Level 4 capability planning.
+Things you wish AI could do for you. Some become slices; some become extra skills inside a slice. Claude adds to this whenever you mention a wish — and pulls from it when picking what to build next.
 
-- (Claude populates from Step 2 wrap-up)
+- (your wishes land here as they come up)

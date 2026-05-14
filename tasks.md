@@ -1,6 +1,6 @@
-# My Tasks (Day-1 Inventory)
+# My Tasks
 
-This is filled in by Claude during Level 1 — every recurring task in your business, with a rough weekly-hours estimate on each. The hours are your Day-0 baseline. You re-score this near the end of the program; the hours taken off your plate are the proof it worked.
+Every recurring task in your business, with a rough weekly-hours estimate on each. Claude fills this in **slice by slice** — each slice adds its bucket's tasks and hours. The hours are your starting-line baseline. You re-score this near the end of the program; the hours taken off your plate are the proof it worked.
 
 ---
 

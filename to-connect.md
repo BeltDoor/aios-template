@@ -1,11 +1,11 @@
-# To Connect — Levels 2-4 Picklist
+# To Connect — outside tools still to hook up
 
-External sources named in Level 1 that need connecting or migrating into your AI Operating System. Sequenced by level.
+Tools and sources named along the way that a future slice still needs to connect. Claude adds to this as things come up. Each slice connects what *it* needs in its own Beat 4 — this is the running list of what's left.
 
-## People sources (Levels 2-4)
+## Connected so far
 
-- (Claude populates from Step 2 Theme 2 — your CRM, your conversation source, head-stored clients to migrate)
+- (Claude marks tools here once a slice connects them)
 
-## Business sources (Levels 2-3)
+## Still to connect
 
-- (Claude populates from Step 2 Theme 3 — your offer source, brand source, goals source)
+- (CRM, calendar, drive, recording tool, etc. — added as they're mentioned)

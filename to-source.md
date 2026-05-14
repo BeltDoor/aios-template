@@ -1,15 +1,11 @@
-# To Source — Level 2 Picklist
+# To Source — reference material to bring in
 
-Books, frameworks, and reference docs named in Level 1 that aren't yet loaded into your AI Operating System. Jacob picks these up with you in Level 2.
+Books, frameworks, and documents named along the way that aren't loaded into your AI Operating System yet. Claude adds to this as things come up; a later slice brings them in.
 
-## Books to find / extract
+## Books / frameworks to bring in
 
-- (Claude populates from Step 2 Theme 1)
+- (named as you go)
 
-## Frameworks to find reference material for
+## Business documents to track down
 
-- (Same)
-
-## Business assets to track down
-
-- (Populated from Step 2 Theme 3 — V/TO doc, latest proposal template, brand guide PDF, etc.)
+- (V/TO doc, latest proposal template, brand guide PDF, etc.)

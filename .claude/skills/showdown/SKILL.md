@@ -1,11 +1,11 @@
 ---
 name: showdown
-description: STUB. Built in Level 6 (graduation). Run the 10-question Showdown test where Claude answers questions about the user's business and the user scores each answer 1-3.
+description: STUB. Built at graduation. Run the 10-question Showdown test where Claude answers questions about the user's business and the user scores each answer 1-3.
 ---
 
 # /showdown — STUB
 
-This skill is built in Level 6 (graduation). For now it's a placeholder.
+This skill is built at graduation. For now it's a placeholder.
 
 When built, it will: ask Claude 10 questions about the user's business — factual ("who are your top 5 clients") through interpretive ("what would you say in this exact situation"). The user scores each answer 1-3:
 
