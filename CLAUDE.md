@@ -4,7 +4,7 @@ This folder is the start of [Your Name]'s AI Operating System. Whenever you (Cla
 
 ## Who I am
 
-See `about-me.md` for the basics. (If it's empty, that's fine — we haven't done Intake yet. Ask me questions.)
+See `about-me.md` for the basics. (If it's empty, that's fine — we haven't done Level 1 yet. Ask me questions.)
 
 ## What my business does
 
@@ -12,7 +12,7 @@ See `about-business.md`.
 
 ## How I sound when I write
 
-Examples in `voice/`. (Empty until the Voice step — don't try to mimic me yet.)
+Examples in `voice/`. (Empty until the Voice level — don't try to mimic me yet.)
 
 ## How I want you to work with me
 
@@ -24,7 +24,7 @@ Examples in `voice/`. (Empty until the Voice step — don't try to mimic me yet.
 
 ## My tools
 
-(We connect these after Intake. For now: assume basic stuff — Gmail, a calendar, maybe a CRM.)
+(We connect these in Level 2. For now: assume basic stuff — Gmail, a calendar, maybe a CRM.)
 
 ## What's important to me right now
 
@@ -34,15 +34,15 @@ Examples in `voice/`. (Empty until the Voice step — don't try to mimic me yet.
 
 ## What's in this folder
 
-- `tasks.md` — every recurring task in my business, with hours on each (filled in during Intake)
+- `tasks.md` — every recurring task in my business, with hours on each (filled in during Level 1)
 - `intake.md` — my starting-line numbers
-- `about-me.md` / `about-business.md` / `ai-journey.md` / `methodology.md` — filled in during Intake
+- `about-me.md` / `about-business.md` / `ai-journey.md` / `methodology.md` — filled in during Level 1
 - `clients/` — per-client folders
 - `projects/` — per-project folders
 - `recipes/` — saved workflows
 - `voice/` — examples of how I write
-- `.claude/skills/` — the guided sessions, built into this folder
+- `.claude/skills/` — the guided levels, built into this folder
 
 ## How to start
 
-If `about-me.md` is still empty, I haven't done Intake yet. Tell me to read `.claude/skills/module-02/SKILL.md` and walk me through it.
+If `about-me.md` is still empty, I haven't done Level 1 yet. Tell me to read `.claude/skills/level-1/SKILL.md` and follow its instructions to walk me through Level 1.

@@ -6,28 +6,28 @@ It's the start of your AI Operating System — the place where you teach AI ever
 
 ## Start here
 
-You've got setup done. Now you do your first real session.
+You've got setup done. Now you do Level 1 — your first real session.
 
 **In the chat box, type this and hit enter:**
 
 ```
-Read .claude/skills/module-02/SKILL.md and walk me through it.
+Read .claude/skills/level-1/SKILL.md and follow its instructions to walk me through Level 1.
 ```
 
 That's it. Claude takes over from there. You just talk — out loud, using your voice tool. Claude listens and writes everything down for you.
 
 ## The journey
 
-You build this up one piece at a time. Each piece is small and ends with a real win.
+You build this up one level at a time. Each level is small and ends with a real win.
 
 - **Setup** — get the tools on your computer. *(done — your guide ran this with you)*
-- **Intake** — Claude learns your whole business. *(this is your first session — start above)*
-- **Connect tools** — plug Claude into your email and calendar.
-- **Voice** — teach Claude how you sound when you write.
-- **Per-client folders** — a place for each of your clients.
-- **First automation** — Claude takes its first real task off your plate.
-- **Build a skill** — you make your own tool.
-- **Run forever** — things start running on their own.
+- **Level 1 — Day One** — Claude learns your whole business. *(start above)*
+- **Level 2 — Connect** — plug Claude into your email and calendar.
+- **Level 3 — Voice** — teach Claude how you sound when you write.
+- **Level 4 — Per-client folders** — a place for each of your clients.
+- **Level 5 — First automation** — Claude takes its first real task off your plate.
+- **Level 6 — Build a skill** — you make your own tool.
+- **Level 7 — Run forever** — things start running on their own.
 
 ## What's in this folder
 
@@ -38,7 +38,7 @@ You build this up one piece at a time. Each piece is small and ends with a real 
 - `intake.md` — your starting-line numbers.
 - `voice/` — examples of how you write. Fills in later.
 - `clients/`, `projects/`, `recipes/` — folders that fill up as you go.
-- `.claude/skills/` — the guided sessions, built into this folder.
+- `.claude/skills/` — the guided levels, built into this folder.
 
 ## When you get stuck
 

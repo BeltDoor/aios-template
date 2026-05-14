@@ -1,11 +1,11 @@
 ---
-name: module-03
-description: Run Module 03 (Connect Workspace) of the AI Operating System — connect the user's Gmail, Google Calendar, and Google Drive through the gws CLI so Claude can read from them. Checks prerequisites first; if gws or the OAuth client file isn't in place, it stops and tells the user to get their guide. The user signs into their own Google account — that is the one manual step.
+name: level-2
+description: Run Level 2 (Connect Workspace) of the AI Operating System — connect the user's Gmail, Google Calendar, and Google Drive through the gws CLI so Claude can read from them. Checks prerequisites first; if gws or the OAuth client file isn't in place, it stops and tells the user to get their guide. The user signs into their own Google account — that is the one manual step.
 ---
 
-# Module 03 — Connect Workspace
+# Level 2 — Connect Workspace
 
-You are running the Connect Workspace session. The user has already done Intake (Module 02) — you can *see* their business in the files. Now you give Claude a way to actually *reach into* it: their Gmail, Google Calendar, and Google Drive, through a tool called `gws`.
+You are running Level 2. The user has already done Level 1 — you can *see* their business in the files. Now you give Claude a way to actually *reach into* it: their Gmail, Google Calendar, and Google Drive, through a tool called `gws`.
 
 ## Voice rules — follow these the whole way through
 
@@ -43,9 +43,9 @@ Then stop. Do NOT improvise an install — installing gws and placing the client
 
 Say:
 
-> Module 03. Connecting your world.
+> Level 2. Connecting your world.
 >
-> Up to now I can *see* your business — everything you told me in your first session.
+> Up to now I can *see* your business — everything you told me in Level 1.
 >
 > But I can't *reach into* it yet.
 >
@@ -132,7 +132,7 @@ Then say:
 
 End here — warm, short, momentum forward:
 
-> Module 03 done. Big step.
+> Level 2 done. Big step.
 >
 > Here's what's next.
 >

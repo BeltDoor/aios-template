@@ -1,6 +1,6 @@
 # My Tasks (Day-1 Inventory)
 
-This is filled in by Claude during Module 02 (Intake) — every recurring task in your business, with a rough weekly-hours estimate on each. The hours are your Day-0 baseline. You re-score this near the end of the program; the hours taken off your plate are the proof it worked.
+This is filled in by Claude during Level 1 — every recurring task in your business, with a rough weekly-hours estimate on each. The hours are your Day-0 baseline. You re-score this near the end of the program; the hours taken off your plate are the proof it worked.
 
 ---
 
@@ -19,7 +19,7 @@ Every task gets a score 0-3 based on how much AI is doing the work for you.
 
 ---
 
-## My tasks (filled in during Module 02)
+## My tasks (filled in during Level 1)
 
 Format per task: `- [ ] Task name — Score: 0 — Hours/wk: __ — Notes:`
 
@@ -59,7 +59,7 @@ Track your % at Score 2+ over time.
 
 | Date | % at Score 2+ | Total hours/wk on these tasks | Notes |
 |---|---|---|---|
-| Day 0 | 0% | | Baseline — just finished Module 02. |
+| Day 0 | 0% | | Baseline — just finished Level 1. |
 | | | | |
 | | | | |
 | Final | | | Re-scored near graduation. |
