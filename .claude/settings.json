@@ -1,5 +1,19 @@
 {
   "permissions": {
     "defaultMode": "default"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__perplexity__perplexity_reason|mcp__perplexity__perplexity_research",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/perplexity-guard.js",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
   }
 }
