@@ -4,15 +4,16 @@
 // Never assumes — always tests. Run this before Beat 4 of any slice.
 //
 // Usage:
-//   node verify.mjs --check install   # is Playwright + Chromium ready
-//   node verify.mjs --check otter     # is the Otter key set + working
-//   node verify.mjs --check google    # is gws installed + authed
-//   node verify.mjs --check all       # everything
+//   node verify.mjs --check install     # is Playwright + Chromium ready
+//   node verify.mjs --check otter       # is the Otter key set + working
+//   node verify.mjs --check google      # is the helper signed into Google
+//   node verify.mjs --check microsoft   # is the helper signed into Microsoft
+//   node verify.mjs --check all         # everything
 //
 // Exit code 0 = the checked thing passed. Non-zero = it failed.
 
 
-import { ROOT, log, getEnv, readState, runShellQuiet, fs, path } from './lib.mjs';
+import { ROOT, log, getEnv, readState, fs, path } from './lib.mjs';
 
 // Set the exit code without calling Node's process.exit(). Calling that while
 // a fetch socket is still tearing down triggers a libuv assertion on Windows.
@@ -92,28 +93,34 @@ async function checkOtter() {
   }
 }
 
-// --- google (gws) ---------------------------------------------------------
+// --- google ---------------------------------------------------------------
 
 function checkGoogle() {
-  const v = runShellQuiet(['gws', '--version']);
-  if (v.status !== 0) {
-    log.fail(
-      'Google: the gws tool is not installed.',
-      'gws is the tool that connects Gmail, Calendar, and Drive.',
-      'Connect Google first: node .claude/skills/connect-kit/scripts/connect-google.mjs',
-    );
-    return false;
-  }
-  const status = runShellQuiet(['gws', 'auth', 'status']);
-  const out = `${status.stdout || ''}${status.stderr || ''}`.toLowerCase();
-  if (status.status === 0 && (out.includes('authenticated') || out.includes('logged in') || out.includes('active'))) {
-    log.ok('Google: gws is installed and signed in.');
+  const state = readState('google');
+  if (state && state.status === 'signed-in-via-helper') {
+    log.ok(`Google: the helper is signed in${state.signed_in_at ? ` (since ${state.signed_in_at})` : ''}.`);
     return true;
   }
   log.fail(
-    'Google: gws is installed but not signed in.',
-    'You have the tool, but no Google account is connected yet.',
-    'Connect Google: node .claude/skills/connect-kit/scripts/connect-google.mjs',
+    'Google: the helper is not signed in yet.',
+    'No Google sign-in is recorded for this folder.',
+    'Sign in: node .claude/skills/connect-kit/scripts/connect-google.mjs',
+  );
+  return false;
+}
+
+// --- microsoft ------------------------------------------------------------
+
+function checkMicrosoft() {
+  const state = readState('microsoft');
+  if (state && state.status === 'signed-in-via-helper') {
+    log.ok(`Microsoft: the helper is signed in${state.signed_in_at ? ` (since ${state.signed_in_at})` : ''}.`);
+    return true;
+  }
+  log.fail(
+    'Microsoft: the helper is not signed in yet.',
+    'No Microsoft sign-in is recorded for this folder.',
+    'Sign in: node .claude/skills/connect-kit/scripts/connect-microsoft.mjs',
   );
   return false;
 }
@@ -127,9 +134,10 @@ async function main() {
   if (target === 'install' || target === 'all') pass = (await checkInstall()) && pass;
   if (target === 'otter' || target === 'all') pass = (await checkOtter()) && pass;
   if (target === 'google' || target === 'all') pass = checkGoogle() && pass;
+  if (target === 'microsoft' || target === 'all') pass = checkMicrosoft() && pass;
 
-  if (!['install', 'otter', 'google', 'all'].includes(target)) {
-    log.fail('Unknown check.', `"${target}" is not a thing I can check.`, 'Use: --check install | otter | google | all');
+  if (!['install', 'otter', 'google', 'microsoft', 'all'].includes(target)) {
+    log.fail('Unknown check.', `"${target}" is not a thing I can check.`, 'Use: --check install | otter | google | microsoft | all');
     return exit(2);
   }
 

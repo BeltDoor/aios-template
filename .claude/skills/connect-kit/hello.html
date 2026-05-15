@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>AIOS Helper Browser — sign in</title>
+  <title>AIOS Helper Browser &mdash; ready</title>
   <style>
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; min-height: 100%; }
+    html, body { margin: 0; padding: 0; height: 100%; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       background: radial-gradient(circle at 30% 20%, #1f2937 0%, #0f172a 60%, #020617 100%);
@@ -14,89 +14,28 @@
       align-items: center;
       justify-content: center;
       padding: 40px;
-      min-height: 100vh;
     }
-    .card { max-width: 720px; width: 100%; }
+    .card { max-width: 640px; width: 100%; }
     .check {
-      width: 72px;
-      height: 72px;
+      width: 80px; height: 80px;
       border-radius: 999px;
       background: #16a34a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-      font-weight: bold;
-      color: white;
-      margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 44px; font-weight: bold; color: white;
+      margin-bottom: 28px;
       box-shadow: 0 0 0 8px rgba(22, 163, 74, 0.18);
     }
-    h1 {
-      font-size: 40px;
-      font-weight: 700;
-      margin: 0 0 12px;
-      letter-spacing: -0.02em;
-    }
-    .lead {
-      font-size: 18px;
-      line-height: 1.55;
-      color: #cbd5e1;
-      margin: 0 0 28px;
-      max-width: 600px;
-    }
+    h1 { font-size: 44px; font-weight: 700; margin: 0 0 16px; letter-spacing: -0.02em; }
+    .lead { font-size: 20px; line-height: 1.55; color: #cbd5e1; margin: 0 0 28px; }
     .note {
-      padding: 16px 20px;
+      padding: 20px 24px;
       background: rgba(255,255,255,0.05);
       border-left: 4px solid #16a34a;
       border-radius: 6px;
-      font-size: 15px;
-      line-height: 1.55;
-      color: #e2e8f0;
-      margin-bottom: 36px;
+      font-size: 16px; line-height: 1.55; color: #e2e8f0;
     }
     .note strong { color: #ffffff; }
-    .ask {
-      font-size: 22px;
-      font-weight: 600;
-      margin: 0 0 16px;
-    }
-    .buttons {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-    .btn {
-      flex: 1 1 240px;
-      padding: 18px 24px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.06);
-      color: #f8fafc;
-      font-size: 17px;
-      font-weight: 600;
-      text-align: left;
-      cursor: pointer;
-      transition: background 120ms ease, transform 120ms ease;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    .btn:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
-    .btn .label { line-height: 1.3; }
-    .btn .sub { display: block; font-size: 13px; color: #94a3b8; margin-top: 2px; font-weight: 400; }
-    .skip {
-      display: block;
-      margin-top: 24px;
-      font-size: 14px;
-      color: #64748b;
-      text-decoration: none;
-    }
-    .skip:hover { color: #cbd5e1; }
-    .footer {
-      margin-top: 32px;
-      font-size: 13px;
-      color: #475569;
-    }
+    .footer { margin-top: 28px; font-size: 14px; color: #64748b; }
   </style>
 </head>
 <body>
@@ -104,33 +43,13 @@
     <div class="check">&check;</div>
     <h1>Your AIOS helper is ready.</h1>
     <p class="lead">
-      This is a <strong>separate</strong> browser. It's not your real Chrome &mdash;
-      it's a quiet helper your AI Operating System uses to connect things and do work for you.
+      This is a <strong>separate</strong> browser. It's not your real Chrome &mdash; it's a quiet helper your AI Operating System uses to do work for you.
     </p>
     <div class="note">
-      <strong>Whatever happens in this window stays in this window.</strong>
-      Your real Chrome is untouched &mdash; different tabs, different logins, different everything.
+      <strong>Close this window when you're ready.</strong>
+      Your real Chrome stays untouched &mdash; different tabs, different logins, different everything.
     </div>
-
-    <p class="ask">Which email do you use? Click one to sign in.</p>
-    <div class="buttons">
-      <button class="btn" onclick="location.href='https://accounts.google.com/'">
-        <span class="label">
-          Sign in with Google
-          <span class="sub">Gmail / Google Workspace</span>
-        </span>
-      </button>
-      <button class="btn" onclick="location.href='https://login.microsoftonline.com/'">
-        <span class="label">
-          Sign in with Microsoft
-          <span class="sub">Outlook / Microsoft 365</span>
-        </span>
-      </button>
-    </div>
-
-    <a class="skip" href="#" onclick="window.close(); return false;">I'll do this later &mdash; close this window</a>
-
-    <p class="footer">When you're done signing in, just close this window. Your helper will remember you next time.</p>
+    <p class="footer">Powered by Playwright.</p>
   </div>
 </body>
 </html>

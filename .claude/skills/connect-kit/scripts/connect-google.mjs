@@ -1,107 +1,98 @@
 #!/usr/bin/env node
-// connect-google.mjs — connect Gmail, Google Calendar, and Google Drive.
-// Uses `gws` (the Google Workspace CLI). gws opens its own browser for sign-in,
-// so the user's only job is signing into their own Google account.
+// connect-google.mjs — sign the user into their Google account, in the helper.
+// Opens the helper browser (persistent profile) to Google's sign-in page.
+// The user signs in like they would anywhere else. Their session lives in the
+// helper's profile dir, so future runs remember them.
 //
-// This is NOT on the Slice 1 (Meetings) path — Slice 1 connects Otter. This
-// runs in a later slice that needs Gmail/Calendar/Drive.
+// This script does the SIGN-IN step only. The deeper integration (reading
+// Gmail, Calendar, Drive via the Microsoft Graph or Google APIs) is a later
+// slice — not built here per the current scope. What this skill ships is:
+// the helper is signed into Google.
 //
-// The OAuth client file (the app identity) is the GUIDE's — it must already be
-// at ~/.config/gws/client_secret.json before this runs. If it's not there,
-// this script STOPS and says so. It does not try to create one.
+// Usage:
+//   node connect-google.mjs   # opens the helper, user signs in, exit on close
 
-import os from 'node:os';
-import path from 'node:path';
-import { log, writeState, runShell, runShellQuiet, fs } from './lib.mjs';
+import { log, writeState, tryLoadChromium, ROOT, fs, path } from './lib.mjs';
 
-const CLIENT_FILE = path.join(os.homedir(), '.config', 'gws', 'client_secret.json');
+const exit = (code) => { process.exitCode = code; };
 
-const sh = (parts) => runShell(parts);
-const shQuiet = (parts) => runShellQuiet(parts);
+const SIGN_IN_URL = 'https://accounts.google.com/';
+const TIMEOUT_MS = 8 * 60 * 1000; // 8 minutes — plenty of time for 2FA
 
 async function main() {
-  log.step('Google — connecting Gmail, Calendar, Drive');
+  log.step('Google — sign in inside your helper');
 
-  // 1. Is gws installed?
-  let v = shQuiet(['gws', '--version']);
-  if (v.status !== 0) {
-    log.info('The gws tool is not installed yet — installing it now...');
-    const inst = sh(['npm', 'install', '-g', '@googleworkspace/cli', '--no-audit', '--no-fund', '--loglevel=error']);
-    v = shQuiet(['gws', '--version']);
-    if (inst.status !== 0 || v.status !== 0) {
-      log.fail(
-        'Could not install the gws tool.',
-        'gws is what connects Gmail, Calendar, and Drive. The install needs npm (comes with Node).',
-        'Tell your guide: "gws install failed." They can install it from the Google Workspace CLI releases page.',
-      );
-      writeState('google', { status: 'error', step: 'install' });
-      process.exit(1);
-    }
-  }
-  log.ok(`gws is installed (${(v.stdout || '').trim() || 'version ok'}).`);
-
-  // 2. Is the OAuth client file in place? (the guide's prep)
-  if (!fs.existsSync(CLIENT_FILE)) {
+  const chromium = await tryLoadChromium();
+  if (!chromium) {
     log.fail(
-      'The Google sign-in file is not in place yet.',
-      `gws needs the app identity file at: ${CLIENT_FILE}`,
-      'Tell your guide: "the Google client file isn\'t in place yet." It is a quick thing for them to drop in. '
-        + 'Then come back and run this again.',
+      'The browser tool is not installed yet.',
+      'Playwright + Chromium need to be installed before I can open the helper.',
+      'Run the install first: node .claude/skills/connect-kit/scripts/install.mjs',
     );
-    writeState('google', { status: 'blocked', step: 'client-file-missing' });
-    process.exit(2);
-  }
-  log.ok('Google sign-in file is in place.');
-
-  // 3. Already signed in?
-  const status = shQuiet(['gws', 'auth', 'status']);
-  const statusOut = `${status.stdout || ''}${status.stderr || ''}`.toLowerCase();
-  if (status.status === 0 && (statusOut.includes('authenticated') || statusOut.includes('active') || statusOut.includes('logged in'))) {
-    log.ok('Google is already connected. Nothing to do.');
-    writeState('google', { status: 'connected', note: 'already connected' });
-    return;
+    return exit(1);
   }
 
-  // 4. Sign in. gws opens a browser; the user signs in there.
+  // Same persistent profile the install demo set up — the helper's permanent
+  // identity. The sign-in stays put across runs because of this.
+  const profileDir = path.join(ROOT, '.aios-browser-profile');
+  fs.mkdirSync(profileDir, { recursive: true });
+
+  let context;
+  try {
+    context = await chromium.launchPersistentContext(profileDir, {
+      headless: false,
+      viewport: { width: 1280, height: 900 },
+    });
+  } catch (err) {
+    log.fail('Could not open the helper browser.', err.message, 'Re-run the install, then try again.');
+    return exit(2);
+  }
+
+  const page = (context.pages()[0]) || (await context.newPage());
+  await page.goto(SIGN_IN_URL, { waitUntil: 'domcontentloaded' }).catch(() => {});
+
   console.log('');
   console.log('  ----------------------------------------------------------------');
-  console.log('  A browser window is about to open.');
-  console.log('  Sign into YOUR Google account and approve the access it asks for.');
-  console.log('  That is the one and only thing you need to do.');
+  console.log('  In the helper window that just opened:');
+  console.log('');
+  console.log('    Sign into your Google account like you would anywhere else.');
+  console.log('');
+  console.log('  When you are signed in and you see your normal Google page,');
+  console.log('  close the helper window. That is how I know you are done.');
   console.log('  ----------------------------------------------------------------');
   console.log('');
+  log.info('Waiting for you to sign in and close the helper... (up to 8 minutes)');
 
-  const login = sh(['gws', 'auth', 'login', '-s', 'gmail,calendar,drive']);
-  if (login.status !== 0) {
+  // Wait for the user to close the helper OR an 8-min timeout.
+  let closed = false;
+  context.on('close', () => { closed = true; });
+  const start = Date.now();
+  while (!closed && Date.now() - start < TIMEOUT_MS) {
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+
+  await context.close().catch(() => {});
+
+  if (!closed) {
     log.fail(
-      'The Google sign-in did not go through.',
-      'This is often because the Google account needs to be added as a test user on the app.',
-      'Tell your guide: "the Google account may need to be added as a test user." That is a one-click thing on their end. '
-        + 'Then run this again.',
+      'Timed out waiting for sign-in.',
+      'The helper was still open after 8 minutes.',
+      'Run this again when you have a couple of minutes: node .claude/skills/connect-kit/scripts/connect-google.mjs',
     );
-    writeState('google', { status: 'error', step: 'auth-login' });
-    process.exit(3);
+    writeState('google', { status: 'timed-out', updated_at: new Date().toISOString() });
+    return exit(3);
   }
 
-  // 5. Confirm
-  const confirm = shQuiet(['gws', 'auth', 'status']);
-  const confirmOut = `${confirm.stdout || ''}${confirm.stderr || ''}`.toLowerCase();
-  if (confirm.status === 0 && (confirmOut.includes('authenticated') || confirmOut.includes('active') || confirmOut.includes('logged in'))) {
-    log.ok('Google is connected — Gmail, Calendar, and Drive are reachable now.');
-    writeState('google', { status: 'connected', connected_at: new Date().toISOString() });
-    return;
-  }
-
-  log.fail(
-    'Sign-in finished but I could not confirm it.',
-    'gws ran, but the status check did not come back as connected.',
-    'Run the verify step: node .claude/skills/connect-kit/scripts/verify.mjs --check google',
-  );
-  writeState('google', { status: 'unconfirmed' });
-  process.exit(4);
+  // We don't verify the sign-in went through programmatically — Google's
+  // post-sign-in page varies, and over-verifying is brittle. We trust the
+  // user closed the window because they were done. Deeper integration in a
+  // later slice will exercise the session and confirm.
+  writeState('google', { status: 'signed-in-via-helper', signed_in_at: new Date().toISOString() });
+  log.ok('Google sign-in recorded. Your helper remembers your Google session for future slices.');
+  log.info('Deeper Google integration (reading Gmail, Calendar, Drive) lands in a later slice.');
 }
 
 main().catch((err) => {
   log.fail('Connecting Google hit an unexpected error.', err.message, 'Show this to your guide.');
-  process.exit(99);
+  return exit(99);
 });

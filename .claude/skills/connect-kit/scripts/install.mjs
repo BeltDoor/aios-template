@@ -16,6 +16,19 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const HELLO_HTML = path.join(SCRIPT_DIR, '..', 'hello.html');
 const DEMO = process.argv.includes('--demo');
 
+// --demo-url <url> opens the helper to that URL as the wow (e.g. the user's
+// own website, so they see the helper open to something familiar — proves the
+// thing works in a way no splash page can).
+function getDemoUrl() {
+  const i = process.argv.indexOf('--demo-url');
+  if (i === -1) return null;
+  const url = process.argv[i + 1];
+  if (!url || url.startsWith('-')) return null;
+  // Light validation — has to look like an http(s) URL.
+  if (!/^https?:\/\//i.test(url)) return null;
+  return url;
+}
+
 function run(parts) {
   log.info(`> ${parts.join(' ')}`);
   const r = runShell(parts, { cwd: ROOT });
@@ -138,23 +151,32 @@ async function demo() {
   }
 
   const page = (context.pages()[0]) || (await context.newPage());
-  // Build a file:// URL the browser will accept on both Mac and Windows.
-  const fileUrl = 'file://' + HELLO_HTML.replace(/\\/g, '/').replace(/^([A-Za-z]):/, '/$1:');
-  await page.goto(fileUrl).catch(() => {});
 
-  log.info('The helper browser is open. Sign into Google or Microsoft from the page that just appeared — or just close the window if you want to do this later.');
-  log.info('This script will exit when you close the helper window (or after 8 minutes, whichever comes first).');
+  // Decide where to point the helper: the user's own website (the wow) or a
+  // generic "ready" splash page if no URL was passed.
+  const demoUrl = getDemoUrl();
+  if (demoUrl) {
+    log.info(`Opening the helper to: ${demoUrl}`);
+    await page.goto(demoUrl, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {
+      log.warn('The helper opened but could not load that URL in time. The helper itself is fine — close the window and we will move on.');
+    });
+  } else {
+    const fileUrl = 'file://' + HELLO_HTML.replace(/\\/g, '/').replace(/^([A-Za-z]):/, '/$1:');
+    await page.goto(fileUrl).catch(() => {});
+  }
 
-  // Wait for the user to close the helper, OR an 8-minute timeout. 8 min gives
-  // them plenty of time to sign in (Google's 2FA / Microsoft's MFA can take a
-  // minute or two).
+  log.info('The helper browser is open on your screen. Have a look — close the window when you are done.');
+  log.info('This script will exit when you close the helper (or after 3 minutes, whichever comes first).');
+
+  // Wait for the user to close OR 3 min auto-close. This is the "see it
+  // work" beat — not the sign-in step. The sign-in happens in connect-google
+  // or connect-microsoft afterward.
   await Promise.race([
     new Promise((r) => context.on('close', r)),
-    new Promise((r) => setTimeout(r, 8 * 60 * 1000)),
+    new Promise((r) => setTimeout(r, 3 * 60 * 1000)),
   ]);
   await context.close().catch(() => {});
-  log.ok('Demo done. Your helper is installed.');
-  log.info('If you signed in just now, your helper will remember the session next time it opens.');
+  log.ok('Demo done. Your helper is installed and proven to work.');
 }
 
 main().catch((err) => {

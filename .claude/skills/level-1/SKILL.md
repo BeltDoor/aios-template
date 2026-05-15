@@ -144,60 +144,13 @@ Don't let the model picker become a thing. If it lags, move on immediately — t
 
 ---
 
-## Step 3 — Install your helper, and sign in
-
-This step installs the AIOS helper in front of the user AND has them sign into their email account inside the helper — so by the time Slice 1 starts, the helper is already connected. Run it inline in this window — no second window, no background mystery.
+## Step 3 — A quick look at your business
 
 Say:
 
 > Step 3.
 >
-> Last setup piece — your AIOS helper.
->
-> It's a separate browser your AIOS uses to do work for you. You'll never have to touch it day-to-day — it just runs when something needs it.
->
-> Two things are about to happen, back to back:
->
-> 1. It installs (a couple of minutes — you'll see text scrolling).
-> 2. It opens and asks you to sign into your email — Google or Microsoft, whichever you use.
->
-> That sign-in is your helper's first connection. After it, your helper is ready to actually do things for you.
-
-Then run, with a **long Bash timeout — at least 12 minutes (720000 ms)**:
-
-```
-node .claude/skills/connect-kit/scripts/install.mjs --demo
-```
-
-You'll see the install stream output right here in this chat (~3-5 min, Chromium download is the biggest part). Don't narrate every line; let it run. If they comment, *"that's your computer doing work — you can ignore the details, it's the install."*
-
-When the install finishes, the helper browser pops up on their screen with a page that says **"Your AIOS helper is ready"** and offers two buttons: *Sign in with Google* and *Sign in with Microsoft*. **This is the moment.** Say:
-
-> There it is. That's your helper.
->
-> Notice — it's a different browser than your real Chrome. They are completely separate. Whatever your helper does, your real Chrome stays untouched.
->
-> Now — pick the one you use. Click *Sign in with Google* if you use Gmail, or *Sign in with Microsoft* if you use Outlook. Sign in like you would anywhere else.
-
-Wait for them to sign in. They might hit a "verify it's you" step (2FA, a phone code, whatever their account uses) — walk them through it patiently. Sign-in can take a couple of minutes; that's fine, the helper waits up to 8 minutes.
-
-If they say *"I don't want to do that right now"*: that's fine. Have them click the "I'll do this later" link at the bottom of the page. Sign-in can happen in any slice that needs it. Don't push.
-
-**Why we sign in now and not later:** the helper has its own permanent profile in this folder. Signing in once means the helper remembers — no signing in every session, and the account treats the helper as a known device instead of seeing a fresh fingerprint every time (which can cause weird logouts on your real Chrome).
-
-When the helper window is closed, the script exits and you move on. If anything errors during the install, it fails loudly with plain English — read it to the user as-is, don't guess past it. Common cause: Node isn't installed → script stops and tells them; the guide handles installing Node, then re-run.
-
-Show the progress block. Move to Step 4.
-
----
-
-## Step 4 — A quick look at your business
-
-Say:
-
-> Step 4.
->
-> Before we dive in, let me get the quick version of who you are — so I'm not asking you things I could've found myself.
+> Before I get into the rest, let me get the quick version of who you are — so I'm not asking you things I could've found myself.
 >
 > Drop me two links:
 >
@@ -208,7 +161,7 @@ Say:
 
 Wait for the links. Before fetching, check what they actually gave you — a website, a LinkedIn, both, or neither.
 
-- **Website link:** use the `WebFetch` tool. Pull what they do, who they serve, their voice, any logo or brand colors visible.
+- **Website link:** use the `WebFetch` tool. Pull what they do, who they serve, their voice, any logo or brand colors visible. **Also: save the website URL itself** — you're going to hand it back to the helper-install step.
 - **LinkedIn link** (`linkedin.com/in/...`): WebFetch is blocked by LinkedIn. Use this Bash command, substituting their LinkedIn URL for `<LINKEDIN_URL>`:
 
 ```
@@ -243,13 +196,77 @@ Capture whatever they say.
 1. **`about-me.md`** — who they are, their background, their business(es) + role(s), bio from the scrape.
 2. **`about-business.md`** — what they sell, who they serve, voice/brand notes.
 
-Keep these light. This is a glance, not the full picture — the slices fill in the depth. After saving, say *"Saved — that's you, on the books."* Show the progress block. Move to Step 5.
+Keep these light. This is a glance, not the full picture — the slices fill in the depth. After saving, say *"Saved — that's you, on the books."* Show the progress block. Move to Step 4.
+
+---
+
+## Step 4 — Install your helper, and sign in
+
+This step installs the AIOS helper in front of the user, opens it to **their own website** as a wow moment, then signs them into their email account inside the helper — so by the time Slice 1 starts, the helper is already connected. Run inline in this window — no second window, no background mystery.
+
+Say:
+
+> Step 4.
+>
+> Last setup piece — your AIOS helper.
+>
+> It's a separate browser your AIOS uses to do work for you. You'll never have to touch it day-to-day — it just runs when something needs it.
+>
+> Three things, back to back:
+>
+> 1. It installs (a couple of minutes — you'll see text scrolling).
+> 2. It opens, right on your screen, to *your own website* — just so you can see it's real.
+> 3. Then it asks you to sign into your email — Google or Microsoft, whichever you use.
+>
+> That sign-in is your helper's first connection. After it, your helper is ready to do work for you.
+
+Then run the install, with a **long Bash timeout — at least 12 minutes (720000 ms)**. **Pass the website URL you captured in Step 3** so the helper opens to their own site (the wow). If you didn't get a website in Step 3, drop the `--demo-url` flag entirely and the helper opens to a plain "ready" splash instead.
+
+```
+node .claude/skills/connect-kit/scripts/install.mjs --demo --demo-url <THEIR_WEBSITE_URL>
+```
+
+You'll see the install stream output right here in this chat (~3-5 min, Chromium download is the biggest part). Don't narrate every line; let it run. If they comment, *"that's your computer doing work — you can ignore the details, it's the install."*
+
+When the install finishes, the helper browser pops up on their screen, loaded to their own website. **This is the wow.** Say:
+
+> There it is. That's your helper.
+>
+> Notice — it's a different browser than your real Chrome. They are completely separate. Whatever your helper does, your real Chrome stays untouched.
+>
+> Take a look. Close the window when you're ready.
+
+Wait for them to close the helper. The install script exits on close (or after 3 minutes).
+
+Then **ask which email they use** — use AskUserQuestion:
+
+- **Google / Gmail** — Recommended for most small businesses
+- **Microsoft / Outlook**
+- **I'll sign in later** — fine, skip this and they can sign in from any slice that needs it
+
+If they pick Google, invoke the `connect-google` skill (`node .claude/skills/connect-kit/scripts/connect-google.mjs`) with a **long Bash timeout — at least 10 minutes (600000 ms)**.
+
+If they pick Microsoft, invoke the `connect-microsoft` skill (`node .claude/skills/connect-kit/scripts/connect-microsoft.mjs`) with a **long Bash timeout — at least 10 minutes (600000 ms)**.
+
+Both scripts open the helper to the right sign-in page (accounts.google.com or login.microsoftonline.com), wait up to 8 minutes for the user to close the helper, and write a state file so future slices can check the connection is live.
+
+While the helper is open, say:
+
+> Sign in like you would anywhere else — your email, your password, your 2FA code if you use one.
+>
+> When you're signed in and you see your normal inbox or home page, just close the helper window. That's how I know you're done.
+
+If they hit a "verify it's you" step (phone code, app prompt), walk them through it patiently. Don't rush. If anything errors, the script fails loudly in plain English — read it to the user as-is, don't guess past it.
+
+**Why we sign in now:** the helper has its own permanent profile in this folder. Signing in once means it remembers — no signing in every session, and the account treats the helper as a known device. The deeper work (reading your email, drafting replies, checking your calendar) is a later slice. Today is just getting connected.
+
+Show the progress block. Move to Step 5.
 
 ---
 
 ## Step 5 — See where this goes
 
-This step is mostly the guide's job — they show the client their own AI Operating System doing one real thing. Your job is just to cue it and frame it.
+This step is the guide's job — they show the client their own AI Operating System doing one real thing. Your job is just to cue it and frame it.
 
 Say:
 
@@ -259,7 +276,7 @@ Say:
 >
 > That's the destination. What you just started is the same thing — yours.
 
-> *Note for the guide:* this is your cue. Screen-share your own AIOS. **The fastest reliable way to fire the destination demo is to run `/demo-aios` in your own Claude Code** — that runs a prepped, tested 60–90 second walkthrough on one of your recent real meetings (transcript → summary → next steps → drafted follow-up). If your `/demo-aios` skill isn't set up yet, do it manually: open a recent `clients/{X}/02-conversations/` summary file and narrate the summary + next steps + drafted reply. Keep it under two minutes. Then tell Claude "done" to continue.
+> *Note for the guide:* screen-share your own AIOS for 60–90 seconds. Pick one real, recent piece of work — a meeting summary, a follow-up email you had your AIOS draft, a customer file it filled in. Narrate it briefly. Don't try to show everything; show one thing well. Then tell Claude "done" to continue.
 
 Wait for the guide to signal done (the client will type something like "ok" or "done").
 
