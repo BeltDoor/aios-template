@@ -20,7 +20,7 @@
 //   - If a key already exists, the user deletes it (trash icon) and the
 //     "API Key" button reappears.
 
-import { getEnv, setEnv, log, writeState, tryLoadChromium } from './lib.mjs';
+import { getEnv, setEnv, log, writeState, tryLoadChromium, ROOT, fs, path } from './lib.mjs';
 
 // Set the exit code without calling Node's process.exit() — doing that while a
 // fetch socket is tearing down triggers a libuv assertion on Windows.
@@ -103,17 +103,25 @@ async function autoMode() {
     return exit(3);
   }
 
-  log.info('Opening Otter in a browser window now. Watch your screen.');
-  let browser;
+  log.info('Opening Otter in your helper browser now. Watch your screen.');
+  // Use the helper's persistent profile dir — same one Module 1 set up. That
+  // way the user's session here doesn't get treated as a brand-new device
+  // every run (which can trigger logouts on other browsers).
+  const profileDir = path.join(ROOT, '.aios-browser-profile');
+  fs.mkdirSync(profileDir, { recursive: true });
+
+  let context;
   try {
-    browser = await chromium.launch({ headless: false });
+    context = await chromium.launchPersistentContext(profileDir, {
+      headless: false,
+      viewport: { width: 1280, height: 900 },
+    });
   } catch (err) {
     log.fail('Could not open the browser.', err.message, 'Re-run the install, then try again.');
     return exit(4);
   }
 
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  const page = await context.newPage();
+  const page = (context.pages()[0]) || (await context.newPage());
 
   let capturedKey = null;
 
@@ -166,7 +174,7 @@ async function autoMode() {
   // Wait for either: the key gets captured, the browser gets closed, or timeout.
   const start = Date.now();
   let browserClosed = false;
-  browser.on('disconnected', () => {
+  context.on('close', () => {
     browserClosed = true;
   });
 
@@ -177,7 +185,7 @@ async function autoMode() {
   if (capturedKey) {
     log.ok('Caught the key.');
     const v = await verifyKey(capturedKey);
-    await browser.close().catch(() => {});
+    await context.close().catch(() => {});
     if (!v.ok) {
       log.fail(
         'I caught a key but it did not verify against Otter.',
@@ -190,7 +198,7 @@ async function autoMode() {
     return;
   }
 
-  await browser.close().catch(() => {});
+  await context.close().catch(() => {});
 
   if (browserClosed) {
     log.fail(

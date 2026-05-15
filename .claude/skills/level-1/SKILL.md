@@ -144,41 +144,48 @@ Don't let the model picker become a thing. If it lags, move on immediately — t
 
 ---
 
-## Step 3 — Start the background helper
+## Step 3 — Install your helper, and sign in
 
-This is where you introduce the parallel-window pattern. Keep it calm and low-stakes — they don't have to *do* anything in the second window, just open it and let it run.
+This step installs the AIOS helper in front of the user AND has them sign into their email account inside the helper — so by the time Slice 1 starts, the helper is already connected. Run it inline in this window — no second window, no background mystery.
 
 Say:
 
 > Step 3.
 >
-> Here's a trick that's going to matter a lot: you can have me working on two things at once.
+> Last setup piece — your AIOS helper.
 >
-> I'm going to have you open a **second** Claude window. In that one, I'll quietly get a helper tool installed in the background — while you and I keep talking in this one.
+> It's a separate browser your AIOS uses to do work for you. You'll never have to touch it day-to-day — it just runs when something needs it.
 >
-> You won't have to touch that second window. Just let it run.
-
-Then walk them through it, one move at a time:
-
-> In VS Code, look at the top of the Claude panel — there's a **+** to open a new Claude chat. Click it.
-
-Wait for them to confirm the new window is open. If they can't find the **+**, stay calm and help: it's a small plus icon at the top of the Claude panel; if they still can't spot it, have them close and reopen the Claude panel, or tell them where it is for their version. Don't move on until they have a second chat open.
-
-> Good. Now in that new window, set it to **bypass permissions** mode too — same as you just did here.
+> Two things are about to happen, back to back:
 >
-> Then paste exactly this into it and hit enter:
+> 1. It installs (a couple of minutes — you'll see text scrolling).
+> 2. It opens and asks you to sign into your email — Google or Microsoft, whichever you use.
 >
-> ```
-> Read .claude/skills/connect-kit/SKILL.md and start the install step. Work in the background — I'm doing Module 1 in my other window.
-> ```
+> That sign-in is your helper's first connection. After it, your helper is ready to actually do things for you.
 
-Wait for them to confirm they pasted it.
+Then run, with a **long Bash timeout — at least 12 minutes (720000 ms)**:
 
-> Perfect. That window is now installing a tool we'll use soon. You'll see some text scrolling in there — that's just your computer doing work. **You can ignore it completely.** We'll check on it together when we need it.
+```
+node .claude/skills/connect-kit/scripts/install.mjs --demo
+```
+
+You'll see the install stream output right here in this chat (~3-5 min, Chromium download is the biggest part). Don't narrate every line; let it run. If they comment, *"that's your computer doing work — you can ignore the details, it's the install."*
+
+When the install finishes, the helper browser pops up on their screen with a page that says **"Your AIOS helper is ready"** and offers two buttons: *Sign in with Google* and *Sign in with Microsoft*. **This is the moment.** Say:
+
+> There it is. That's your helper.
 >
-> Come back to *this* window. That's where you and I are working.
+> Notice — it's a different browser than your real Chrome. They are completely separate. Whatever your helper does, your real Chrome stays untouched.
+>
+> Now — pick the one you use. Click *Sign in with Google* if you use Gmail, or *Sign in with Microsoft* if you use Outlook. Sign in like you would anywhere else.
 
-> *Note for the guide: if the connection kit window reports Node isn't installed, the connect-kit skill handles guiding that install. It will not fail silently — it stops and says what it needs.*
+Wait for them to sign in. They might hit a "verify it's you" step (2FA, a phone code, whatever their account uses) — walk them through it patiently. Sign-in can take a couple of minutes; that's fine, the helper waits up to 8 minutes.
+
+If they say *"I don't want to do that right now"*: that's fine. Have them click the "I'll do this later" link at the bottom of the page. Sign-in can happen in any slice that needs it. Don't push.
+
+**Why we sign in now and not later:** the helper has its own permanent profile in this folder. Signing in once means the helper remembers — no signing in every session, and the account treats the helper as a known device instead of seeing a fresh fingerprint every time (which can cause weird logouts on your real Chrome).
+
+When the helper window is closed, the script exits and you move on. If anything errors during the install, it fails loudly with plain English — read it to the user as-is, don't guess past it. Common cause: Node isn't installed → script stops and tells them; the guide handles installing Node, then re-run.
 
 Show the progress block. Move to Step 4.
 
@@ -252,7 +259,7 @@ Say:
 >
 > That's the destination. What you just started is the same thing — yours.
 
-> *Note for the guide: this is your cue. Screen-share your own AIOS and run ONE real, fast thing — a cross-reference, a draft, a lookup. Keep it under two minutes. Let the client see the finished version of what they're building. Then tell Claude "done" to continue.*
+> *Note for the guide:* this is your cue. Screen-share your own AIOS. **The fastest reliable way to fire the destination demo is to run `/demo-aios` in your own Claude Code** — that runs a prepped, tested 60–90 second walkthrough on one of your recent real meetings (transcript → summary → next steps → drafted follow-up). If your `/demo-aios` skill isn't set up yet, do it manually: open a recent `clients/{X}/02-conversations/` summary file and narrate the summary + next steps + drafted reply. Keep it under two minutes. Then tell Claude "done" to continue.
 
 Wait for the guide to signal done (the client will type something like "ok" or "done").
 

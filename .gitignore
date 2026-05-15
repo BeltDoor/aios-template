@@ -8,6 +8,10 @@
 node_modules/
 package-lock.json
 
+# The helper browser's persistent profile — holds the user's logged-in
+# sessions for connected services. Stays on the user's machine, never shared.
+.aios-browser-profile/
+
 # Connection-kit state — local status files, regenerated as you go.
 .claude/skills/connect-kit/state/*.json
 

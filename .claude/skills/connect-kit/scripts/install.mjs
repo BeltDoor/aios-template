@@ -8,9 +8,13 @@
 // connect-kit SKILL.md checks for Node BEFORE running this — if Node is
 // missing it never gets here.
 
-import { ROOT, log, writeState, detectOS, runShell, fs, path } from './lib.mjs';
+import { fileURLToPath } from 'node:url';
+import { ROOT, log, writeState, detectOS, runShell, tryLoadChromium, fs, path } from './lib.mjs';
 
 const NODE_MAJOR = parseInt(process.versions.node.split('.')[0], 10);
+const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
+const HELLO_HTML = path.join(SCRIPT_DIR, '..', 'hello.html');
+const DEMO = process.argv.includes('--demo');
 
 function run(parts) {
   log.info(`> ${parts.join(' ')}`);
@@ -98,7 +102,59 @@ async function main() {
   });
   log.step('Install complete');
   log.ok('The connection kit is ready.');
-  log.info('You can leave this window alone now. Your main window will check on this when it needs it.');
+
+  // 5. Optional demo — opens the helper browser to a branded splash so the
+  //    user can actually SEE the thing they just installed. Triggered by the
+  //    --demo flag from Module 1's Step 3.
+  if (DEMO) {
+    await demo();
+  }
+}
+
+async function demo() {
+  log.step('Opening your helper browser now...');
+  const chromium = await tryLoadChromium();
+  if (!chromium) {
+    log.warn('Could not load the browser tool for the demo — the install itself is still fine.');
+    return;
+  }
+  // Use a persistent context with a named profile dir in the folder. This is
+  // the helper's own permanent profile — totally separate from the user's real
+  // Chrome (different files, different cookies, different everything), AND it
+  // means future runs reuse the session (the user signs into Google or
+  // Microsoft once, not every time). The dir is gitignored.
+  const profileDir = path.join(ROOT, '.aios-browser-profile');
+  fs.mkdirSync(profileDir, { recursive: true });
+
+  let context;
+  try {
+    context = await chromium.launchPersistentContext(profileDir, {
+      headless: false,
+      viewport: { width: 1100, height: 720 },
+    });
+  } catch (err) {
+    log.warn(`Could not open the helper browser for the demo (${err.message}). The install itself is fine.`);
+    return;
+  }
+
+  const page = (context.pages()[0]) || (await context.newPage());
+  // Build a file:// URL the browser will accept on both Mac and Windows.
+  const fileUrl = 'file://' + HELLO_HTML.replace(/\\/g, '/').replace(/^([A-Za-z]):/, '/$1:');
+  await page.goto(fileUrl).catch(() => {});
+
+  log.info('The helper browser is open. Sign into Google or Microsoft from the page that just appeared — or just close the window if you want to do this later.');
+  log.info('This script will exit when you close the helper window (or after 8 minutes, whichever comes first).');
+
+  // Wait for the user to close the helper, OR an 8-minute timeout. 8 min gives
+  // them plenty of time to sign in (Google's 2FA / Microsoft's MFA can take a
+  // minute or two).
+  await Promise.race([
+    new Promise((r) => context.on('close', r)),
+    new Promise((r) => setTimeout(r, 8 * 60 * 1000)),
+  ]);
+  await context.close().catch(() => {});
+  log.ok('Demo done. Your helper is installed.');
+  log.info('If you signed in just now, your helper will remember the session next time it opens.');
 }
 
 main().catch((err) => {
