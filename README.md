@@ -1,44 +1,21 @@
-# Your AI Operating System
+# Snowball
 
-Welcome. This folder is yours.
+**Your AI Chief of Staff. Compounds every week.**
 
-It's the start of your AI Operating System — the place where you teach AI everything about you, your business, and how you work, so it can take more and more off your plate.
+## What this is
+
+This is your Snowball — a folder on your laptop that holds your identity, your voice, your tools, and a running history of how you work. Every time you use it, it gets sharper.
 
 ## Start here
 
-Your tools are installed and this folder is open. Now you do **Day One** — a short setup session that gets you ready to actually work.
+Once this folder is open in VS Code with Claude Code in the chat panel:
 
-**In the chat box, type this and hit enter:**
+1. Go to **[king-intelligence.com/levelup](https://king-intelligence.com/levelup)** and enter your passcode.
+2. Copy the whole bundle on that page.
+3. Paste it into the chat panel and hit enter.
 
-```
-Read .claude/skills/level-1/SKILL.md and follow its instructions to walk me through Level 1.
-```
+That kicks off Day One — about 30 minutes, guided by whoever is helping you set up. By the end you'll have your identity captured, two key settings dialed in, your business loaded so Claude knows who it's working with, and a clear handoff into building your first skill.
 
-That's it. Claude takes over from there. You talk — out loud, using your voice tool — and Claude does the rest.
+## If you're stuck
 
-## How this works
-
-You build this up in **slices**. A slice takes one part of your business — top to bottom — and ends with a real, working tool you own. Not a lesson. A thing that does a job for you.
-
-- **Day One** — get your voice tool working, learn the two simple things that drive Claude, a quick look at your business. Short. *(start above)*
-- **Slice 1 — Meetings** — your first real session. We build a tool that does your after-meeting work for you: summary, next steps, follow-up.
-- **Slice 2 — Customers** — the follow-ups, the people who slip through the cracks.
-- **Slice 3, 4, 5…** — same pattern, one part of your business at a time.
-- **Run Forever** — things start running on their own. Graduation.
-
-Every slice works the same way: you talk, Claude maps it, connects what's needed, and builds you something. You walk out of every session with a win.
-
-## What's in this folder
-
-- `CLAUDE.md` — what Claude reads about your business every time. Fills in as you go.
-- `about-me.md` / `about-business.md` — who you are, what your business does.
-- `tasks.md` — every recurring task in your business, with hours on each. The proof number.
-- `intake.md` — your starting line.
-- `.claude/skills/` — the guided sessions, built into this folder. `connect-kit/` is the part that connects your outside tools.
-- `clients/`, `projects/`, `recipes/`, `voice/` — folders that fill up as you go.
-
-## When you get stuck
-
-Type into Claude: **"Explain like I'm an idiot."**
-
-That's the magic phrase. If Claude is doing something you don't follow, use that line — it'll slow down and explain plainly. No jargon.
+Just say "this is broken" or "this is frustrating." Claude will log what went wrong and ask what would have worked better. Your Snowball gets sharper every time you tell it where it falls short.

@@ -5,7 +5,7 @@
 // run $0.30-$1.00 per call. perplexity_research with reasoning_effort=high burned $15.99
 // across 26 calls in 24h on 2026-05-13.
 //
-// Installed: 2026-05-13
+// Installed: 2026-05-13 (lifted into AIOS template 2026-05-24)
 //
 // Rule (applies to Jacob AND to AIOS clients we set up with Perplexity):
 //   - perplexity_research  -> BANNED

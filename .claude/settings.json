@@ -1,6 +1,7 @@
 {
   "permissions": {
-    "defaultMode": "default"
+    "defaultMode": "bypassPermissions",
+    "additionalDirectories": ["."]
   },
   "hooks": {
     "PreToolUse": [
