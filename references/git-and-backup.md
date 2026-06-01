@@ -13,15 +13,13 @@ Your Snowball folder is a **git repo**. Think of git as a time machine for the f
 
 Your repo is **private**. Only you (and anyone you explicitly invite) can see it.
 
-## One-time setup (`/day-one` walks you through this)
+## One-time setup (`/day-one` does this with you)
 
-You don't have to do this by hand — `/day-one` does it with you, step by step. The shape:
+You don't touch the terminal for this — `/day-one` handles it as its very first step, using a button built into VS Code. The shape:
 
-1. **Create a private GitHub repo.** Whatever you want to call it (e.g. `my-snowball`). Leave it empty — no README, no .gitignore, no license.
-2. **Tell your local folder where the repo lives.** Claude runs `git remote add origin <your-repo-url>`.
-3. **Push for the first time.** Claude runs `git push -u origin main`. Your whole Snowball is now backed up.
-
-If you don't have a GitHub account yet, `/day-one` walks you through creating one first.
+1. **Publish to GitHub.** When Claude prompts you, click the **Source Control** icon on the left, then the **Publish to GitHub** button. If it asks you to sign in to GitHub, do it — a browser window opens, you approve it. (No GitHub account yet? The sign-in screen has a free "Create an account" link.)
+2. **Pick "private."** Choose **"Publish to GitHub private repository"** and name it `snowball`. In one click, VS Code creates the repo under your account, connects your folder to it, and pushes the first backup.
+3. **That's it.** No commands, no tokens, no GitHub CLI. Your whole Snowball is now backed up to your own private GitHub, and Claude confirms it worked before moving on.
 
 ## What `/end-session` does
 
@@ -45,10 +43,20 @@ Both are listed in `.gitignore`, which is git's "don't ever back this up" file. 
 
 ## Restoring on a new laptop
 
-Three steps:
-
-1. **Clone the repo.** `git clone <your-repo-url>` — this downloads your whole Snowball folder onto the new machine.
-2. **Open it in VS Code.**
-3. **Run `/day-one`.** Claude will notice you're on a fresh machine, walk you through re-adding your API keys to local env vars, and (when needed) re-create your browser profile so Claude can log in as you again.
+1. **Install Git, VS Code, and the Claude Code extension** — same as your first setup.
+2. **Clone your repo.** In VS Code: **Source Control → Clone Repository → pick your `snowball` repo** (or run `git clone <your-repo-url>` in the terminal). This downloads your whole Snowball.
+3. **Open it in VS Code, then run `/day-one`.** Claude notices you're on a fresh machine, walks you through re-adding your API keys to local env vars, and (when needed) re-creates your browser profile so Claude can log in as you again.
 
 When `/day-one` finishes, you're back where you left off — same identity, same skills, same history.
+
+## Sharing one Snowball with a teammate
+
+Two people can share one Snowball so it works as a single shared brain. The trick: one private repo, two laptops pointing at it. Do NOT have both people set up from scratch separately, or you end up with two unconnected copies.
+
+1. **First person** sets up normally (`/day-one` publishes the private `snowball` repo to GitHub).
+2. **Second person** does NOT clone the template. They get access to the first person's repo (either both sign into the same GitHub account, or the first person invites them as a collaborator on the repo in GitHub), then in VS Code: **Source Control → Clone Repository → pick the `snowball` repo**. Now both laptops point at the same private repo.
+3. **Working rhythm:** before you start, pull the latest down (Source Control → Sync Changes, or just tell Claude "sync the latest down"). When you finish, `/end-session` saves and backs up for you, and it pulls down any of your teammate's changes first. To keep it simple, avoid both running a session on the exact same file at the exact same time.
+
+If two people did edit the same file at once, nothing is lost: both versions are saved, and Claude merges them and asks you to confirm.
+
+**Already set up separately by mistake?** (Both laptops still point at `BeltDoor/aios-template`, or you each made your own repo.) Pick one laptop as the main one, turn its backup on properly (`/day-one`'s publish step), then on the other laptop clone that same repo per step 2.

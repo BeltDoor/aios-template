@@ -40,7 +40,7 @@ After the silent OS detect and bundle parse, open with this — Snowball-branded
 >
 > Day One is short. It's the on-ramp.
 >
-> Three things: get your voice tool working, show you two settings that make this easy to drive, then take a quick look at your business so I know who I'm working with.
+> First I'll turn on your backup so your work is safe. Then three quick things: get your voice tool working, two settings that make me easy to drive, and a fast look at your business so I know who I'm working with.
 >
 > Once that's done — your Snowball is ready to start building real tools for you.
 >
@@ -55,6 +55,19 @@ Day One — Step <N> of 3
 ```
 
 "Type **next**" gates between steps. Reserve `AskUserQuestion` for real either/or choices inside the steps.
+
+## First — turn on the backup (before Step 1)
+
+The kickoff cloned a starter copy from my template. Before anything else, turn it into the client's OWN private, backed-up GitHub repo. This is the off-laptop backup and what lets the Snowball follow them to a new laptop. **No `gh` CLI, no tokens — VS Code's built-in publish does it all through the client's GitHub sign-in.**
+
+1. **Detach from my template.** In the snowball folder, run `rm -rf .git` via your Bash tool so the folder is no longer tied to `BeltDoor/aios-template`. (Confirm you're in the snowball folder first — `pwd` — never run this anywhere else.) If VS Code's Source Control panel still shows the old repo afterward, tell the client: *Command Palette (Cmd/Ctrl+Shift+P) → "Developer: Reload Window."*
+2. **Guide the publish.** This is a button the client clicks — you can't drive it from the terminal:
+   > Click the **Source Control** icon on the left bar (the little branch). You'll see a **Publish to GitHub** button — click it. If it asks you to sign in to GitHub, do that (a browser window opens; approve it). Then choose **"Publish to GitHub private repository"** and name it **snowball**.
+
+   Stress **private** — their real business data lives here. If they don't have a GitHub account yet, the sign-in screen has a free "Create an account" link; walk them through it, then continue.
+3. **Verify it worked (don't skip).** Run `git remote -v` — confirm `origin` points at `github.com/<their-account>/snowball`, **not** `BeltDoor`. Run `git log --oneline -1` to confirm the first commit landed. If `git remote -v` is empty or still shows `BeltDoor`, the publish didn't complete — walk back through step 2.
+
+On success: *"Done — your Snowball is now backed up to your own private GitHub. Every time we wrap up, I save and back it up automatically; you won't have to think about it."* Then proceed to Step 1.
 
 ## Step 1 — Typeless voice tool (strong soft gate)
 
@@ -250,12 +263,11 @@ You (Jacob at first, possibly future facilitators) are on Zoom or in-person, scr
 - [ ] Client has Mac or Windows laptop. **Chromebook = hard no.** ChromeOS (stock OR Crostini) can't reliably run npm / git CLI / browser-helper flows the Snowball assumes. Escalate to "buy a real laptop first" before Day 1.
 - [ ] VS Code installed.
 - [ ] Claude Code extension installed; client signed into Claude account.
-- [ ] GitHub account exists; client signed into VS Code's GitHub integration.
-- [ ] `github.com/BeltDoor/aios-template` → click **Use this template** → **Create a new private repository** named `snowball-<clientname>` (do NOT initialize with README).
-- [ ] Client clones the NEW private repo locally (NOT `BeltDoor/aios-template` directly).
-- [ ] Folder opened in VS Code; Claude Code chat panel visible.
-- [ ] `king-intelligence.com/levelup` → enter passcode → **copy the entire kickoff bundle** (kickoff prompt + Apify token line, one paste block).
-- [ ] Client pastes the bundle into Claude Code chat. /day-one starts.
+- [ ] **Git installed** — the one unavoidable install (the Snowball *is* a git repo; without it Step 1's clone fails, like it did on an early setup call). Windows: paste `winget install --id Git.Git -e --source winget` into the VS Code terminal (winget ships with Win10 1809+/Win11). Mac: run `xcode-select --install` and click Install. Then **close and reopen VS Code** so it detects Git. Verify with `git --version`.
+- [ ] GitHub account exists (free) — or create one during the publish step; the sign-in screen has a "Create an account" link. **No `gh` CLI, no Personal Access Token** — VS Code's built-in "Publish to GitHub" handles repo creation + auth through the client's GitHub sign-in.
+- [ ] `king-intelligence.com/levelup` → enter passcode → run **Step 1** (clones the starter Snowball into Downloads) → choose **File → Open Folder** and pick the `snowball` folder → paste the **Step 2** kickoff bundle into Claude Code chat. `/day-one` starts, and its FIRST action turns the cloned folder into the client's own private GitHub repo (detaches the template, then guides "Publish to GitHub private repository").
+
+> Repo creation moved INTO `/day-one` (the "First — turn on the backup" step) and uses VS Code's built-in Publish-to-GitHub, replacing the old "Use this template" pre-flight + any `gh` dependency. Decision: `decisions/2026-05-28-onboarding-flow-publish-to-github.md`. (`BeltDoor/aios-template` is a normal public repo, not a GitHub "template" repo, so the old "Use this template" step never actually applied.)
 
 ### Pacing rules (during /day-one)
 

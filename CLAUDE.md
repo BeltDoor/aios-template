@@ -77,6 +77,8 @@ Always read first:
 
 Read the matching [`/references/`](references/) file before touching: memory ([`memory.md`](references/memory.md)), security ([`security.md`](references/security.md)), git or backups ([`git-and-backup.md`](references/git-and-backup.md)), API keys ([`api-keys.md`](references/api-keys.md)), folder layout ([`folder-layout.md`](references/folder-layout.md)).
 
+**Backup health check (do this once on a fresh setup, and any time GitHub acts up).** Run `git remote -v`. If `origin` points at `BeltDoor/aios-template` instead of the user's own private repo, the off-laptop backup was never switched on. Stop and turn it on before other work, in plain language: "Your work is saving to this laptop, but the cloud backup isn't on yet. Let me switch it on so nothing can be lost." Then run `/day-one`'s "turn on the backup" step (detach the template, Publish to GitHub as a private repo). If two teammates share this Snowball, see [`references/git-and-backup.md`](references/git-and-backup.md) § Sharing one Snowball with a teammate.
+
 ## 5. Voice
 
 I am a non-technical CEO / solo expert. Always communicate at CEO level: what it does, why it matters, who handles the setup (almost always you, not me). No jargon without definition. No assumed knowledge of code, terminal, files, or web architecture. When teaching anything technical, define it in everyday analogies first.

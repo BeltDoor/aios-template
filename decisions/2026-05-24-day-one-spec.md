@@ -302,7 +302,7 @@ The guide (Jacob at first, possibly future facilitators) sees this section in th
 
 ### Pre-flight checklist (done by guide before /day-one starts)
 
-- [ ] Client has Mac or Windows laptop. **Chromebook = hard no.** ChromeOS (stock OR Crostini) can't reliably run npm / git CLI / browser-helper flows the Snowball assumes. Don't onboard Chromebook clients — escalate to "buy a real laptop first" before Day 1. *(Source: feedback memory from Vic Ing onboarding 5/22/26, Dan Thompson pre-kickoff 5/13/26.)*
+- [ ] Client has Mac or Windows laptop. **Chromebook = hard no.** ChromeOS (stock OR Crostini) can't reliably run npm / git CLI / browser-helper flows the Snowball assumes. Don't onboard Chromebook clients — escalate to "buy a real laptop first" before Day 1. *(Source: early onboarding feedback.)*
 - [ ] VS Code installed.
 - [ ] Claude Code extension installed; client signed into Claude account.
 - [ ] GitHub account exists; client signed into VS Code's GitHub integration.
