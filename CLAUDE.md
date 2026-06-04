@@ -120,4 +120,4 @@ Sometimes I (Jacob, who builds the Snowball template) will ship an update — a 
 
 - [`SKILLS.md`](SKILLS.md) — skill catalog
 - [`CONNECTIONS.md`](CONNECTIONS.md) — connected-tools registry
-- [`/references/`](references/) — meta-docs (memory, api-keys, security, git-and-backup, automation-menu, folder-layout, per-tool API references)
+- [`/references/`](references/) — meta-docs (memory, api-keys, security, git-and-backup, whats-getting-installed, automation-menu, folder-layout, per-tool API references)

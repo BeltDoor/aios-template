@@ -9,9 +9,26 @@ The first-touch on-ramp inside this Snowball. Three steps, identity paragraph, s
 
 > Guided session: this skill assumes Jacob (or a future facilitator) is screen-sharing with the client on Zoom or in-person. See § Notes for whoever is guiding this session at the bottom.
 
-## Before you start — silent OS detect
+## Before you start — silent OS + shell detect
 
-Before saying anything, run `uname` in Bash. `Darwin` = Mac; anything else (`MINGW...`, `MSYS...`, Windows version string, error) = Windows. Remember it. Don't make the user tell you; just know.
+Before saying anything, run `uname` in Bash and read the result:
+
+- **`Darwin`** → Mac. Remember it, proceed.
+- **`MINGW...` or `MSYS...`** → Windows, and (this is the part that matters) you're running on **Git Bash**, the command line this whole skill is written in. Good. Remember it, proceed.
+- **The command errors, the Bash tool can't run at all, or you get anything other than the above** → you're almost certainly on **PowerShell** (Windows' built-in command line), NOT Git Bash. **Stop here.** Every step below is Git Bash; on PowerShell the very first real command fails and onboarding dies confusingly three steps in. Fix the shell first (next section), then re-run `uname` and confirm you now get `MINGW...`/`MSYS...` before continuing.
+
+Don't make the user tell you their OS; just know. But don't paper over a PowerShell shell either — catching it here is the difference between a clean setup and a baffling failure.
+
+### If you're on PowerShell, not Git Bash (Windows only)
+
+Say it plainly, no jargon: *"One quick setup thing before we start. Your computer's using its built-in command line, but your Snowball needs a slightly different one that comes free with Git. Let me get that sorted, then we're off."*
+
+1. **Make sure Git is installed** (it brings Git Bash with it). In the VS Code terminal: `winget install --id Git.Git -e --source winget` (winget ships with Win10 1809+/Win11).
+2. **Close and reopen VS Code completely.** This is what lets your AI pick up Git Bash. Nine times out of ten this alone fixes it.
+3. **Re-run `uname`.** If it now says `MINGW...`/`MSYS...`, you're set — continue with onboarding.
+4. **If it STILL isn't on Git Bash** (rare): point Claude Code at Git Bash directly. Set the Windows environment variable `CLAUDE_CODE_GIT_BASH_PATH` to the full path of `bash.exe` (typically `C:\Program Files\Git\bin\bash.exe`), then reopen VS Code. To the user: *"I'm just telling your AI exactly where to find the right command line. One-time thing."*
+
+The plain-English "what even is Git Bash" explainer for the user lives in [`/references/whats-getting-installed.md`](../../../references/whats-getting-installed.md) — read it to them if they ask why any of this matters.
 
 ## Capture the Apify token from the paste-bundle
 
@@ -302,8 +319,12 @@ You (Jacob at first, possibly future facilitators) are on Zoom or in-person, scr
 - [ ] VS Code installed.
 - [ ] Claude Code extension installed; client signed into Claude account.
 - [ ] **Git installed** — the one unavoidable install (the Snowball *is* a git repo; without it Step 1's clone fails, like it did on an early setup call). Windows: paste `winget install --id Git.Git -e --source winget` into the VS Code terminal (winget ships with Win10 1809+/Win11). Mac: run `xcode-select --install` and click Install. Then **close and reopen VS Code** so it detects Git. Verify with `git --version`.
+- [ ] **Windows only — confirm the shell is Git Bash, not PowerShell.** After the Git install + VS Code reopen, run `uname`. `MINGW...`/`MSYS...` = good (the AI is on Git Bash, the command line the whole Snowball is written in). An error or anything else = it's on PowerShell, and onboarding breaks on step one. `/day-one` auto-checks and self-repairs this at its very start, so this is just a belt-and-suspenders glance. Why it matters, in plain English: [`references/whats-getting-installed.md`](../../../references/whats-getting-installed.md).
+- [ ] **Node.js installed** — a small engine a few skills run on. Windows: `winget install --id OpenJS.NodeJS.LTS -e --source winget`. Mac: download the **LTS** installer from [nodejs.org](https://nodejs.org) and double-click it (no Homebrew needed — see the explainer). Close and reopen VS Code after; verify with `node --version`.
 - [ ] GitHub account exists (free) — or create one during the publish step; the sign-in screen has a "Create an account" link. The happy path is VS Code's "Publish to GitHub" (no `gh`, no token), but the backup step now **commits first, verifies against GitHub for real (`git ls-remote origin`), and self-repairs from the terminal** if the button flakes — so a half-failed publish gets caught and fixed in the session instead of surfacing later as a dead backup.
 - [ ] `king-intelligence.com/levelup` → enter passcode → run **Step 1** (clones the starter Snowball into Downloads) → choose **File → Open Folder** and pick the `snowball` folder → paste the **Step 2** kickoff bundle into Claude Code chat. `/day-one` starts, and its FIRST action turns the cloned folder into the client's own private GitHub repo (detaches the template, then guides "Publish to GitHub private repository").
+
+**If the client asks what any of these installs are, don't improvise jargon.** The plain-English, no-background answers for every tool above (VS Code, Git, GitHub, Node.js, Git Bash vs PowerShell, and why we skip Homebrew on Mac) live in [`references/whats-getting-installed.md`](../../../references/whats-getting-installed.md). Read it to them.
 
 > Repo creation moved INTO `/day-one` (the "First — turn on the backup" step) and uses VS Code's built-in Publish-to-GitHub. Decision: `decisions/2026-05-28-onboarding-flow-publish-to-github.md`, **hardened 6/3/26** (commit-first + live `git ls-remote` verify + terminal self-repair) after the publish silently half-failed for BeeHive and Chris Riha. (`BeltDoor/aios-template` is a normal public repo, not a GitHub "template" repo, so the old "Use this template" step never actually applied.)
 
