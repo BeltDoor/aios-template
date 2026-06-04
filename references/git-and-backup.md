@@ -19,7 +19,7 @@ You don't touch the terminal for this — `/day-one` handles it as its very firs
 
 1. **Publish to GitHub.** When Claude prompts you, click the **Source Control** icon on the left, then the **Publish to GitHub** button. If it asks you to sign in to GitHub, do it — a browser window opens, you approve it. (No GitHub account yet? The sign-in screen has a free "Create an account" link.)
 2. **Pick "private."** Choose **"Publish to GitHub private repository"** and name it `snowball`. In one click, VS Code creates the repo under your account, connects your folder to it, and pushes the first backup.
-3. **That's it.** No commands, no tokens, no GitHub CLI. Your whole Snowball is now backed up to your own private GitHub, and Claude confirms it worked before moving on.
+3. **Claude proves it's real, then moves on.** Before saying you're backed up, Claude actually reaches out to GitHub to confirm your repo is there and reachable — not just that it looks set up. If that one click didn't fully take (it happens — a browser closes, the connection hiccups), Claude fixes it on the spot from the terminal so you leave the session with a backup that genuinely works, not one that quietly isn't there.
 
 ## What `/end-session` does
 

@@ -38,3 +38,14 @@ A research workflow verified each load-bearing fact against official docs:
 - `docs/levelup/index.html` — Step 1 clones into Downloads; Step 2 carries the Apify token bundled in the kickoff paste (separate "copy the key" step removed).
 - `.claude/skills/day-one/SKILL.md` — added the "First — turn on the backup" step; greeting mentions backup; pre-flight checklist now requires Git install and drops the "Use this template" / `gh` steps.
 - `references/git-and-backup.md` — one-time setup + restore rewritten around Publish-to-GitHub (no manual `git remote add` / `git push`).
+
+## 6/3/26 update — hardened the backup step (commit-first + real verify + self-repair)
+
+**Why:** the Publish-to-GitHub button silently half-failed twice (BeeHive 6/1, Chris Riha 6/3) — origin left on the template and/or no commit made — and the soft verify (`git remote -v` only) didn't catch it, so clients walked away with a dead backup that surfaced later as a failed push. Root cause: the button is a GUI action Claude can't drive or verify in real time, and a local `git remote -v` read can look clean while the backup isn't real.
+
+**What changed (the publish button stays — it's still the zero-install, cross-platform happy path; the *constraint that gh can't be guaranteed on a stock Mac still holds*, so we did NOT switch to gh):**
+1. **Commit first.** `/day-one` now runs `git init -b main && git add -A && git commit` BEFORE the publish, so a first save always exists (kills the "no commits" half).
+2. **Verify for real.** The check is now `git ls-remote origin` (a live call to GitHub that proves the repo exists + is reachable + auth works), not just `git remote -v`. Don't declare "backed up" until it succeeds and origin is the client's own account (kills the "silently broken" half).
+3. **Self-repair from the terminal.** If verify fails, Claude repairs it itself instead of re-looping the button: `gh repo create … --push` if gh happens to be present + authed, else guide a 30-second manual repo create at github.com/new and run `git remote add origin <url> && git push -u origin main` (push auths through VS Code's GitHub sign-in). Loop until `git ls-remote origin` succeeds; never proceed on an unverified backup.
+
+Files touched 6/3: `.claude/skills/day-one/SKILL.md` (backup step + pre-flight note + decision pointer), `snowball/CLAUDE.md` § 4 health check (now uses `git ls-remote`), `references/git-and-backup.md` (client-facing § one-time setup). Republished to `BeltDoor/aios-template`.

@@ -58,16 +58,54 @@ Day One — Step <N> of 3
 
 ## First — turn on the backup (before Step 1)
 
-The kickoff cloned a starter copy from my template. Before anything else, turn it into the client's OWN private, backed-up GitHub repo. This is the off-laptop backup and what lets the Snowball follow them to a new laptop. **No `gh` CLI, no tokens — VS Code's built-in publish does it all through the client's GitHub sign-in.**
+The kickoff cloned a starter copy from my template. Before anything else, turn it into the client's OWN private, backed-up GitHub repo — and **prove it's real before you move on.** This step has silently half-failed on past setups (origin left pointing at my template, or a publish that made no commit), and nobody caught it until a later push failed. The discipline that kills that: **commit first, then publish, then verify against GitHub for real, then repair it yourself if the verify fails.** Never trust the button; trust the check.
 
-1. **Detach from my template.** In the snowball folder, run `rm -rf .git` via your Bash tool so the folder is no longer tied to `BeltDoor/aios-template`. (Confirm you're in the snowball folder first — `pwd` — never run this anywhere else.) If VS Code's Source Control panel still shows the old repo afterward, tell the client: *Command Palette (Cmd/Ctrl+Shift+P) → "Developer: Reload Window."*
-2. **Guide the publish.** This is a button the client clicks — you can't drive it from the terminal:
-   > Click the **Source Control** icon on the left bar (the little branch). You'll see a **Publish to GitHub** button — click it. If it asks you to sign in to GitHub, do that (a browser window opens; approve it). Then choose **"Publish to GitHub private repository"** and name it **snowball**.
+**1. Detach + make the first save (you drive this in Bash — this alone fixes half the old bug).**
+Confirm you're in the snowball folder first (`pwd` — never run this anywhere else), then:
+```
+rm -rf .git
+git init -b main
+git add -A
+git commit -m "Snowball initial setup"
+```
+`rm -rf .git` severs the tie to `BeltDoor/aios-template`; the init + commit guarantee a first save exists (publishing with zero commits was half the recurring failure). Confirm with `git log --oneline -1`.
 
-   Stress **private** — their real business data lives here. If they don't have a GitHub account yet, the sign-in screen has a free "Create an account" link; walk them through it, then continue.
-3. **Verify it worked (don't skip).** Run `git remote -v` — confirm `origin` points at `github.com/<their-account>/snowball`, **not** `BeltDoor`. Run `git log --oneline -1` to confirm the first commit landed. If `git remote -v` is empty or still shows `BeltDoor`, the publish didn't complete — walk back through step 2.
+**2. Create the private repo + push (the client's one click).**
+> Click the **Source Control** icon on the left bar (the branch icon). Click **Publish to GitHub**. If it asks you to sign in to GitHub, do it (a browser opens, approve it). Choose **"Publish to GitHub private repository"** and name it **snowball**.
 
-On success: *"Done — your Snowball is now backed up to your own private GitHub. Every time we wrap up, I save and back it up automatically; you won't have to think about it."* Then proceed to Step 1.
+Stress **private** — their real business data lives here. No GitHub account yet? The sign-in screen has a free "Create an account" link.
+
+**3. VERIFY FOR REAL — do not skip, do not trust the button (you drive this in Bash).**
+Wait for the client to confirm they clicked through. Then check against GitHub itself, not just a local string:
+```
+git remote -v          # origin MUST show github.com/<their-account>/snowball, NOT BeltDoor
+git ls-remote origin   # actually contacts GitHub — success proves the repo exists, is reachable, and auth works
+git log --oneline -1   # the commit exists (guaranteed by step 1)
+```
+The load-bearing check is **`git ls-remote origin`** — a clean local `git remote -v` can still be a dead backup. If `git ls-remote origin` errors, or `git remote -v` is empty / still shows `BeltDoor`, the publish did NOT take → go to step 4. Only when `git ls-remote origin` succeeds AND origin is the client's own account do you tell them it's backed up.
+
+**4. Repair it yourself if the button flaked (you drive this — this is the actual fix for the recurring bug).**
+Do NOT just re-loop the button. Repair from the terminal:
+- **Fast path if `gh` is already installed + authed** (`gh auth status` succeeds): one command does everything —
+  ```
+  git remote remove origin 2>/dev/null; gh repo create snowball --private --source=. --remote=origin --push
+  ```
+  (Don't install `gh` just for this — a stock Mac has no Homebrew, so it isn't guaranteed. If it's not there, use the next path.)
+- **No-install path (works everywhere):** guide a 30-second manual repo create —
+  > Go to **github.com/new**, name it **snowball**, set it to **Private**, click **Create repository**, then paste me the URL it shows you.
+
+  When they paste the URL:
+  ```
+  git remote remove origin 2>/dev/null
+  git remote add origin <THEIR-REPO-URL>
+  git branch -M main
+  git push -u origin main
+  ```
+  The push authenticates through VS Code's built-in GitHub sign-in — no token needed.
+
+Re-run the step-3 checks after any repair. **Loop step 4 until `git ls-remote origin` succeeds. Never proceed to Step 1 on an unverified backup** — a broken backup that looks fine is exactly the failure we're killing.
+
+On success: *"Done — your Snowball is backed up to your own private GitHub, and I confirmed it's live, not just set up. Every time we wrap up I save and back it up automatically; you won't have to think about it."* Then proceed to Step 1.
 
 ## Step 1 — Typeless voice tool (strong soft gate)
 
@@ -264,10 +302,10 @@ You (Jacob at first, possibly future facilitators) are on Zoom or in-person, scr
 - [ ] VS Code installed.
 - [ ] Claude Code extension installed; client signed into Claude account.
 - [ ] **Git installed** — the one unavoidable install (the Snowball *is* a git repo; without it Step 1's clone fails, like it did on an early setup call). Windows: paste `winget install --id Git.Git -e --source winget` into the VS Code terminal (winget ships with Win10 1809+/Win11). Mac: run `xcode-select --install` and click Install. Then **close and reopen VS Code** so it detects Git. Verify with `git --version`.
-- [ ] GitHub account exists (free) — or create one during the publish step; the sign-in screen has a "Create an account" link. **No `gh` CLI, no Personal Access Token** — VS Code's built-in "Publish to GitHub" handles repo creation + auth through the client's GitHub sign-in.
+- [ ] GitHub account exists (free) — or create one during the publish step; the sign-in screen has a "Create an account" link. The happy path is VS Code's "Publish to GitHub" (no `gh`, no token), but the backup step now **commits first, verifies against GitHub for real (`git ls-remote origin`), and self-repairs from the terminal** if the button flakes — so a half-failed publish gets caught and fixed in the session instead of surfacing later as a dead backup.
 - [ ] `king-intelligence.com/levelup` → enter passcode → run **Step 1** (clones the starter Snowball into Downloads) → choose **File → Open Folder** and pick the `snowball` folder → paste the **Step 2** kickoff bundle into Claude Code chat. `/day-one` starts, and its FIRST action turns the cloned folder into the client's own private GitHub repo (detaches the template, then guides "Publish to GitHub private repository").
 
-> Repo creation moved INTO `/day-one` (the "First — turn on the backup" step) and uses VS Code's built-in Publish-to-GitHub, replacing the old "Use this template" pre-flight + any `gh` dependency. Decision: `decisions/2026-05-28-onboarding-flow-publish-to-github.md`. (`BeltDoor/aios-template` is a normal public repo, not a GitHub "template" repo, so the old "Use this template" step never actually applied.)
+> Repo creation moved INTO `/day-one` (the "First — turn on the backup" step) and uses VS Code's built-in Publish-to-GitHub. Decision: `decisions/2026-05-28-onboarding-flow-publish-to-github.md`, **hardened 6/3/26** (commit-first + live `git ls-remote` verify + terminal self-repair) after the publish silently half-failed for BeeHive and Chris Riha. (`BeltDoor/aios-template` is a normal public repo, not a GitHub "template" repo, so the old "Use this template" step never actually applied.)
 
 ### Pacing rules (during /day-one)
 
