@@ -21,9 +21,9 @@ You don't touch the terminal for this — `/day-one` handles it as its very firs
 2. **Pick "private."** Choose **"Publish to GitHub private repository"** and name it `snowball`. In one click, VS Code creates the repo under your account, connects your folder to it, and pushes the first backup.
 3. **Claude proves it's real, then moves on.** Before saying you're backed up, Claude actually reaches out to GitHub to confirm your repo is there and reachable — not just that it looks set up. If that one click didn't fully take (it happens — a browser closes, the connection hiccups), Claude fixes it on the spot from the terminal so you leave the session with a backup that genuinely works, not one that quietly isn't there.
 
-## What `/end-session` does
+## What `/king-intelligence:end-session` does
 
-Every time you wrap up with `/end-session`, the skill:
+Every time you wrap up with `/king-intelligence:end-session`, the skill:
 
 1. Saves any unsaved changes (a git commit).
 2. Sends them to your GitHub repo (a git push).
@@ -55,7 +55,7 @@ Two people can share one Snowball so it works as a single shared brain. The tric
 
 1. **First person** sets up normally (`/day-one` publishes the private `snowball` repo to GitHub).
 2. **Second person** does NOT clone the template. They get access to the first person's repo (either both sign into the same GitHub account, or the first person invites them as a collaborator on the repo in GitHub), then in VS Code: **Source Control → Clone Repository → pick the `snowball` repo**. Now both laptops point at the same private repo.
-3. **Working rhythm:** before you start, pull the latest down (Source Control → Sync Changes, or just tell Claude "sync the latest down"). When you finish, `/end-session` saves and backs up for you, and it pulls down any of your teammate's changes first. To keep it simple, avoid both running a session on the exact same file at the exact same time.
+3. **Working rhythm:** before you start, pull the latest down (Source Control → Sync Changes, or just tell Claude "sync the latest down"). When you finish, `/king-intelligence:end-session` saves and backs up for you, and it pulls down any of your teammate's changes first. To keep it simple, avoid both running a session on the exact same file at the exact same time.
 
 If two people did edit the same file at once, nothing is lost: both versions are saved, and Claude merges them and asks you to confirm.
 

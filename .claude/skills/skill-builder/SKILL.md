@@ -1,11 +1,11 @@
 ---
 name: skill-builder
-description: Compositional engine for growing new skills inside this Snowball. Routes me to `/grill-me` or `/brainstorm`, captures how long the task takes me by hand, blocks on missing connections or missing voice profile, generates the SKILL.md, tests it once with real data, then ships an atomic commit. Use when the user says "build me a skill", "automate this", "I keep doing X by hand", "I want a skill for Y", "what should I automate next", or pastes a recurring task with any "turn this into a skill" framing.
+description: Compositional engine for growing new skills inside this Snowball. Routes me to `/king-intelligence:grill-me` or `/king-intelligence:brainstorming`, captures how long the task takes me by hand, blocks on missing connections or missing voice profile, generates the SKILL.md, tests it once with real data, then ships an atomic commit. Use when the user says "build me a skill", "automate this", "I keep doing X by hand", "I want a skill for Y", "what should I automate next", or pastes a recurring task with any "turn this into a skill" framing.
 ---
 
 # /skill-builder
 
-The compositional engine that grows new skills inside this Snowball. I route you to the right thinking partner (`/grill-me` if there's a plan, `/brainstorm` if there isn't), lock the spec, enforce prerequisites, generate the SKILL.md, test it once, and commit.
+The compositional engine that grows new skills inside this Snowball. I route you to the right thinking partner (`/king-intelligence:grill-me` if there's a plan, `/king-intelligence:brainstorming` if there isn't), lock the spec, enforce prerequisites, generate the SKILL.md, test it once, and commit.
 
 ## What this skill is for
 
@@ -14,7 +14,7 @@ Building a new skill, end-to-end, in one session. The user has a recurring task 
 ## What this skill is NOT
 
 - **Not for one-off scripts.** Skills are for recurring work. If the task happens once and never again, just do it manually.
-- **Not a brainstorming partner.** If the user doesn't know what to build yet, route to `/brainstorm` — it hands back to `/grill-me` once a direction lands.
+- **Not a brainstorming partner.** If the user doesn't know what to build yet, route to `/king-intelligence:brainstorming` — it hands back to `/king-intelligence:grill-me` once a direction lands.
 
 ## Before you start — read these (always)
 
@@ -34,17 +34,17 @@ One pass, in order. Don't skip steps. If a hard gate fires, stop and resolve bef
 
 Read the opening message. Three cases:
 
-- **Task in mind** ("build me a /follow-up-invoices skill", "automate my weekly recap"): skip the AskUserQuestion, route directly to `/grill-me`.
-- **No task in mind** ("what should I automate next", "I keep doing repetitive stuff but I don't know what to fix first"): route to `/brainstorm`. It will hand back to `/grill-me` once a direction lands.
+- **Task in mind** ("build me a /follow-up-invoices skill", "automate my weekly recap"): skip the AskUserQuestion, route directly to `/king-intelligence:grill-me`.
+- **No task in mind** ("what should I automate next", "I keep doing repetitive stuff but I don't know what to fix first"): route to `/king-intelligence:brainstorming`. It will hand back to `/king-intelligence:grill-me` once a direction lands.
 - **Ambiguous** (bare "automate this" with no context): `AskUserQuestion`:
   - "I have a task in mind (Recommended if you already know what's repetitive)"
   - "I want to think through what to automate next"
 
 Per CLAUDE.md § Voice: don't ask just to ask. When the opening clearly names a task, skip the question and route directly.
 
-### 2. /grill-me locks the spec
+### 2. /king-intelligence:grill-me locks the spec
 
-Run `/grill-me` on the skill the user wants. The output is a tight spec: what triggers it, what data it reads, what it produces, what edge cases matter. Don't proceed without this — every skill that ships is grilled first.
+Run `/king-intelligence:grill-me` on the skill the user wants. The output is a tight spec: what triggers it, what data it reads, what it produces, what edge cases matter. Don't proceed without this — every skill that ships is grilled first.
 
 ### 3. Overlap check (BEFORE baseline capture)
 
@@ -85,7 +85,7 @@ Identify every tool the new skill will need (Gmail, HubSpot, Otter, Stripe, anyt
 
 If any required tool is **not** in § 1: **stop. Do not draft the SKILL.md.**
 
-Walk the user through connecting it: claude.ai → Settings → Connectors → search the tool → Connect → sign in. Then verify the new MCP server is reachable by running `claude mcp list` (per CLAUDE.md § Verify before asserting — don't claim it's connected without checking). Update [`CONNECTIONS.md`](../../../CONNECTIONS.md) § 1 by hand for now; `/end-session` will re-confirm on session close.
+Walk the user through connecting it: claude.ai → Settings → Connectors → search the tool → Connect → sign in. Then verify the new MCP server is reachable by running `claude mcp list` (per CLAUDE.md § Verify before asserting — don't claim it's connected without checking). Update [`CONNECTIONS.md`](../../../CONNECTIONS.md) § 1 by hand for now; `/king-intelligence:end-session` will re-confirm on session close.
 
 Resume only after every required tool is verified connected. No "ship with TODO." No "ship with hard gate inside the skill." Every skill that ships works on first invocation.
 
@@ -125,7 +125,7 @@ Do **not** restate CEO voice rules, AskUserQuestion default, or verify-before-as
 
 Per Pocock: show the draft, ask "does this cover it? anything missing?". This is a content review, not a test — the user is reading the SKILL.md text, not running the skill.
 
-Apply any structural edits the user calls out. Tight clarifications, not rewrites. If the user wants a fundamental redesign, that's a `/grill-me` redo signal — back up to Step 2.
+Apply any structural edits the user calls out. Tight clarifications, not rewrites. If the user wants a fundamental redesign, that's a `/king-intelligence:grill-me` redo signal — back up to Step 2.
 
 ### 10. Test with one real record
 
@@ -148,7 +148,7 @@ One pass, not a benchmark loop.
 - **Cycle 2.** Same loop. One more fix. One more re-run.
 - **After cycle 2**, `AskUserQuestion`:
   - "Ship as-is — I'll edit it manually if I need to (Recommended if it's 80% there)"
-  - "Scrap and re-grill — the design has a fundamental issue, take me back to `/grill-me`"
+  - "Scrap and re-grill — the design has a fundamental issue, take me back to `/king-intelligence:grill-me`"
   - "Hand it to me — write the SKILL.md to disk but skip the commit so I can edit before committing"
 
 If iterate keeps needing more than 2 cycles, the skill's design has a flaw that more fix-passes can't paper over. Re-grill, don't keep patching.
@@ -197,7 +197,7 @@ After commit, increment `/skill-builder`'s own row in [`TIME-SAVED.md`](../../..
 When Step 3's overlap check routes to "Extend existing" instead of new build:
 
 1. Read the existing SKILL.md.
-2. Run `/grill-me` on the specific change the user wants — not the whole skill, just the delta.
+2. Run `/king-intelligence:grill-me` on the specific change the user wants — not the whole skill, just the delta.
 3. Apply edits to SKILL.md. Re-bake AIOS appends if missing.
 4. Skip the connector gap check (Step 5) UNLESS the modification adds a new tool dependency.
 5. Skip the voice-profile gate (Step 6) UNLESS the modification turns a non-draft skill into a draft-related one.

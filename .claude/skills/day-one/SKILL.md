@@ -30,6 +30,17 @@ Say it plainly, no jargon: *"One quick setup thing before we start. Your compute
 
 The plain-English "what even is Git Bash" explainer for the user lives in [`/references/whats-getting-installed.md`](../../../references/whats-getting-installed.md) — read it to them if they ask why any of this matters.
 
+## Silent toolkit check (right after the OS detect)
+
+Still before saying anything, run `claude plugin list` in Bash and read the result:
+
+- **The output includes `king-intelligence`** → the toolkit is installed. Say nothing about it, proceed.
+- **It's missing** → the client skipped Step 2 of the kickoff page. Pause and say it plainly, no jargon:
+
+> One quick thing before we start. Part of your toolkit didn't make it onto your computer yet. Go back to the email this link came in, copy the two personal install lines, and paste them into the terminal here, then press Enter. When that finishes, close VS Code completely and reopen it, and we'll pick Day One right back up.
+
+Do **not** continue Day One past this point until `claude plugin list` shows `king-intelligence`. After the client reopens VS Code, re-run the check and confirm before moving on.
+
 ## Capture the Apify token from the paste-bundle
 
 The user's first message should contain a bundle pasted from `king-intelligence.com/levelup`:
@@ -47,7 +58,7 @@ Parse the `APIFY_TOKEN=` line from inside the `SNOWBALL_BUNDLE v1` HTML-comment 
 
 ## Greeting
 
-After the silent OS detect and bundle parse, open with this — Snowball-branded, one thought per line, no progress bars:
+After the silent OS detect, the silent toolkit check, and the bundle parse, open with this — Snowball-branded, one thought per line, no progress bars:
 
 > Hey. Welcome to your Snowball.
 >
@@ -284,7 +295,11 @@ Write the final paragraph to `snowball/CLAUDE.md` § 1 Identity, replacing the e
 
 ## Handoff to /skill-builder (soft ask)
 
-`AskUserQuestion`:
+First, one short line introducing the toolkit, in plain words:
+
+> One more thing: your full King Intelligence toolkit is already installed. Type `/king-intelligence:` any time to see every command, and `/king-intelligence:adapt <skill>` wires one up to your own tools.
+
+Then `AskUserQuestion`:
 
 1. **"Build your first skill now" (Recommended)** — invoke `/skill-builder` via the Skill tool in the same session. Continuity preserved.
 2. **"Take a break — I'll be here when you come back."** — show the paste-line explicitly and stop:
@@ -322,7 +337,8 @@ You (Jacob at first, possibly future facilitators) are on Zoom or in-person, scr
 - [ ] **Windows only — confirm the shell is Git Bash, not PowerShell.** After the Git install + VS Code reopen, run `uname`. `MINGW...`/`MSYS...` = good (the AI is on Git Bash, the command line the whole Snowball is written in). An error or anything else = it's on PowerShell, and onboarding breaks on step one. `/day-one` auto-checks and self-repairs this at its very start, so this is just a belt-and-suspenders glance. Why it matters, in plain English: [`references/whats-getting-installed.md`](../../../references/whats-getting-installed.md).
 - [ ] **Node.js installed** — a small engine a few skills run on. Windows: `winget install --id OpenJS.NodeJS.LTS -e --source winget`. Mac: download the **LTS** installer from [nodejs.org](https://nodejs.org) and double-click it (no Homebrew needed — see the explainer). Close and reopen VS Code after; verify with `node --version`.
 - [ ] GitHub account exists (free) — or create one during the publish step; the sign-in screen has a "Create an account" link. The happy path is VS Code's "Publish to GitHub" (no `gh`, no token), but the backup step now **commits first, verifies against GitHub for real (`git ls-remote origin`), and self-repairs from the terminal** if the button flakes — so a half-failed publish gets caught and fixed in the session instead of surfacing later as a dead backup.
-- [ ] `king-intelligence.com/levelup` → enter passcode → run **Step 1** (clones the starter Snowball into Downloads) → choose **File → Open Folder** and pick the `snowball` folder → paste the **Step 2** kickoff bundle into Claude Code chat. `/day-one` starts, and its FIRST action turns the cloned folder into the client's own private GitHub repo (detaches the template, then guides "Publish to GitHub private repository").
+- [ ] `king-intelligence.com/levelup` → enter passcode → run **Step 1** (clones the starter Snowball into Downloads) → choose **File → Open Folder** and pick the `snowball` folder → do **Step 2** (next checkbox) → paste the **Step 3** kickoff bundle into Claude Code chat. `/day-one` starts, and its FIRST action turns the cloned folder into the client's own private GitHub repo (detaches the template, then guides "Publish to GitHub private repository").
+- [ ] **Step 2 of the kickoff page done:** the client copies their two personal install lines from the email, pastes them into the terminal, presses Enter, then closes and reopens VS Code completely. This installs the King Intelligence toolkit. `/day-one` silently checks for it at the start (`claude plugin list`) and pauses until it shows up, so a skipped Step 2 gets caught in the session.
 
 **If the client asks what any of these installs are, don't improvise jargon.** The plain-English, no-background answers for every tool above (VS Code, Git, GitHub, Node.js, Git Bash vs PowerShell, and why we skip Homebrew on Mac) live in [`references/whats-getting-installed.md`](../../../references/whats-getting-installed.md). Read it to them.
 

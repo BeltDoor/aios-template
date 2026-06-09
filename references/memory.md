@@ -100,6 +100,6 @@ If you want to see everything Claude has saved, say "show me my memory." Claude 
 
 Over time, your memory file collects a lot of small notes. Some of them overlap. Some of them are no longer relevant. Some of them could be combined into one cleaner note.
 
-A future skill called `/dream` will reorganize accumulated memory — merging duplicates, retiring stale notes, surfacing patterns. It's not built yet. The current Snowball uses lighter tools (`/end-session` already has a one-step memory-prune confirmation that catches stale notes one at a time).
+A future skill called `/dream` will reorganize accumulated memory — merging duplicates, retiring stale notes, surfacing patterns. It's not built yet. The current Snowball uses lighter tools (`/king-intelligence:end-session` already has a one-step memory-prune confirmation that catches stale notes one at a time).
 
-Until `/dream` exists, the system works the way it works above: small notes, written as Claude learns, pruned by `/end-session` when something goes stale.
+Until `/dream` exists, the system works the way it works above: small notes, written as Claude learns, pruned by `/king-intelligence:end-session` when something goes stale.
