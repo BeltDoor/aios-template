@@ -41,7 +41,7 @@ A research workflow verified each load-bearing fact against official docs:
 
 ## 6/3/26 update — hardened the backup step (commit-first + real verify + self-repair)
 
-**Why:** the Publish-to-GitHub button silently half-failed twice (BeeHive 6/1, Chris Riha 6/3) — origin left on the template and/or no commit made — and the soft verify (`git remote -v` only) didn't catch it, so clients walked away with a dead backup that surfaced later as a failed push. Root cause: the button is a GUI action Claude can't drive or verify in real time, and a local `git remote -v` read can look clean while the backup isn't real.
+**Why:** the Publish-to-GitHub button silently half-failed twice (two early client setups, 6/1 and 6/3) — origin left on the template and/or no commit made — and the soft verify (`git remote -v` only) didn't catch it, so clients walked away with a dead backup that surfaced later as a failed push. Root cause: the button is a GUI action Claude can't drive or verify in real time, and a local `git remote -v` read can look clean while the backup isn't real.
 
 **What changed (the publish button stays — it's still the zero-install, cross-platform happy path; the *constraint that gh can't be guaranteed on a stock Mac still holds*, so we did NOT switch to gh):**
 1. **Commit first.** `/day-one` now runs `git init -b main && git add -A && git commit` BEFORE the publish, so a first save always exists (kills the "no commits" half).

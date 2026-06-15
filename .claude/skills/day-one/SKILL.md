@@ -362,7 +362,7 @@ You (Jacob at first, possibly future facilitators) are on Zoom or in-person, scr
 
 **If the client asks what any of these installs are, don't improvise jargon.** The plain-English, no-background answers for every tool above (VS Code, Git, GitHub, Node.js, Git Bash vs PowerShell, and why we skip Homebrew on Mac) live in [`references/whats-getting-installed.md`](../../../references/whats-getting-installed.md). Read it to them.
 
-> Repo creation moved INTO `/day-one` (the "First — turn on the backup" step) and uses VS Code's built-in Publish-to-GitHub. Decision: `decisions/2026-05-28-onboarding-flow-publish-to-github.md`, **hardened 6/3/26** (commit-first + live `git ls-remote` verify + terminal self-repair) after the publish silently half-failed for BeeHive and Chris Riha. (`BeltDoor/aios-template` is a normal public repo, not a GitHub "template" repo, so the old "Use this template" step never actually applied.)
+> Repo creation moved INTO `/day-one` (the "First — turn on the backup" step) and uses VS Code's built-in Publish-to-GitHub. Decision: `decisions/2026-05-28-onboarding-flow-publish-to-github.md`, **hardened 6/3/26** (commit-first + live `git ls-remote` verify + terminal self-repair) after the publish silently half-failed on two early client setups. (`BeltDoor/aios-template` is a normal public repo, not a GitHub "template" repo, so the old "Use this template" step never actually applied.)
 
 ### Pacing rules (during /day-one)
 
