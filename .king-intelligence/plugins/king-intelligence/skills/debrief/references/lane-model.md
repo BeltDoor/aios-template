@@ -94,7 +94,7 @@ Ready to send (your trigger):
   - Invoice: draft $300 to <recipient>  (your send)
 
 Prompts queued (run in a fresh window):
-  - prompts/2026-06-04-john-stephens-thursday.md  [URGENT — Thursday]
+  - prompts/2026-06-04-acme-renewal-thursday.md  [URGENT — Thursday]
   - prompts/2026-06-02-fixturelite-spec-skill.md
 
 Flagged (low confidence / your call):
