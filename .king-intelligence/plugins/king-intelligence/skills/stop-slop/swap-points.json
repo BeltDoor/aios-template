@@ -1,0 +1,5 @@
+{
+  "skill": "stop-slop",
+  "description": "Strips predictable AI writing patterns out of prose so it reads like a human wrote it. Self-contained writing skill, no per-client tool wiring.",
+  "swapPoints": []
+}

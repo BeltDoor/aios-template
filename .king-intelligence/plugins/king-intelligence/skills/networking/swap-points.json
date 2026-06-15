@@ -1,0 +1,40 @@
+{
+  "skill": "networking",
+  "description": "Fill the calendar with tentative networking-event holds for the next ~60 days — the user's recurring anchors plus fresh local finds inside their travel radius, previewed inline then added (or handed over to add).",
+  "swapPoints": [
+    {
+      "key": "city",
+      "prompt": "What city (or town) is your home base for finding local events? This anchors every search and the travel-radius filter.",
+      "required": true
+    },
+    {
+      "key": "radius",
+      "prompt": "How far will you travel for an event? (e.g. '30 min drive' or '25 miles')",
+      "required": false,
+      "default": "30 min"
+    },
+    {
+      "key": "calendarTool",
+      "prompt": "Which calendar should events go on? 'google' (auto-adds as tentative holds with a Yes/No/Maybe RSVP), 'outlook', 'other', or 'none' (I'll just give you a list to add yourself).",
+      "required": false,
+      "default": "none"
+    },
+    {
+      "key": "selfEmail",
+      "prompt": "What email should I add you as a guest under, so each Google hold shows the Yes/No/Maybe RSVP prompt? (optional; Google calendar only)",
+      "required": false
+    },
+    {
+      "key": "recurringAnchors",
+      "prompt": "List any recurring rooms you reliably attend (name + cadence like '1st Tuesday' + venue). Leave empty to start — we'll build this list as you find rooms you keep going back to.",
+      "required": false,
+      "default": []
+    },
+    {
+      "key": "eventSources",
+      "prompt": "Any local event sources you already know about (chamber calendar, a Meetup group, a coworking hub's events page)? Optional — paste URLs.",
+      "required": false,
+      "default": []
+    }
+  ]
+}

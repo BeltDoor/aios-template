@@ -1,0 +1,5 @@
+{
+  "skill": "end-session",
+  "description": "Session-closing ritual: detects what changed, updates folder notes and memory, prunes via one gate, writes a resume briefing, and commits plus pushes. Self-discovers paths, branch, registries, and memory folder; no per-client wiring.",
+  "swapPoints": []
+}

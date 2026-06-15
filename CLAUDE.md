@@ -114,7 +114,9 @@ Just say "this is broken" or "this is frustrating." I'll log what went wrong and
 
 ## 9. Getting updates
 
-Sometimes I (Jacob, who builds the Snowball template) will ship an update — a new skill, a tweak to an existing one. You'll hear from me by email or text. When you want to apply it, paste a trigger phrase like: "pull `/capture-voice` from `BeltDoor/aios-template` `main` and install it." You'll know to do this when `/skill-builder` tells you a voice profile would improve a draft-related skill. You (Claude) will read the template repo, walk me through one change at a time, and ask before applying each one.
+Your toolkit came bundled with your Snowball, so you started with my full current skill set. When I improve a skill or ship a new one, you pull it with `/king-intelligence:update`. That command also offers you my latest ways of working, one at a time, and never changes anything you've personalized without your yes.
+
+Live updates need your personal key. Until you have one, you're on the free starter set: it works, it just doesn't grow on its own. When you're ready to switch updates on, I'll send you two quick setup lines by email. Paste them in, reopen, and `/king-intelligence:update` keeps you current from then on.
 
 ## 10. Pointers
 

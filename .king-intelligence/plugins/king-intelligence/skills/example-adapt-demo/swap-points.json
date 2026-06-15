@@ -1,0 +1,17 @@
+{
+  "skill": "example-adapt-demo",
+  "description": "Demo wiring to prove the adapt/config loop. No real tools touched.",
+  "swapPoints": [
+    {
+      "key": "displayName",
+      "prompt": "What name should this demo greet you by?",
+      "required": true
+    },
+    {
+      "key": "favoriteTool",
+      "prompt": "Name any tool you use day to day (just to prove the wiring saves it)",
+      "required": false,
+      "default": "Claude Code"
+    }
+  ]
+}

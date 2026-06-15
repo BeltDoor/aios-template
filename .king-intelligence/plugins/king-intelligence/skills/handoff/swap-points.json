@@ -1,0 +1,1 @@
+{"skill":"handoff","description":"Generates a phase-map-first next-window handoff prompt plus a gitignored .claude/last-handoff.md backup; no memory writes, no commits.","swapPoints":[]}

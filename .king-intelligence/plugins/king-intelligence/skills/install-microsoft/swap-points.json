@@ -1,0 +1,5 @@
+{
+  "skill": "install-microsoft",
+  "description": "Set up the Microsoft Graph PowerShell SDK so Claude can read, draft, and send the user's Outlook email and manage their calendar, the Microsoft-side equivalent of the Google gws tool.",
+  "swapPoints": []
+}

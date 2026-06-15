@@ -30,16 +30,36 @@ Say it plainly, no jargon: *"One quick setup thing before we start. Your compute
 
 The plain-English "what even is Git Bash" explainer for the user lives in [`/references/whats-getting-installed.md`](../../../references/whats-getting-installed.md) — read it to them if they ask why any of this matters.
 
-## Silent toolkit check (right after the OS detect)
+## Silent toolkit install (right after the OS detect)
 
-Still before saying anything, run `claude plugin list` in Bash and read the result:
+The full King Intelligence toolkit ships INSIDE this clone (the bundled `.king-intelligence` folder). No key is needed to use it — the key only turns on live updates later. Your job here is to make sure it's switched on. Still before saying anything, run `claude plugin list` in Bash:
 
-- **The output includes `king-intelligence`** → the toolkit is installed. Say nothing about it, proceed.
-- **It's missing** → the client skipped Step 2 of the kickoff page. Pause and say it plainly, no jargon:
+- **The output includes `king-intelligence`** → already installed. Say nothing, proceed.
+- **It's missing** → install it from the bundle that came with the clone. Confirm you're in the snowball folder (`pwd`), confirm the bundle is there (`ls .king-intelligence/.claude-plugin/marketplace.json`), then run:
 
-> One quick thing before we start. Part of your toolkit didn't make it onto your computer yet. Go back to the email this link came in, copy the two personal install lines, and paste them into the terminal here, then press Enter. When that finishes, close VS Code completely and reopen it, and we'll pick Day One right back up.
+  ```
+  claude plugin marketplace add "$(pwd)/.king-intelligence"
+  claude plugin install king-intelligence@king-intelligence-starter
+  ```
 
-Do **not** continue Day One past this point until `claude plugin list` shows `king-intelligence`. After the client reopens VS Code, re-run the check and confirm before moving on.
+  Then tell the client, plainly, no jargon:
+
+  > Switching your toolkit on. One quick thing makes it stick: close VS Code all the way and open it again, then we'll keep going.
+
+  After they reopen, re-run `claude plugin list` and confirm `king-intelligence` shows before moving on. The typeable `/king-intelligence:` commands appear after that reopen.
+
+  **If the bundle folder isn't there** (rare — an old clone): fall back to *"Part of your toolkit didn't come through. Re-clone from king-intelligence.com/levelup, or text Jacob."* Don't continue until `claude plugin list` shows `king-intelligence`.
+
+### Also switch on the document tools (best-effort, don't block on it)
+
+These are Anthropic's own free tools for making and reading PDFs, Word, Excel, and PowerPoint files. Public, no key. Run both; if either errors (no internet, etc.), skip silently and move on, this is a nice-to-have, not a gate:
+
+```
+claude plugin marketplace add anthropics/skills
+claude plugin install document-skills@anthropic-agent-skills
+```
+
+They also load on the next reopen, alongside the toolkit above.
 
 ## Capture the Apify token from the paste-bundle
 
@@ -337,8 +357,8 @@ You (Jacob at first, possibly future facilitators) are on Zoom or in-person, scr
 - [ ] **Windows only — confirm the shell is Git Bash, not PowerShell.** After the Git install + VS Code reopen, run `uname`. `MINGW...`/`MSYS...` = good (the AI is on Git Bash, the command line the whole Snowball is written in). An error or anything else = it's on PowerShell, and onboarding breaks on step one. `/day-one` auto-checks and self-repairs this at its very start, so this is just a belt-and-suspenders glance. Why it matters, in plain English: [`references/whats-getting-installed.md`](../../../references/whats-getting-installed.md).
 - [ ] **Node.js installed** — a small engine a few skills run on. Windows: `winget install --id OpenJS.NodeJS.LTS -e --source winget`. Mac: download the **LTS** installer from [nodejs.org](https://nodejs.org) and double-click it (no Homebrew needed — see the explainer). Close and reopen VS Code after; verify with `node --version`.
 - [ ] GitHub account exists (free) — or create one during the publish step; the sign-in screen has a "Create an account" link. The happy path is VS Code's "Publish to GitHub" (no `gh`, no token), but the backup step now **commits first, verifies against GitHub for real (`git ls-remote origin`), and self-repairs from the terminal** if the button flakes — so a half-failed publish gets caught and fixed in the session instead of surfacing later as a dead backup.
-- [ ] `king-intelligence.com/levelup` → enter passcode → run **Step 1** (clones the starter Snowball into Downloads) → choose **File → Open Folder** and pick the `snowball` folder → do **Step 2** (next checkbox) → paste the **Step 3** kickoff bundle into Claude Code chat. `/day-one` starts, and its FIRST action turns the cloned folder into the client's own private GitHub repo (detaches the template, then guides "Publish to GitHub private repository").
-- [ ] **Step 2 of the kickoff page done:** the client copies their two personal install lines from the email, pastes them into the terminal, presses Enter, then closes and reopens VS Code completely. This installs the King Intelligence toolkit. `/day-one` silently checks for it at the start (`claude plugin list`) and pauses until it shows up, so a skipped Step 2 gets caught in the session.
+- [ ] `king-intelligence.com/levelup` → enter passcode → run **Step 1** (clones the starter Snowball into Downloads) → choose **File → Open Folder** and pick the `snowball` folder → paste the **Step 2** kickoff bundle into Claude Code chat. `/day-one` starts, and its FIRST action turns the cloned folder into the client's own private GitHub repo (detaches the template, then guides "Publish to GitHub private repository").
+- [ ] **Toolkit is keyless now — no install lines, no email key needed.** The full King Intelligence toolkit ships INSIDE the clone (the bundled `.king-intelligence` folder). `/day-one` installs it from that bundle at the start and has the client reopen VS Code once so the `/king-intelligence:` commands register. The per-client key is no longer part of setup; it only unlocks live updates (`/king-intelligence:update`) later, and gets sent by email when the client signs on. So the kickoff page is now two steps (clone → Day One), not three.
 
 **If the client asks what any of these installs are, don't improvise jargon.** The plain-English, no-background answers for every tool above (VS Code, Git, GitHub, Node.js, Git Bash vs PowerShell, and why we skip Homebrew on Mac) live in [`references/whats-getting-installed.md`](../../../references/whats-getting-installed.md). Read it to them.
 

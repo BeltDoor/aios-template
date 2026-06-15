@@ -1,0 +1,12 @@
+{
+  "name": "king-intelligence-starter",
+  "owner": { "name": "Jacob King", "email": "jacob@king-intelligence.com" },
+  "description": "King Intelligence starter toolkit, bundled into your Snowball. The full skill set, free. Get your personal key from Jacob to switch on live updates.",
+  "plugins": [
+    {
+      "name": "king-intelligence",
+      "source": "./plugins/king-intelligence",
+      "description": "Jacob King's operating-system plugin: client skills, the /adapt and /update commands, and per-client wiring that survives updates."
+    }
+  ]
+}

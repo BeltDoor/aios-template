@@ -10,7 +10,7 @@ Status legend: `[live]` = built and ready. `[not yet built]` = placeholder; the 
 
 ## The King Intelligence plugin
 
-The full skill library installed at Step 2 of the kickoff page lives under `/king-intelligence:` commands. Type `/king-intelligence:` in chat to see them all. Two to know first: `/king-intelligence:adapt <skill>` wires a skill to my tools, and `/king-intelligence:update` pulls Jacob's latest improvements.
+The full skill library came bundled with your Snowball and switched on during Day One. It lives under `/king-intelligence:` commands. Type `/king-intelligence:` in chat to see them all. Two to know first: `/king-intelligence:adapt <skill>` wires a skill to my tools, and `/king-intelligence:update` pulls Jacob's latest improvements (that one needs your personal key; until you have it, you're on the free starter set).
 
 Three skills that used to live in this folder now live there: `/king-intelligence:brainstorming`, `/king-intelligence:grill-me`, and `/king-intelligence:end-session`.
 

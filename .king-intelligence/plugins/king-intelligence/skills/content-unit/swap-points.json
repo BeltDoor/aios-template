@@ -1,0 +1,22 @@
+{
+  "skill": "content-unit",
+  "description": "Writes a finished social post in THIS client's voice using Hormozi's Hook/Retain/Reward framework. The only thing that differs per client is whose voice it writes in.",
+  "swapPoints": [
+    {
+      "key": "voiceProfilePath",
+      "prompt": "Do you have a voice guide in your own files (a note describing how you write)? If so, what's the path to it? Leave blank if you don't have one.",
+      "required": false
+    },
+    {
+      "key": "voiceDescription",
+      "prompt": "If you don't have a voice file, describe your writing voice in a sentence or two (your tone, what you sound like, anything to avoid). Used as a fallback so posts still sound like you.",
+      "required": false
+    },
+    {
+      "key": "defaultPlatform",
+      "prompt": "Your main platform for these posts (shapes the format)",
+      "required": false,
+      "default": "LinkedIn"
+    }
+  ]
+}

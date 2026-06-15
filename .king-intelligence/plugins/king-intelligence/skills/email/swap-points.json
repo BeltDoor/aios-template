@@ -1,0 +1,31 @@
+{
+  "skill": "email",
+  "description": "Drafts an email in the client's voice with structure-by-type discipline, a fabrication check, and an anti-slop pass. Never sends.",
+  "swapPoints": [
+    {
+      "key": "voiceGuidePath",
+      "prompt": "Optional path to this client's own email voice guide (a markdown file describing how they write emails — openers, sign-offs, banned words, examples). If set, it is read every draft and overrides the generic craft. Leave blank to use the generic plain/human default.",
+      "required": false
+    },
+    {
+      "key": "voiceDescription",
+      "prompt": "Optional inline description of how this client writes emails, used as a lightweight voice when there's no full voice guide file. A few sentences on tone, typical greeting/close, and anything they always or never do.",
+      "required": false
+    },
+    {
+      "key": "signature",
+      "prompt": "Optional email signature to append when a draft is created in the client's email tool. If set, the skill will not also type the sender's name in the body (to avoid a doubled-up close).",
+      "required": false
+    },
+    {
+      "key": "bannedPhrases",
+      "prompt": "Optional extra words or phrases THIS client never wants in their emails. Added on top of the universal anti-slop blacklist for the Phase 4 grep. One per line or comma-separated.",
+      "required": false
+    },
+    {
+      "key": "emailTool",
+      "prompt": "Optional name of the email tool the client has connected (e.g. Gmail, Outlook). Informs whether the skill offers to create a draft in their tool versus just handing over clean text to paste.",
+      "required": false
+    }
+  ]
+}
