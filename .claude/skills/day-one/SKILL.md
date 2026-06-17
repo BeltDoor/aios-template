@@ -319,6 +319,8 @@ First, one short line introducing the toolkit, in plain words:
 
 > One more thing: your full King Intelligence toolkit is already installed. Type `/king-intelligence:` any time to see every command, and `/king-intelligence:adapt <skill>` wires one up to your own tools.
 
+A few skills (debrief, end-session, networking) tune themselves from a plain settings file at [`references/king-intelligence-config.md`](../../../references/king-intelligence-config.md). It ships pre-filled with safe defaults, so everything works today; open it and fill in your own tools (your CRM, your city, your calendar) whenever you're ready. Don't walk the client through it now (it's a "later, on your own time" thing), just let them know it's there.
+
 Then `AskUserQuestion`:
 
 1. **"Build your first skill now" (Recommended)** — invoke `/skill-builder` via the Skill tool in the same session. Continuity preserved.

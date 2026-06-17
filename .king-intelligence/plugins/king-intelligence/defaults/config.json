@@ -6,5 +6,9 @@
     "adopted": [],
     "declined": [],
     "lastSyncedVersion": null
+  },
+  "autoUpdate": {
+    "lastCheckedVersion": null,
+    "lastCheckedAt": null
   }
 }

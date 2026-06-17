@@ -5,16 +5,16 @@ Use this structure for all meeting summaries. Omit sections that don't apply (se
 ## Template
 
 ```
-# [Meeting Type] Summary - [Contact Full Name]
+# [Meeting Type] Summary - [Client Full Name]
 
 [date stamp: M/D/YY - HH:MM]
 
-**Date:** YYYY-MM-DD HH:MM
+**Date:** YYYY-MM-DD HH:MM EST
 **Participants:** [Name (Company/Role)] for each person
 **Type:** [Discovery Call / Coaching Session / Check-in / Demo / Follow-up / Proposal Review / Onboarding]
 **Duration:** ~[X] minutes
 **Platform:** [Google Meet / Zoom / Phone / In-person]
-**Full transcript:** [relative link to the transcript file]
+**Full transcript:** [relative link to transcript file, e.g., ../transcripts/YYYY-MM-DD-discovery-transcript.md]
 
 ---
 
@@ -65,7 +65,7 @@ Use this structure for all meeting summaries. Omit sections that don't apply (se
 
 ## New Information Gathered
 
-- [Anything learned about the contact, their company, tech stack, team, etc.]
+- [Anything learned about the client, their company, tech stack, team, etc.]
 - [Personal details worth remembering (kids, hobbies, connections)]
 - [Competitive intel, market observations, referral opportunities]
 
@@ -76,7 +76,7 @@ Use this structure for all meeting summaries. Omit sections that don't apply (se
 ### You
 - [ ] [Specific action] (by [date if applicable])
 
-### [Contact Name]
+### [Client Name]
 - [ ] [Specific action] (by [date if applicable])
 
 ---

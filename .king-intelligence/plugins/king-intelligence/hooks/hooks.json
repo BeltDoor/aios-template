@@ -10,7 +10,7 @@
           },
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-update.mjs\""
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/auto-update.mjs\""
           },
           {
             "type": "command",

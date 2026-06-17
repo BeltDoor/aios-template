@@ -13,7 +13,7 @@ Use this structure for all saved transcripts. The header provides context; the b
 **Participants:** [Name (Company)] for each person
 **Platform:** [Google Meet / Zoom / Phone / In-person]
 **Duration:** ~[X] minutes
-**Source:** [transcript source, e.g. Otter / Zoom / Fathom / Granola / manual]
+**Source:** [Otter.ai / Super Whisper / manual / other]
 
 ---
 
@@ -22,10 +22,10 @@ Use this structure for all saved transcripts. The header provides context; the b
 
 ## Speaker Label Rules
 
-1. Normalize all of the user's labels to **You:** (not their full name, not "Speaker 1").
-2. Normalize the contact's labels to **[First Name Last Name]:** (not "Speaker 2", not a mislabeled name).
-3. If timestamps exist in the original (e.g., `Speaker  0:12`), preserve them as `**You** (0:12):`.
-4. If no timestamps exist, just use `**[Name]:**` followed by their text.
-5. Keep paragraph breaks from the original as-is.
+1. Normalize all user labels to **[User Name]:** (not a generic "Speaker 1")
+2. Normalize client labels to **[First Name Last Name]:** (not "Speaker 2", not mislabeled names)
+3. If timestamps exist in the original (e.g., `Your Name  0:12`), preserve them as `**[User Name]** (0:12):`
+4. If no timestamps exist, just use `**[Name]:**` followed by their text
+5. Keep paragraph breaks from the original as-is
 6. Do NOT fix grammar, remove filler words, or clean up speech. This is a raw transcript.
 7. Do NOT truncate or summarize. Save everything.

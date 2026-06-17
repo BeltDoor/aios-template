@@ -1,98 +1,145 @@
 # Executor Examples
 
-**Not a catalog. Not a switch statement.** Use this only as a sanity check that you picked a reasonable tool for the action you detected. If your action isn't here, figure out the right tool from whatever is connected for this client and use it. The general rule of thumb when dispatching:
+**Not a catalog. Not a switch statement.** Use this only as a sanity check that you picked a reasonable tool for the action you detected. If your action isn't here, that's fine — figure out the right tool from `awareness-surfaces.md` and use it.
 
-1. **Is there a skill that does this?** Skills encode discipline that took iterations to lock in (voice rules, anti-slop checks, brand specs). Prefer the skill over freelancing the same task.
-2. **Is there a connected MCP / tool for the target system?** The configured CRM, calendar, email, payments, notes/wiki, etc. Use it instead of building API calls by hand.
-3. **Can a simple CLI / script do it cleaner?** Often yes.
-4. **Does it need a general-purpose primitive?** An Agent (background research), a scheduled reminder, a recurring job, `WebFetch` (single URL).
-5. **Only if all of the above come up empty** should the action land as `[manual]`.
-
-Format below: `Action intent` -> `executor candidate` -> `why / gotchas`. The named tools are **examples**; substitute whatever is configured for this client.
+Format: `Action intent` -> `executor candidate` -> `why / gotchas`
 
 ---
 
 ## Communication
 
-**Create the follow-up email draft.**
-- `Skill: king-intelligence:email` if available (it enforces the user's voice + anti-slop + signature), else draft inline per [follow-up-email.md](follow-up-email.md) and create the draft in the configured `emailTool`.
-- Drafts only — the user sends manually.
+**Send the Gmail draft `/debrief` parked.**
+- `Bash: gws gmail users drafts send --id <draft_id>`
+- Why: `/debrief` Phase 3C already created the draft. We just hit send.
+- Gotcha: Draft ID must match what's actually in Gmail — if the user edited or deleted the draft, this fails. Surface the failure in Phase E, don't silently retry.
+
+**Send a PDF attachment to a specific recipient.**
+- `Bash: gws gmail users drafts create` with `--attachment <path>`, then `gws gmail users drafts send --id <new_draft_id>`.
+- Why: `gws --upload` may send as `application/octet-stream` which Gmail rejects. Test the method in your environment first.
 
 **Draft an intro email (don't send).**
-- Create a draft with both prospective parties in To, neither in Cc.
-- Why: intros need the user's eyes before they go out. Always drafts only.
+- `Bash: gws gmail users drafts create` with both prospective parties in To, neither in Cc.
+- Why: Intros need the user's eyes before they go out. Always drafts only.
 
-**Run any prose through anti-slop before showing it.**
-- `Skill: king-intelligence:stop-slop` if available, else self-check against the hard rules in [follow-up-email.md](follow-up-email.md).
+**Send a Telegram update.**
+- `mcp__plugin_telegram_telegram__reply` with `chat_id` (from the original Telegram message context) and `text`.
+- Why: Pages the user's phone — only do this when the conversation explicitly asked for one.
+
+**Write prospect-facing email body first.**
+- `Skill: email`
+- Why: Encodes voice guide rules, blacklist, fabrication check. Never freelance prospect email copy.
 
 ---
 
 ## CRM
 
-**Move a deal stage.**
-- Use the configured `crm`'s update tool with the new stage.
-- Gotchas: re-query the live pipeline before trusting a stored stage (it goes stale); categorize the meeting outcome into the right stage bucket before moving.
+Use the CRM tool and board from your settings (the `crm` and `crmBoardId` fields). Full mechanics: `references/trello-api.md` in your repo root references (for Trello), or the equivalent for your configured CRM.
 
-**Create a new contact + company + deal (prospect onboarding).**
-- Run the configured `crm`'s create flow end-to-end (dedup, full confirmation, execute, associations, engagement note). Don't skip the dedup step or you'll create dupes.
+**Move a card between lists (the only "stage change").**
+- `PUT /1/cards/<cardId>?idList=<newListId>` — resolve list ids live from the board, never hardcode.
+- Gotcha: GET the card's current list first; state in CLAUDE.md goes stale.
 
-**Log a meeting engagement on an existing deal.**
-- Use the `crm`'s create-engagement tool, type MEETING, including the meeting date, summary path, top 3 action items, duration estimate. (Phase 4E does this automatically when a CRM is configured.)
+**Create a new card (prospect onboarding).**
+- Dedup first: search by person AND company name in your CRM.
+- `POST /1/cards` with name `First Last - Company`, desc = title/company/email/phone + one context line, right list per Phase 4E, label if the offer fit is clear. No due dates (board rule).
 
-When `crm` is `none`/unset, surface CRM-shaped actions as flagged items, don't fabricate records.
+**Log a meeting on a card.**
+- `POST /1/cards/<cardId>/actions/comments` with a dated note (date, summary path, top 3 actions).
+- Note: `/debrief` Phase 4E does this automatically now (housekeeping, no gate).
 
 ---
 
 ## Scheduling
 
 **Create + send a calendar invite for the next meeting.**
-- Use the configured `calendarTool` with attendees + start/end + summary + location/conferencing.
-- Gotcha: time zones. Build datetimes with an explicit TZ (the user's local TZ by default).
+- `Bash: gws calendar events create` with attendees + start/end + summary + location/conferencing.
+- Why: The `mcp__claude_ai_Google_Calendar__*` server only exposes `__authenticate` and `__complete_authentication` — it's OAuth-only. Use the `gws calendar` CLI for actual event creation.
+- Default: send invite to attendees, include video link or location from the call.
+- Gotcha: TZ. Build datetimes with explicit TZ (e.g., `America/New_York`) matching the user's local timezone.
 
 **Schedule a self-reminder ("follow up Friday if no reply").**
-- A one-off scheduled reminder, or a recurring job for repeating nudges.
+- `ScheduleWakeup` (one-off) or `CronCreate` (recurring)
+- Why: ScheduleWakeup hands the user a notification at the right time with the right context.
 
 ---
 
 ## Payments
 
-**Create a draft invoice / payment link.**
-- Use the configured `paymentsTool`. Default: draft/finalize only, don't trigger the tool's own send (the user's email is the delivery).
-- Gotchas: the billing email must be the A/P contact, not just the primary contact; set the due date BEFORE finalizing if the tool locks it after.
-- When no `paymentsTool` is configured, flag that money is owed; never invent a link.
+**Create a draft invoice.**
+- `Bash` + payment tool API key from your env vars (see `paymentsTool` from your settings + its references file)
+- Default: draft only, don't finalize/send.
+- Critical gotchas:
+  - Stripe `send_invoice` auto-emails ONLY `customer.email`. Verify the email is the A/P contact, not just the primary contact.
+  - `due_date` is un-editable on non-draft invoices. Set it BEFORE finalize.
+- Output: surface the `hosted_invoice_url` in Phase E so the user can paste it into a Gmail reply if they want to bypass the tool's own send.
 
 ---
 
 ## Research / browsing
 
-**Kick off background research the user owes the contact.**
-- An Agent (general-purpose), run in the background so it doesn't block the debrief.
-- Prompt it self-contained: it doesn't see this conversation. Include the topic, what's known, what to find, and the desired output format/length.
+**Kick off background research the user owes the client.**
+- `Agent` with `subagent_type: general-purpose` and `run_in_background: true`
+- Why: Doesn't block the gate close. The user keeps moving. Notification arrives when done.
+- Prompt the agent self-contained: it doesn't see this conversation. Include the topic, what's already known, what specifically to find, and the desired output format/length.
 
-**Quick web lookup (verify a venue address, a fact).**
-- `perplexity_search`. NEVER `perplexity_research` or `perplexity_reason`.
+**Quick web lookup (e.g., to verify a meeting venue address).**
+- `mcp__perplexity__perplexity_search` (sonar)
+- NEVER `_research` or `_reason` — banned + hook-blocked.
 
 **Read a live website mid-execution.**
-- `WebFetch` for static pages; a browser tool for pages that need JS to render.
+- `mcp__playwright__browser_navigate` -> `browser_snapshot` (or `WebFetch` for static pages)
+- Why: Some pages need JS to render. Playwright handles that.
 
-**Watch a YouTube/video link the conversation referenced.**
-- A video-understanding skill if one is available (native video understanding beats screenshots).
+**Watch a YouTube link the conversation referenced.**
+- `Skill: playwatch`
+- Why: Native video understanding via Gemini, not Playwright screenshots.
 
 ---
 
-## Publishing / docs
+## Publishing / repo
 
-**Update the contact's notes file (add a new commitment).**
-- Edit directly. (Read first.)
+**Publish a page to the user's website.**
+- `Write` to `docs/<slug>/index.html`, then `Bash: git add docs/<slug>/index.html && git commit -m "feat(site): <description>" && git push`
+- Why: GitHub Pages serves `docs/` automatically. Live within ~1 min of push.
+- Pattern: see existing `docs/` pages in your repo for prior examples.
 
-**Update the persistent memory.**
-- Append to the user's memory/notes system if one is in use; add a one-line pointer where the index lives.
+**Update a client's CLAUDE.md (e.g., to add a new commitment).**
+- `Edit` directly. (Read first — existing skill rule.)
+
+**Update auto-memory.**
+- `Write` to the memory file for the active repo (path from your settings) AND add a 1-line pointer to `MEMORY.md`.
+- See root CLAUDE.md memory section for the full memory rules.
 
 **Queue a social post.**
-- The configured posting tool or the user's content pipeline. (The branded social-post phase lives in the full version of this skill.)
+- `mcp__blotato__blotato_create_post` (for direct API) or invoke the appropriate content skill.
+- Or: drop content into the content-app pipeline if one is configured.
+
+---
+
+## Pulling more data
+
+**Pull the latest Otter transcripts.**
+- `Bash: node scripts/otter-pull.mjs`
+- Why: Idempotent. Won't restage anything already in `state/processed.json`.
+- This is the same script `/debrief` Phase 0 now calls automatically — `/handle-it` mostly won't need to do this, but it's available.
+
+**Look up something in Notion.**
+- `mcp__claude_ai_Notion__notion-search` or `notion-fetch`.
+
+---
+
+## Workflow automation
+
+**Modify or trigger an n8n workflow.**
+- `mcp__n8n__*` — `n8n_get_workflow`, `n8n_update_partial_workflow`, `n8n_test_workflow`, `n8n_executions`.
+- Gotcha: For any n8n changes, validate via `mcp__n8n__n8n_validate_workflow` BEFORE deploy.
+
+**Add a permission rule or settings change.**
+- `Skill: update-config`
+- Why: Encodes the settings.json structure correctly, scoped to user/project/local.
 
 ---
 
 ## When the action genuinely doesn't fit a tool
 
-Label it `[manual]`. Examples: "drive to the meeting," "sign the paper contract," "hand them the USB drive." Rare.
+Label `[manual]` in the gate. Examples: "drive to the meeting," "sign the paper contract," "hand Mark the USB drive." Rare. Always check `awareness-surfaces.md` first.

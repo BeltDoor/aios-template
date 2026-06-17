@@ -1,40 +1,73 @@
-# Networking anchors + fit rules
+# Anchors reference — data model for the /networking skill
 
-This is the guide for the `/networking` skill's **Layer 1 (recurring anchors)** and the shared fit filters. The user's *actual* anchor list lives in their config (`skills["networking"].recurringAnchors`), not here. This file explains how anchors work and how the list grows.
+*Provided as part of your King Intelligence engagement. Not for resale or redistribution.*
 
-## What an anchor is
+This file is a **data-model explainer**. Your actual recurring anchors (the series you reliably attend) live at the path set in `anchorsFile` inside your `## networking` config block in `references/king-intelligence-config.md`. The skill reads THAT file every run; this file just documents the expected shape so you can populate your own.
 
-An anchor is a recurring room the user reliably shows up to: a weekly chapter meeting, a monthly chamber breakfast, a standing meetup. The skill computes each anchor's in-window dates from its cadence and adds the occurrences that fall in the horizon.
+---
 
-**The list starts empty.** A new client has no anchors. They build the list over time: each run surfaces new rooms, and when one becomes a regular, the user tells you and you save it to `recurringAnchors`. Do not invent anchors to fill the list.
+## What an anchors file should contain
 
-## Cadence notation
+### Filter rules block
 
-Each saved anchor carries a cadence rule. "nth Weekday" = the nth occurrence of that weekday in the month (e.g. "3rd Friday" = third Friday). The skill computes the in-window dates from this, then verifies against a source link where one exists. Anything only projected (not confirmed from a source) gets tagged `(date projected — confirm)` in the receipt.
+A short set of rules that apply to ALL events (both Layer 1 anchors and Layer 2 new finds):
 
-A reasonable shape for each saved anchor:
+- **Radius** — how far you will drive (e.g. "30-min drive from ZIP 44XXX"). Everything outside this is out unless the metro carve-out applies.
+- **Metro carve-out** — any exception to the radius (e.g. "a farther city is allowed only if explicitly AI-focused").
+- **ICP balance** — your preferred buyer/peer ratio (e.g. "roughly half buyer rooms — chamber/small-biz/benefits — half peer/referral rooms — AI/founders/consultants").
+- **Out of scope** — types of events the skill must never add (e.g. one-on-one coffees, speaking bookings).
+- **Cost policy** — whether paid events are included and how to flag them.
+
+### Cadence notation
+
+Use "nth Weekday" format: e.g. "1st Tuesday", "3rd Friday" = the nth occurrence of that weekday in the month. The skill computes in-window dates from this cadence, then verifies against a source link where one exists. Anything only projected (not confirmed from a source) gets tagged `(date projected — confirm)` in the receipt.
+
+### Core anchors table (auto-add every run when they fall in the window)
+
+| Series | Cadence | Time | Venue | Cost | Room type | Verify against |
+|---|---|---|---|---|---|---|
+| Your recurring series A | e.g. 1st Tue | 8:00-9:30 AM | Venue name + address | $XX or Free | buyer/general | Link or "call to confirm" |
+| Your recurring series B | e.g. 2nd Fri | 6:00 PM | Venue name + address | Free | peer/AI | Link |
+| **[SKIP — already recurring on calendar]** | Weekly | — | — | — | — | List here so the skill knows to never re-add it. |
+
+Add as many rows as you need. Mark any series that is already a true recurring Google Calendar event with a note to skip it — the dedup step catches it too, but marking it explicitly is cleaner.
+
+### Secondary anchors table (include when they fit the window or a focus argument)
+
+| Series | Cadence | Venue | Cost | Room type | Notes |
+|---|---|---|---|---|---|
+| Optional series A | ~Monthly | Venue | Free | buyer/general | Include under "AI only" filter, etc. |
+
+### Known traps block
+
+Document recurring gotchas here: scheduling clashes between two series that can fall on the same morning, series that go dark for summer months, chambers with no machine-readable calendar (note "call to confirm" rather than pretending coverage), etc.
+
+---
+
+## Example structure
 
 ```
-{ "name": "...", "cadence": "1st Tuesday", "time": "8:00–9:30 AM",
-  "venue": "...", "cost": "...", "roomType": "buyer | peer | mixed",
-  "verify": "https://... (Eventbrite series / org calendar, optional)" }
+## Filter rules
+- Radius: ≤30-min drive from 44XXX
+- Metro carve-out: [City] events allowed only if explicitly AI-focused
+- ICP balance: half buyer rooms, half peer/AI
+- Out of scope: one-on-one coffees, speaking bookings
+- Cost: paid events OK — include, flag the price
+
+## Core anchors
+| Series | Cadence | Time | Venue | Cost | Room type | Verify against |
+|---|---|---|---|---|---|---|
+| Acme BNI Chapter | [SKIP — already recurring on calendar] | — | — | member | referral | Do not add. |
+| Riverside Chamber Breakfast | 1st Tue | 8:00 AM | 123 Main St | $20 | buyer | eventbrite.com/... |
+| NE Regional AI Meetup | 2nd Fri | 6:00 PM | Innovation Hub | Free | peer/AI | meetup.com/... |
+
+## Secondary anchors
+| Series | Cadence | Venue | Cost | Room type | Notes |
+|---|---|---|---|---|---|
+| Sam's Founders Lunch | ~Monthly Tue noon | TBD | ~$30 | mixed | Great for peer intros |
+
+## Known traps
+- 3rd-Tuesday clash: two series can both fall on the same morning — surface as a conflict, do not add both.
+- Summer drift: some series go dark July-Aug; project from cadence, tag (date projected — confirm).
+- Phone-only chambers: no machine-readable calendar — note "call to confirm" in the receipt.
 ```
-
-## Fit rules (apply to everything, both layers)
-
-- **Radius:** keep events within the user's configured `radius` of their `city` (default ~30-min drive). A farther city is allowed only when the event tightly matches a focus the user named (e.g. an AI-only event in the next metro over). Tag those so the longer drive is obvious.
-- **ICP balance:** aim for a balanced mix — roughly half buyer rooms (chambers, small-business groups, the industries the user sells into) and half peer/referral rooms (their professional community, founders, consultants). The user can override with a focus argument.
-- **Out of scope, never add:** one-on-one coffees (referral driven, not discoverable), and speaking bookings (a separate pipeline).
-- **Cost:** paid events are fine — include them, just put the price in the description. Do not filter by price.
-
-## Building the anchor list over time
-
-- When the user says they attend something regularly, or a discovered event clearly belongs to a series they keep going to, offer to save it as an anchor.
-- When a saved cadence drifts from reality (the series moved nights, changed venue), update it in config so the next run is right.
-- **Skip-don't-duplicate:** if the user already has a series as a true recurring event on their calendar, do NOT also add it as an anchor candidate — the dedup will catch it, but skipping up front keeps the receipt clean.
-
-## Known traps to watch for
-
-- **Same-slot clashes:** two anchors (or an anchor and a strong new find) can fall on the same morning. Surface it as a conflict, do not silently add both.
-- **Seasonal drift:** dates for series 2–3 months out are often unposted. Project from the cadence, tag `(date projected — confirm)`, and note the confirm contact in the receipt if the user gave you one.
-- **Phone-only / JS-walled sources:** some chambers and groups run real programming but have no machine-readable calendar. The skill can't see them — note them in the receipt as "call to confirm" rather than pretending coverage.
