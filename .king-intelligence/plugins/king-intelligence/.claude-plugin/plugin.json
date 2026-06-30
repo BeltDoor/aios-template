@@ -1,9 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "king-intelligence",
-  "version": "0.14.0",
+  "version": "0.21.0",
   "displayName": "King Intelligence",
-  "description": "Jacob King's operating-system plugin: adaptable client skills, the /adapt and /update commands, and a session-start update nudge. Per-client wiring survives updates.",
+  "description": "Jacob King's operating-system plugin: adaptable client skills, the /adapt and /update commands, and a silent session-start auto-update. Per-client wiring survives updates.",
   "author": {
     "name": "Jacob King",
     "email": "jacob@king-intelligence.com"

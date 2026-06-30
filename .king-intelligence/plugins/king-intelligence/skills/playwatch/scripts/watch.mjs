@@ -16,13 +16,13 @@
 //     then file_data.file_uri points at the Gemini files/* URI. Requires gws CLI on PATH.
 //   Other hosts: refused.
 //
-// Writes the response to last-result.md (resolved relative to this script, so it follows the skill if moved).
+// Writes the response to <skill-dir>/last-result.md (resolved relative to this script, so it follows the skill if moved).
 // Prints token usage and a rough USD cost at the end.
 
 import { writeFile, mkdir, readFile, stat, unlink } from 'node:fs/promises';
-import { statSync } from 'node:fs';
+import { statSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
@@ -173,6 +173,38 @@ async function prepareDriveVideo(apiKey, url) {
   return { mime_type: active.mimeType, file_uri: active.uri };
 }
 
+// Local video files (e.g. screen recordings on disk): uploaded straight to the Gemini Files
+// API, skipping Drive entirely.
+const VIDEO_EXTS = {
+  '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.m4v': 'video/x-m4v',
+  '.mkv': 'video/x-matroska', '.webm': 'video/webm', '.avi': 'video/x-msvideo',
+  '.mpeg': 'video/mpeg', '.mpg': 'video/mpeg', '.flv': 'video/x-flv', '.wmv': 'video/x-ms-wmv',
+};
+
+function isLocalVideoFile(p) {
+  if (!p) return false;
+  // An http(s) URL is never a local file; anything else is treated as a path.
+  try { const u = new URL(p); if (u.protocol === 'http:' || u.protocol === 'https:') return false; } catch {}
+  const ext = extname(p).toLowerCase();
+  if (!VIDEO_EXTS[ext]) return false;
+  return existsSync(resolve(p));
+}
+
+async function prepareLocalVideo(apiKey, p) {
+  const abs = resolve(p);
+  const ext = extname(abs).toLowerCase();
+  const mimeType = VIDEO_EXTS[ext] || 'video/mp4';
+  const sizeBytes = statSync(abs).size;
+  const name = abs.slice(abs.lastIndexOf('/') + 1);
+  console.log(`Local video: ${name} (${mimeType}, ${(sizeBytes / 1_000_000).toFixed(1)} MB)`);
+  console.log(`Uploading to Gemini Files API...`);
+  const uploaded = await geminiFilesUpload(apiKey, abs, mimeType, name);
+  console.log(`  uploaded as ${uploaded.name}, state=${uploaded.state}`);
+  const active = await geminiFilesWaitActive(apiKey, uploaded);
+  console.log(`  ACTIVE: ${active.uri}`);
+  return { mime_type: active.mimeType, file_uri: active.uri };
+}
+
 // Pricing reference (per 1M tokens, USD). Used for the cost estimate line.
 // Sources: ai.google.dev pricing pages as of 2026-05.
 const PRICING = {
@@ -201,9 +233,10 @@ async function main() {
 
   const youtube = isYouTubeUrl(args.url);
   const drive = isDriveUrl(args.url);
-  if (!youtube && !drive) {
-    console.error(`Refusing: ${args.url} is not a YouTube or Google Drive URL.`);
-    console.error('Supported hosts: youtube.com, youtu.be, drive.google.com. LinkedIn, Vimeo, TikTok, X/Twitter, and direct mp4 URLs will not work.');
+  const local = !youtube && !drive && isLocalVideoFile(args.url);
+  if (!youtube && !drive && !local) {
+    console.error(`Refusing: ${args.url} is not a YouTube URL, a Google Drive URL, or an existing local video file.`);
+    console.error('Supported: youtube.com, youtu.be, drive.google.com, or a local video file path (.mp4/.mov/.mkv/.webm/...). LinkedIn, Vimeo, TikTok, X/Twitter, and direct mp4 URLs will not work.');
     process.exit(2);
   }
 
@@ -212,7 +245,7 @@ async function main() {
   const apiKey = process.env[keyVar];
   if (!apiKey) {
     console.error(`${keyVar} is not set in this process env.`);
-    console.error('Set it as an env var and relaunch the shell, or inject it for this run.');
+    console.error('Set it as an environment variable and relaunch the shell, or inject it for this run.');
     process.exit(2);
   }
 
@@ -224,6 +257,12 @@ async function main() {
   let filePart;
   if (drive) {
     const prepared = await prepareDriveVideo(apiKey, args.url);
+    filePart = {
+      file_data: prepared,
+      ...(Object.keys(videoMetadata).length ? { video_metadata: videoMetadata } : {}),
+    };
+  } else if (local) {
+    const prepared = await prepareLocalVideo(apiKey, args.url);
     filePart = {
       file_data: prepared,
       ...(Object.keys(videoMetadata).length ? { video_metadata: videoMetadata } : {}),

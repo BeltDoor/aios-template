@@ -1,34 +1,31 @@
 #!/usr/bin/env node
 // preview-post.mjs — render a mock LinkedIn post and (optionally) open it in
-// the user's native browser so they SEE the post exactly as their audience will,
+// the native browser so the user SEES the post exactly as their audience will,
 // BEFORE anything is published.
 //
 // Contract:
 //   node preview-post.mjs --text-file <abs.txt> --image <abs.png> \
-//     [--style <name>] [--queue "1 of 3"] [--open] [--name "<display name>"] [--headline "<headline>"]
+//     [--style <name>] [--queue "1 of 3"] [--open]
 //   -> writes <image-dir>/preview.html (post text + the rendered card + LinkedIn
 //      chrome), copies the avatar in, prints the html path. --open launches it.
 //
 // The post BODY text is read from a file (not argv) so multi-paragraph posts
 // never get mangled by shell quoting. The image is the card PNG from render-card.mjs.
-//
-// --name and --headline override the preview display name and headline.
-// These are preview-only; LinkedIn uses the real profile at post time.
 
 import { readFileSync, writeFileSync, copyFileSync, existsSync } from 'fs';
 import { spawn } from 'child_process';
 import { dirname, join, basename } from 'path';
 
-// LAB_DIR is the branded-styles lab directory. Set via env var LAB_DIR or derive
-// from the skill's known location relative to this script.
-const LAB_DIR = process.env.LAB_DIR ||
-  new URL('../../../king-ai-content-app/v2.0/.planning/branded-styles', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1');
-
-const AVATAR_SRC = join(LAB_DIR, 'assets/avatar.png');
-
-// Preview display name + headline — set via args or env vars; no hardcoded values
-const DEFAULT_NAME     = process.env.PREVIEW_NAME     || 'Your Name';
-const DEFAULT_HEADLINE = process.env.PREVIEW_HEADLINE || 'Your headline here';
+// LAB_DIR: path to your branded-styles lab (the branded-styles folder from the content app).
+// Update this to your local absolute path before running.
+const LAB_DIR = process.env.LAB_DIR || '';
+const AVATAR_SRC = LAB_DIR ? LAB_DIR + '/assets/avatar.png' : '';
+// CHROME: path to your Chrome executable (or leave blank to use system default open).
+const CHROME = process.env.CHROME_PATH || '';
+// Preview only — NOT published. LinkedIn uses the user's real profile headline at post time.
+// Set NAME and HEADLINE to match your LinkedIn profile for an accurate preview.
+const NAME = process.env.PREVIEW_NAME || 'Your Name';
+const HEADLINE = process.env.PREVIEW_HEADLINE || 'Your Title · Your tagline here';
 
 // --- args --------------------------------------------------------------------
 const args = {};
@@ -43,11 +40,9 @@ const textFile = args['text-file'];
 const image    = args.image;
 const style    = args.style || 'quote';
 const queue    = args.queue || '';
-const NAME     = args.name     || DEFAULT_NAME;
-const HEADLINE = args.headline || DEFAULT_HEADLINE;
 
 if (!textFile || !image || !existsSync(textFile) || !existsSync(image)) {
-  console.error('usage: preview-post.mjs --text-file <abs.txt> --image <abs.png> [--style <name>] [--queue "1 of 3"] [--open] [--name "<name>"] [--headline "<headline>"]');
+  console.error('usage: preview-post.mjs --text-file <abs.txt> --image <abs.png> [--style <name>] [--queue "1 of 3"] [--open]');
   process.exit(2);
 }
 
@@ -123,13 +118,18 @@ writeFileSync(htmlPath, html);
 if (args.open) {
   const fileUrl = 'file:///' + htmlPath.replace(/\\/g, '/');
   try {
-    // detached + unref: a NEW window comes to the foreground,
+    // detached + unref: a NEW window comes to the foreground (a background tab behind VS Code does not),
     // and the script returns immediately instead of blocking until the browser closes.
-    const child = spawn(process.platform === 'win32' ? 'cmd' : 'open',
-      process.platform === 'win32'
-        ? ['/c', 'start', '', htmlPath.replace(/\//g, '\\')]
-        : [htmlPath],
-      { detached: true, stdio: 'ignore' });
+    let child;
+    if (CHROME && existsSync(CHROME)) {
+      child = spawn(CHROME, ['--new-window', fileUrl], { detached: true, stdio: 'ignore' });
+    } else if (process.platform === 'darwin') {
+      child = spawn('open', [htmlPath], { detached: true, stdio: 'ignore' });
+    } else if (process.platform === 'win32') {
+      child = spawn('cmd', ['/c', 'start', '', htmlPath.replace(/\//g, '\\')], { detached: true, stdio: 'ignore' });
+    } else {
+      child = spawn('xdg-open', [htmlPath], { detached: true, stdio: 'ignore' });
+    }
     child.unref();
   } catch (e) { console.error('could not auto-open browser: ' + e.message + ' (open manually: ' + htmlPath + ')'); }
 }

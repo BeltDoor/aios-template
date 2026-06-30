@@ -1,0 +1,1 @@
+Your toolkit now updates itself quietly in the background, so your skills stay current without you running anything.

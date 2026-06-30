@@ -1,8 +1,8 @@
 ---
-description: "Run the session-closing ritual: update folder notes, draft memory entries, write a next-session briefing, and commit + push. Type when wrapping up for the day."
+description: "Closes out a work session — files notes, memory, and backs everything up"
 disable-model-invocation: true
-argument-hint: "[optional note about the session]"
-allowed-tools: Read, Write, Bash, Glob, Grep
+argument-hint: "[--dry-run]"
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
 # end-session

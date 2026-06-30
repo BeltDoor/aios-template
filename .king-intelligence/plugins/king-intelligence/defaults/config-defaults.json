@@ -1,0 +1,15 @@
+{
+  "_comment": "Canonical King Intelligence config keys with safe CLIENT defaults. The migration step in /king-intelligence:update merges any ABSENT or BLANK key into the client's references/king-intelligence-config.md additively, and NEVER changes a value the client already set. Section + key order here is the order new keys/sections get written. The script paths are repo-relative (.claude/scripts/...): the migration COPIES the maintenance scripts there from the plugin and refreshes them on each update, so a skill that shells out (end-session) always resolves them with a plain path (a skill's shell call does not expand ${CLAUDE_PLUGIN_ROOT}).",
+  "sections": {
+    "end-session": {
+      "conveyorScript": ".claude/scripts/memory-conveyor.mjs",
+      "orgCheckScript": ".claude/scripts/org-check.mjs",
+      "scratchpadFile": ".claude/session-scratch.md",
+      "folderLayoutDoc": "references/folder-layout.md"
+    },
+    "org-check": {
+      "containers": "clients, projects",
+      "layoutDoc": "references/folder-layout.md"
+    }
+  }
+}

@@ -2,7 +2,7 @@
 // pick-style.mjs — return the next image variant in the rotation, advance the cursors.
 // Prints "<style> <theme>" (space-separated): the layout template AND the on-brand
 // color scheme to use. Two independent rotations so no two consecutive cards look
-// identical (variety rule: never the same style twice in a row).
+// identical.
 //   node pick-style.mjs          -> prints "<style> <theme>" AND advances both cursors
 //   node pick-style.mjs --peek   -> prints "<style> <theme>", does NOT advance (re-renders/overrides)
 //   node pick-style.mjs --list   -> prints the whole queue config

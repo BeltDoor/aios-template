@@ -1,5 +1,7 @@
 # Meeting Type Detection Rules
 
+*Provided as part of your King Intelligence engagement. Not for resale or redistribution.*
+
 Auto-detect the meeting type from transcript content. Use these signal words and patterns to classify. If multiple types match, prefer the one with more signals.
 
 ## Types
@@ -18,7 +20,7 @@ Auto-detect the meeting type from transcript content. Use these signal words and
 ### coaching
 **Display name:** Coaching Session
 **Signals:**
-- Client already paying for coaching
+- Client already paying for coaching ($250/session or similar)
 - Screen sharing, tool installation, demos of the user's tools
 - Teaching/explaining concepts ("MCP", "how this works", "let me show you")
 - Troubleshooting technical issues (Node.js, Claude Code, extensions)
@@ -37,7 +39,7 @@ Auto-detect the meeting type from transcript content. Use these signal words and
 ### demo
 **Display name:** Product Demo
 **Signals:**
-- User showing a product or service
+- The user showing a product (Content App, cold email pipeline, RFQ system, etc.)
 - "Let me show you" / "Here's how it works" / "Watch this"
 - Client reacting to features ("That's cool" / "How does that work?")
 - Trial or next steps discussed after showing

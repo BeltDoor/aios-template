@@ -1,5 +1,7 @@
 # Meeting Summary Template
 
+*Provided as part of your King Intelligence engagement. Not for resale or redistribution.*
+
 Use this structure for all meeting summaries. Omit sections that don't apply (see the matrix at the bottom).
 
 ## Template
@@ -51,7 +53,7 @@ Use this structure for all meeting summaries. Omit sections that don't apply (se
 
 > "[Another quote if relevant]"
 
-[2-4 quotes max. Choose the ones that would help the user remember the vibe of the meeting.]
+[2-4 quotes max. Choose the ones that best capture the vibe of the meeting.]
 
 ---
 
@@ -73,7 +75,7 @@ Use this structure for all meeting summaries. Omit sections that don't apply (se
 
 ## Next Steps
 
-### You
+### User
 - [ ] [Specific action] (by [date if applicable])
 
 ### [Client Name]

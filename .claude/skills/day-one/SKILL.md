@@ -34,7 +34,7 @@ The plain-English "what even is Git Bash" explainer for the user lives in [`/ref
 
 The full King Intelligence toolkit ships INSIDE this clone (the bundled `.king-intelligence` folder). No key is needed to use it — the key only turns on live updates later. Your job here is to make sure it's switched on. Still before saying anything, run `claude plugin list` in Bash:
 
-- **The output includes `king-intelligence`** → already installed. Say nothing, proceed.
+- **The output includes `king-intelligence`** → already installed. Say one line so the check is visible (you're usually on a screen-share): *"Your King Intelligence toolkit is confirmed and ready."* Then proceed.
 - **It's missing** → install it from the bundle that came with the clone. Confirm you're in the snowball folder (`pwd`), confirm the bundle is there (`ls .king-intelligence/.claude-plugin/marketplace.json`), then run:
 
   ```
@@ -88,9 +88,9 @@ After the silent OS detect, the silent toolkit check, and the bundle parse, open
 >
 > Day One is short. It's the on-ramp.
 >
-> First I'll turn on your backup so your work is safe. Then three quick things: get your voice tool working, two settings that make me easy to drive, and a fast look at your business so I know who I'm working with.
+> Three quick things: get your voice tool working, two settings that make me easy to drive, and a fast look at your business so I know who I'm working with. Then I'll make sure your work is safely backed up.
 >
-> Once that's done — your Snowball is ready to start building real tools for you.
+> Once that's done, your Snowball is ready to start building real tools for you.
 >
 > ---
 >
@@ -103,57 +103,6 @@ Day One — Step <N> of 3
 ```
 
 "Type **next**" gates between steps. Reserve `AskUserQuestion` for real either/or choices inside the steps.
-
-## First — turn on the backup (before Step 1)
-
-The kickoff cloned a starter copy from my template. Before anything else, turn it into the client's OWN private, backed-up GitHub repo — and **prove it's real before you move on.** This step has silently half-failed on past setups (origin left pointing at my template, or a publish that made no commit), and nobody caught it until a later push failed. The discipline that kills that: **commit first, then publish, then verify against GitHub for real, then repair it yourself if the verify fails.** Never trust the button; trust the check.
-
-**1. Detach + make the first save (you drive this in Bash — this alone fixes half the old bug).**
-Confirm you're in the snowball folder first (`pwd` — never run this anywhere else), then:
-```
-rm -rf .git
-git init -b main
-git add -A
-git commit -m "Snowball initial setup"
-```
-`rm -rf .git` severs the tie to `BeltDoor/aios-template`; the init + commit guarantee a first save exists (publishing with zero commits was half the recurring failure). Confirm with `git log --oneline -1`.
-
-**2. Create the private repo + push (the client's one click).**
-> Click the **Source Control** icon on the left bar (the branch icon). Click **Publish to GitHub**. If it asks you to sign in to GitHub, do it (a browser opens, approve it). Choose **"Publish to GitHub private repository"** and name it **snowball**.
-
-Stress **private** — their real business data lives here. No GitHub account yet? The sign-in screen has a free "Create an account" link.
-
-**3. VERIFY FOR REAL — do not skip, do not trust the button (you drive this in Bash).**
-Wait for the client to confirm they clicked through. Then check against GitHub itself, not just a local string:
-```
-git remote -v          # origin MUST show github.com/<their-account>/snowball, NOT BeltDoor
-git ls-remote origin   # actually contacts GitHub — success proves the repo exists, is reachable, and auth works
-git log --oneline -1   # the commit exists (guaranteed by step 1)
-```
-The load-bearing check is **`git ls-remote origin`** — a clean local `git remote -v` can still be a dead backup. If `git ls-remote origin` errors, or `git remote -v` is empty / still shows `BeltDoor`, the publish did NOT take → go to step 4. Only when `git ls-remote origin` succeeds AND origin is the client's own account do you tell them it's backed up.
-
-**4. Repair it yourself if the button flaked (you drive this — this is the actual fix for the recurring bug).**
-Do NOT just re-loop the button. Repair from the terminal:
-- **Fast path if `gh` is already installed + authed** (`gh auth status` succeeds): one command does everything —
-  ```
-  git remote remove origin 2>/dev/null; gh repo create snowball --private --source=. --remote=origin --push
-  ```
-  (Don't install `gh` just for this — a stock Mac has no Homebrew, so it isn't guaranteed. If it's not there, use the next path.)
-- **No-install path (works everywhere):** guide a 30-second manual repo create —
-  > Go to **github.com/new**, name it **snowball**, set it to **Private**, click **Create repository**, then paste me the URL it shows you.
-
-  When they paste the URL:
-  ```
-  git remote remove origin 2>/dev/null
-  git remote add origin <THEIR-REPO-URL>
-  git branch -M main
-  git push -u origin main
-  ```
-  The push authenticates through VS Code's built-in GitHub sign-in — no token needed.
-
-Re-run the step-3 checks after any repair. **Loop step 4 until `git ls-remote origin` succeeds. Never proceed to Step 1 on an unverified backup** — a broken backup that looks fine is exactly the failure we're killing.
-
-On success: *"Done — your Snowball is backed up to your own private GitHub, and I confirmed it's live, not just set up. Every time we wrap up I save and back it up automatically; you won't have to think about it."* Then proceed to Step 1.
 
 ## Step 1 — Typeless voice tool (strong soft gate)
 
@@ -313,6 +262,82 @@ Display the written paragraph back:
 
 Write the final paragraph to `snowball/CLAUDE.md` § 1 Identity, replacing the empty stub. Do **not** touch any other section of CLAUDE.md.
 
+## Backup — keep the work safe (the last setup task)
+
+By now they've seen what the Snowball can do. The last setup task is making sure the work can't be lost. Always make a local save first, then handle the off-machine backup, and skip GitHub entirely if the cloud already has it.
+
+**1. Always make the first local save (you drive this in Bash).**
+Confirm you're in the snowball folder first (`pwd`, never run this anywhere else), then:
+```
+rm -rf .git
+git init -b main
+git add -A
+git commit -m "Snowball initial setup"
+```
+`rm -rf .git` severs the tie to `BeltDoor/aios-template`; the init + commit guarantee a first save exists. Confirm with `git log --oneline -1`.
+
+**2. Is the folder already in a cloud-synced home? Check before asking for anything.**
+Read the path from `pwd`:
+- contains `OneDrive` → OneDrive already backs it up
+- contains `Library/Mobile Documents` (that's iCloud Drive) → iCloud already backs it up
+- contains `Dropbox` → Dropbox already backs it up
+
+If any match, the off-machine backup is already handled. Say so plainly, and you're done with backup:
+
+> Good news: your Snowball lives in [OneDrive / iCloud / Dropbox], so every change backs up to the cloud automatically. Nothing to set up, your work is safe. (I also save a version locally every time we wrap up.)
+
+Then go to the handoff. Do NOT run the GitHub step.
+
+**3. Not in a synced folder? Offer GitHub backup (optional, soft gate).**
+`AskUserQuestion`:
+
+1. **"Turn on cloud backup" (Recommended)** runs the publish + verify + self-repair below.
+2. **"Skip for now"** goes to the skip path.
+
+**If they choose backup**, turn the local save into their OWN private, backed-up GitHub repo, and prove it's real before you move on. The button has silently half-failed on past setups (origin left pointing at the template, or a publish that made no commit), so verify against GitHub for real and repair it yourself if the verify fails. Never trust the button, trust the check.
+
+**3a. Create the private repo (the client's one click).**
+> Click the **Source Control** icon on the left bar (the branch icon). Click **Publish to GitHub**. If it asks you to sign in to GitHub, do it (a browser opens, approve it). Choose **"Publish to GitHub private repository"** and name it **snowball**.
+
+Stress **private**: their real business data lives here. No GitHub account yet? The sign-in screen has a free "Create an account" link.
+
+**3b. VERIFY FOR REAL, do not trust the button (you drive this in Bash).**
+Wait for them to confirm they clicked through, then check against GitHub itself, not just a local string:
+```
+git remote -v          # origin MUST show github.com/<their-account>/snowball, NOT BeltDoor
+git ls-remote origin   # actually contacts GitHub: success proves the repo exists, is reachable, and auth works
+git log --oneline -1   # the commit exists (guaranteed by step 1)
+```
+The load-bearing check is **`git ls-remote origin`**: a clean local `git remote -v` can still be a dead backup. If it errors, or `git remote -v` is empty / still shows `BeltDoor`, the publish did NOT take, go to 3c. Only when `git ls-remote origin` succeeds AND origin is their own account do you tell them it's backed up.
+
+**3c. Repair it yourself if the button flaked.**
+Do NOT just re-loop the button. Repair from the terminal:
+- **Fast path if `gh` is installed + authed** (`gh auth status` succeeds):
+  ```
+  git remote remove origin 2>/dev/null; gh repo create snowball --private --source=. --remote=origin --push
+  ```
+  (Don't install `gh` just for this; a stock Mac has no Homebrew, so it isn't guaranteed. If it's not there, use the next path.)
+- **No-install path (works everywhere):** guide a 30-second manual repo create:
+  > Go to **github.com/new**, name it **snowball**, set it to **Private**, click **Create repository**, then paste me the URL it shows you.
+
+  When they paste the URL:
+  ```
+  git remote remove origin 2>/dev/null
+  git remote add origin <THEIR-REPO-URL>
+  git branch -M main
+  git push -u origin main
+  ```
+  The push authenticates through VS Code's built-in GitHub sign-in, no token needed.
+
+Re-run the 3b checks after any repair. Loop 3c until `git ls-remote origin` succeeds. On success:
+
+> Done: your Snowball is backed up to your own private GitHub, and I confirmed it's live, not just set up. Every time we wrap up I save and back it up automatically; you won't have to think about it.
+
+**Skip path** (they chose "Skip for now"): one plain-English heads-up, then move on. Don't gate Day One on it:
+
+1. *"No problem. Heads-up: without a cloud backup, your work only lives on this laptop. If it's lost or the laptop dies, the work goes with it. I'll remind you next session, and you can turn it on any time."*
+2. Write `snowball/onboarding/backup-unconfigured.md` containing one line: *"Backup skipped during /day-one on YYYY-MM-DD. /begin-session should re-prompt."* (Substitute today's date.) Then go to the handoff.
+
 ## Handoff to /skill-builder (soft ask)
 
 First, one short line introducing the toolkit, in plain words:
@@ -358,13 +383,13 @@ You (Jacob at first, possibly future facilitators) are on Zoom or in-person, scr
 - [ ] **Git installed** — the one unavoidable install (the Snowball *is* a git repo; without it Step 1's clone fails, like it did on an early setup call). Windows: paste `winget install --id Git.Git -e --source winget` into the VS Code terminal (winget ships with Win10 1809+/Win11). Mac: run `xcode-select --install` and click Install. Then **close and reopen VS Code** so it detects Git. Verify with `git --version`.
 - [ ] **Windows only — confirm the shell is Git Bash, not PowerShell.** After the Git install + VS Code reopen, run `uname`. `MINGW...`/`MSYS...` = good (the AI is on Git Bash, the command line the whole Snowball is written in). An error or anything else = it's on PowerShell, and onboarding breaks on step one. `/day-one` auto-checks and self-repairs this at its very start, so this is just a belt-and-suspenders glance. Why it matters, in plain English: [`references/whats-getting-installed.md`](../../../references/whats-getting-installed.md).
 - [ ] **Node.js installed** — a small engine a few skills run on. Windows: `winget install --id OpenJS.NodeJS.LTS -e --source winget`. Mac: download the **LTS** installer from [nodejs.org](https://nodejs.org) and double-click it (no Homebrew needed — see the explainer). Close and reopen VS Code after; verify with `node --version`.
-- [ ] GitHub account exists (free) — or create one during the publish step; the sign-in screen has a "Create an account" link. The happy path is VS Code's "Publish to GitHub" (no `gh`, no token), but the backup step now **commits first, verifies against GitHub for real (`git ls-remote origin`), and self-repairs from the terminal** if the button flakes — so a half-failed publish gets caught and fixed in the session instead of surfacing later as a dead backup.
-- [ ] `king-intelligence.com/levelup` → enter passcode → run **Step 1** (clones the starter Snowball into Downloads) → choose **File → Open Folder** and pick the `snowball` folder → paste the **Step 2** kickoff bundle into Claude Code chat. `/day-one` starts, and its FIRST action turns the cloned folder into the client's own private GitHub repo (detaches the template, then guides "Publish to GitHub private repository").
+- [ ] GitHub account (OPTIONAL now). Backup is the LAST setup task, and it's only needed if the client's snowball folder is NOT already in OneDrive / iCloud / Dropbox. Those drives back up on their own, so `/day-one` detects them and skips GitHub entirely. When GitHub backup IS used, the happy path is VS Code's "Publish to GitHub" (no `gh`, no token); the step still **commits first, verifies against GitHub for real (`git ls-remote origin`), and self-repairs from the terminal** if the button flakes. A client whose folder already syncs to the cloud needs no GitHub account at all.
+- [ ] `king-intelligence.com/levelup` → enter passcode → run **Step 1** (clones the starter Snowball into Downloads) → choose **File → Open Folder** and pick the `snowball` folder → paste the **Step 2** kickoff bundle into Claude Code chat. `/day-one` starts with the three quick steps; backup is now its LAST step (smart: skipped when the folder already lives in OneDrive / iCloud / Dropbox, otherwise GitHub backup is offered as an optional, skippable step).
 - [ ] **Toolkit is keyless now — no install lines, no email key needed.** The full King Intelligence toolkit ships INSIDE the clone (the bundled `.king-intelligence` folder). `/day-one` installs it from that bundle at the start and has the client reopen VS Code once so the `/king-intelligence:` commands register. The per-client key is no longer part of setup; it only unlocks live updates (`/king-intelligence:update`) later, and gets sent by email when the client signs on. So the kickoff page is now two steps (clone → Day One), not three.
 
 **If the client asks what any of these installs are, don't improvise jargon.** The plain-English, no-background answers for every tool above (VS Code, Git, GitHub, Node.js, Git Bash vs PowerShell, and why we skip Homebrew on Mac) live in [`references/whats-getting-installed.md`](../../../references/whats-getting-installed.md). Read it to them.
 
-> Repo creation moved INTO `/day-one` (the "First — turn on the backup" step) and uses VS Code's built-in Publish-to-GitHub. Decision: `decisions/2026-05-28-onboarding-flow-publish-to-github.md`, **hardened 6/3/26** (commit-first + live `git ls-remote` verify + terminal self-repair) after the publish silently half-failed on two early client setups. (`BeltDoor/aios-template` is a normal public repo, not a GitHub "template" repo, so the old "Use this template" step never actually applied.)
+> Repo creation lives in `/day-one`'s "Backup — keep the work safe (the last setup task)" step and uses VS Code's built-in Publish-to-GitHub. As of 6/30/26 backup runs LAST (after the client has seen the value), is SKIPPED when the folder already syncs to OneDrive / iCloud / Dropbox, and is OPTIONAL (soft gate) otherwise. Decision: `decisions/2026-05-28-onboarding-flow-publish-to-github.md`, **hardened 6/3/26** (commit-first + live `git ls-remote` verify + terminal self-repair) after the publish silently half-failed on two early client setups, **moved-to-last + made smart/optional 6/30/26**. (`BeltDoor/aios-template` is a normal public repo, not a GitHub "template" repo, so the old "Use this template" step never actually applied.)
 
 ### Pacing rules (during /day-one)
 

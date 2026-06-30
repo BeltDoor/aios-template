@@ -13,49 +13,22 @@
 //   (midnight / gold / bone). Omit it to use the brand default colors.
 //
 // Styles are <name>.tpl.html files in the lab's templates/ dir, filled with the
-// brand config from brands.json. Add a style by dropping a new template
-// (same {{TOKENS}}) and appending its name to state/image-queue.json.
-//
-// LAB_DIR: set via env var LAB_DIR, or defaults to the branded-styles lab
-// relative to this skill's location. Override at runtime as needed.
-//
-// CHROME: set via env var CHROME_PATH, or discovered automatically per platform.
+// King Intelligence brand (brands.json id "king"). Add a style by dropping a new
+// template (same {{TOKENS}}) and appending its name to state/image-queue.json.
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { execFileSync } from 'child_process';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 // --- config (the seam) -------------------------------------------------------
-// LAB_DIR: override with LAB_DIR env var, or compute relative to this skill
-const __dir = dirname(fileURLToPath(import.meta.url));
-const LAB_DIR = process.env.LAB_DIR ||
-  join(__dir, '../../../king-ai-content-app/v2.0/.planning/branded-styles');
-
-// Chrome path: override with CHROME_PATH env var, or discover per platform
-function findChrome() {
-  if (process.env.CHROME_PATH) return process.env.CHROME_PATH;
-  if (process.platform === 'win32') {
-    const candidates = [
-      'C:/Program Files/Google/Chrome/Application/chrome.exe',
-      'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
-    ];
-    return candidates.find(existsSync) || null;
-  }
-  if (process.platform === 'darwin') {
-    return '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-  }
-  // Linux
-  const linuxCandidates = [
-    '/usr/bin/google-chrome',
-    '/usr/bin/chromium-browser',
-    '/usr/bin/chromium',
-  ];
-  return linuxCandidates.find(existsSync) || 'google-chrome';
-}
-const CHROME = findChrome();
-
-const BRAND_ID = process.env.BRAND_ID || 'king';
+// LAB_DIR: absolute path to your branded-styles lab folder (from the content app).
+// Set the LAB_DIR env var or edit this constant to your local path before running.
+const LAB_DIR  = process.env.LAB_DIR || '';
+// CHROME: absolute path to your Chrome executable. Set CHROME_PATH env var or edit here.
+// On Mac: typically '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+// On Windows: typically 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+const CHROME   = process.env.CHROME_PATH || '';
+const BRAND_ID = 'king';
 const W = 1080, H = 1350; // 4:5 portrait, LinkedIn-friendly
 
 // --- args --------------------------------------------------------------------
@@ -69,17 +42,16 @@ const quote     = args.quote;
 const highlight = args.highlight || '';
 const out       = args.out;
 
+if (!LAB_DIR) { console.error('LAB_DIR env var not set — set it to the absolute path of your branded-styles folder'); process.exit(3); }
 if (!quote || !out) {
   console.error('usage: render-card.mjs --style <name> --quote "<text>" [--highlight "<phrase>"] --out <abs.png>');
   process.exit(2);
 }
-if (!CHROME || !existsSync(CHROME)) {
-  console.error('Chrome not found. Set CHROME_PATH env var to the Chrome/Chromium executable.');
-  process.exit(3);
-}
+if (!CHROME) { console.error('CHROME_PATH env var not set and no default Chrome path configured'); process.exit(3); }
+if (!existsSync(CHROME)) { console.error('Chrome not found at ' + CHROME); process.exit(3); }
 
 // --- brand config ------------------------------------------------------------
-const brands = JSON.parse(readFileSync(join(LAB_DIR, 'brands.json'), 'utf8'));
+const brands = JSON.parse(readFileSync(LAB_DIR + '/brands.json', 'utf8'));
 const b = brands.find((x) => x.id === BRAND_ID);
 if (!b) { console.error('brand "' + BRAND_ID + '" not in brands.json'); process.exit(4); }
 
@@ -97,15 +69,15 @@ if (args.theme) {
 }
 
 // --- style template (fallback to quote) --------------------------------------
-let tplPath = join(LAB_DIR, 'templates', style + '.tpl.html');
+let tplPath = LAB_DIR + '/templates/' + style + '.tpl.html';
 if (!existsSync(tplPath)) {
   console.error('style "' + style + '" has no template, falling back to quote');
-  tplPath = join(LAB_DIR, 'templates/quote.tpl.html');
+  tplPath = LAB_DIR + '/templates/quote.tpl.html';
 }
 const tpl = readFileSync(tplPath, 'utf8');
 
 // --- fill tokens (mirrors the lab's render.mjs) ------------------------------
-const assetUrl = (f) => 'file:///' + join(LAB_DIR, 'assets', f).replace(/\\/g, '/');
+const assetUrl = (f) => 'file:///' + LAB_DIR + '/assets/' + f;
 const logoHtml = b.logo
   ? `<img src="${assetUrl(b.logo)}" alt="${b.name}">`
   : `<div class="mono">${b.initials}</div>`;

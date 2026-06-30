@@ -7,7 +7,7 @@ since: 0.11.0
 
 ## What this is
 
-The way to give your setup a real memory that doesn't bloat. Facts get saved one per small file, with a single lean index that loads every session. The index stays short on purpose so it always fits, and older notes age out of it without being lost. This is the structure, not Jacob's specific notes.
+The way to give your setup a real memory that doesn't bloat. Facts get saved one per small file, with a single lean index that loads every session. The index stays short on purpose so it always fits, and older notes age out of it without being lost. This is the structure, not your specific notes.
 
 ## Canonical content
 
