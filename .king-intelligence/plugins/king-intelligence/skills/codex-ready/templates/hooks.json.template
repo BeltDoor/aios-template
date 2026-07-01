@@ -1,0 +1,29 @@
+{
+  "_comment": "TEMPLATE: Codex PreToolUse guards. The codex-ready skill points these at the repo's EXISTING Claude guard scripts when possible, because Codex passes the same flattened stdin JSON (tool_name, tool_input.command at the root) and treats exit code 2 as a block, so most guards port unchanged. Honest caveat: Codex tool-blocking is a guardrail, not a hard boundary, so state the same rules in prose in AGENTS.md. Loads only when the project is trusted; run /hooks once in the Codex CLI to trust them. The matcher field is a regex.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__<server>__<tool_a|tool_b>",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/<your-guard>.js\"",
+            "timeout": 10,
+            "statusMessage": "Running guard"
+          }
+        ]
+      },
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/<your-bash-guard>.js\"",
+            "timeout": 10,
+            "statusMessage": "Checking command"
+          }
+        ]
+      }
+    ]
+  }
+}
