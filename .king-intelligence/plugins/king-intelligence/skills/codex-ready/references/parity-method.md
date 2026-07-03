@@ -13,7 +13,7 @@ How the audit decides whether each of a repo's skills will work in Codex. Read e
 - **Chains other skills via the Skill tool** ("run /stop-slop", "calls /email", "invoke /speaker-id").
 - **Spawns subagents via the Agent/Task tool** (parallel fan-out, "spawn a subagent", judge passes).
 - **Writes or reads the Claude auto-memory system** (the per-project memory the tool manages itself).
-- **Depends on a plugin** (a marketplace plugin bundle, or `claude plugin` CLI).
+- **Depends on a plugin** (a King Intelligence / Telegram / Pocock bundle, or `claude plugin` CLI).
 - **Uses a claude.ai-hosted MCP with no Codex equivalent**, or Claude-only tools like TodoWrite.
 - **Is a session ritual** wired into the tool's own lifecycle (begin/end session, checkpoint).
 

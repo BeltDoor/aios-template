@@ -1,3 +1,7 @@
+<!-- TEMPLATE. The codex-ready skill fills the {{PLACEHOLDERS}} from the repo's own CLAUDE.md, -->
+<!-- then the sync script appends the shared operating rules below it and writes AGENTS.md. -->
+<!-- Keep the result self-contained (AGENTS.md cannot @import), ~150 lines, under 32 KB. -->
+
 # AGENTS.md ({{TOOL_OR_BUSINESS_NAME}} operating brief, for OpenAI Codex)
 
 **This file is GENERATED. Do not hand-edit it.** Edit the preamble source or the rule files, then run the sync script. The canonical, fuller instructions live in `CLAUDE.md`; this is its Codex adapter.

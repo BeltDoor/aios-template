@@ -1,7 +1,5 @@
 # Meeting Type Detection Rules
 
-*Provided as part of your King Intelligence engagement. Not for resale or redistribution.*
-
 Auto-detect the meeting type from transcript content. Use these signal words and patterns to classify. If multiple types match, prefer the one with more signals.
 
 ## Types
@@ -39,11 +37,11 @@ Auto-detect the meeting type from transcript content. Use these signal words and
 ### demo
 **Display name:** Product Demo
 **Signals:**
-- The user showing a product (Content App, cold email pipeline, RFQ system, etc.)
+- The user showing a product (Content App, cold email pipeline, RFQ system)
 - "Let me show you" / "Here's how it works" / "Watch this"
 - Client reacting to features ("That's cool" / "How does that work?")
 - Trial or next steps discussed after showing
-- Screen sharing is one-directional (user showing)
+- Screen sharing is one-directional (the user showing)
 
 ### proposal-review
 **Display name:** Proposal Review

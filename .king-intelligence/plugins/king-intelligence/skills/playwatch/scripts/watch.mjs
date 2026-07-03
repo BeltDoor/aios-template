@@ -245,7 +245,7 @@ async function main() {
   const apiKey = process.env[keyVar];
   if (!apiKey) {
     console.error(`${keyVar} is not set in this process env.`);
-    console.error('Set it as an environment variable and relaunch the shell, or inject it for this run.');
+    console.error('On Windows, set it as a User env var via setx and relaunch the shell, or inject it for this run.');
     process.exit(2);
   }
 

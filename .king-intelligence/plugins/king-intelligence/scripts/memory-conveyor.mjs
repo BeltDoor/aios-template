@@ -86,6 +86,7 @@ const MEMORY_PATH = path.join(MEM_DIR, 'MEMORY.md');
 const EOL = '\n';                      // MEMORY.md is LF-only (verified)
 const HARD_CAP = 25600;                // the real 25KB load cliff
 const BUDGET = 24000;                  // safety budget: ~1.3KB headroom under the cliff
+const LINE_BUDGET = 185;               // Claude Code loads first 200 LINES *or* 25KB, whichever first; cap lines too (margin under 200)
 const MAX_LINE = 240;                  // max bytes for a single one-liner index entry
 const PIN_TAG = '[PIN]';
 
@@ -251,17 +252,20 @@ function build(sections, preamble) {
   // assemble kept index up to BUDGET (pins always kept; fresh newest-first until full)
   const head = preamble.trimEnd() + EOL + EOL;
   let bytes = Buffer.byteLength(head, 'utf8');
+  let lineCount = head.split('\n').length;                           // lines used so far (each entry below = 1 line + 1 blank)
 
   const pinLines = pins.map(renderKept);
-  for (const l of pinLines) bytes += Buffer.byteLength(l + EOL + EOL, 'utf8');
+  for (const l of pinLines) { bytes += Buffer.byteLength(l + EOL + EOL, 'utf8'); lineCount += 2; }
   if (bytes > BUDGET) throw new Error(`PINNED entries alone exceed budget (${bytes} > ${BUDGET}). Demote some [PIN] entries.`);
+  if (lineCount > LINE_BUDGET) throw new Error(`PINNED entries alone exceed the ${LINE_BUDGET}-line budget (${lineCount} lines). Demote some [PIN] entries.`);
 
   const freshKept = [];
   for (const s of fresh) {
     const cost = Buffer.byteLength(renderKept(s) + EOL + EOL, 'utf8');
-    if (bytes + cost > BUDGET) break;                                 // rest overflow to archive
+    if (bytes + cost > BUDGET || lineCount + 2 > LINE_BUDGET) break;  // overflow to archive on byte OR line cap
     freshKept.push(s);
     bytes += cost;
+    lineCount += 2;
   }
   const freshOverflow = fresh.slice(freshKept.length);
 
@@ -358,6 +362,46 @@ function enforce() {
   console.log(`Memory: kept ${r.pins.length + r.freshKept.length} loading, aged ${r.archivedSecs.length} older notes into ${path.basename(arcPath)} (nothing deleted).`);
 }
 
+// ---------- orphan check (report-only) ----------
+
+/** Every topic .md file sitting flat in MEM_DIR (excludes MEMORY.md, ARCHIVE-*.md, and
+ *  anything under _snapshots/ since readdirSync here is non-recursive). */
+function listTopicFiles() {
+  return fs.readdirSync(MEM_DIR, { withFileTypes: true })
+    .filter(e => e.isFile() && e.name.endsWith('.md'))
+    .map(e => e.name)
+    .filter(n => n !== 'MEMORY.md' && !/^ARCHIVE-/.test(n));
+}
+
+/** Union of every `.md` filename linked from MEMORY.md or any ARCHIVE-*.md — the set of
+ *  topic files a session can actually reach. */
+function referencedFiles() {
+  const indexFiles = fs.readdirSync(MEM_DIR, { withFileTypes: true })
+    .filter(e => e.isFile() && e.name.endsWith('.md'))
+    .map(e => e.name)
+    .filter(n => n === 'MEMORY.md' || /^ARCHIVE-/.test(n));
+  const referenced = new Set();
+  for (const f of indexFiles) {
+    const text = fs.readFileSync(path.join(MEM_DIR, f), 'utf8');
+    for (const m of text.matchAll(/\]\(([^)\s]+\.md)\)/g)) referenced.add(m[1]);
+  }
+  return referenced;
+}
+
+/** Report-only: topic files indexed by NEITHER MEMORY.md nor any archive, i.e. no session can
+ *  ever find them by reading the loaded index. Never writes anything — a human (or a future
+ *  audit pass) decides where each orphan belongs. Runs after every mode so it rides along free. */
+function orphanCheck() {
+  if (!fs.existsSync(MEMORY_PATH)) return;                          // nothing to check yet
+  const orphans = listTopicFiles().filter(f => !referencedFiles().has(f)).sort();
+  if (orphans.length === 0) {
+    console.log('Orphan check: 0 unindexed topic files — everything is reachable from MEMORY.md or an archive.');
+    return;
+  }
+  console.log(`\nWARNING — orphan check: ${orphans.length} topic file(s) exist on disk but aren't linked from MEMORY.md or any ARCHIVE-*.md, so no session can find them. Report-only, nothing auto-indexed:`);
+  orphans.forEach(f => console.log('   - ' + f));
+}
+
 // ---------- entry ----------
 
 const mode = ['--analyze', '--collapse', '--verify', '--enforce'].find(m => ARGV.includes(m));
@@ -367,6 +411,7 @@ try {
   else if (mode === '--verify') verify();
   else if (mode === '--enforce') enforce();
   else { console.error('usage: node memory-conveyor.mjs --analyze | --collapse | --verify | --enforce [--mem-dir <path>]'); process.exit(2); }
+  orphanCheck();
 } catch (e) {
   console.error('ERROR:', e.message);
   process.exit(1);

@@ -19,16 +19,17 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { execFileSync } from 'child_process';
 import { dirname } from 'path';
+import { pathToFileURL } from 'url';
 
 // --- config (the seam) -------------------------------------------------------
-// LAB_DIR: absolute path to your branded-styles lab folder (from the content app).
-// Set the LAB_DIR env var or edit this constant to your local path before running.
-const LAB_DIR  = process.env.LAB_DIR || '';
-// CHROME: absolute path to your Chrome executable. Set CHROME_PATH env var or edit here.
-// On Mac: typically '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-// On Windows: typically 'C:/Program Files/Google/Chrome/Application/chrome.exe'
-const CHROME   = process.env.CHROME_PATH || '';
-const BRAND_ID = 'king';
+// LAB_DIR points at your local branded-styles template library. Override with the
+// LAB_DIR env var if yours lives somewhere other than the plugin default below.
+const LAB_DIR  = process.env.LAB_DIR || new URL('../assets/branded-styles', import.meta.url).pathname;
+const CHROME   = process.env.CHROME_PATH
+  || (process.platform === 'win32' ? 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+    : process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+    : '/usr/bin/google-chrome');
+const BRAND_ID = process.env.BRAND_ID || 'king';
 const W = 1080, H = 1350; // 4:5 portrait, LinkedIn-friendly
 
 // --- args --------------------------------------------------------------------
@@ -42,12 +43,10 @@ const quote     = args.quote;
 const highlight = args.highlight || '';
 const out       = args.out;
 
-if (!LAB_DIR) { console.error('LAB_DIR env var not set — set it to the absolute path of your branded-styles folder'); process.exit(3); }
 if (!quote || !out) {
   console.error('usage: render-card.mjs --style <name> --quote "<text>" [--highlight "<phrase>"] --out <abs.png>');
   process.exit(2);
 }
-if (!CHROME) { console.error('CHROME_PATH env var not set and no default Chrome path configured'); process.exit(3); }
 if (!existsSync(CHROME)) { console.error('Chrome not found at ' + CHROME); process.exit(3); }
 
 // --- brand config ------------------------------------------------------------
@@ -77,7 +76,7 @@ if (!existsSync(tplPath)) {
 const tpl = readFileSync(tplPath, 'utf8');
 
 // --- fill tokens (mirrors the lab's render.mjs) ------------------------------
-const assetUrl = (f) => 'file:///' + LAB_DIR + '/assets/' + f;
+const assetUrl = (f) => pathToFileURL(LAB_DIR + '/assets/' + f).href;
 const logoHtml = b.logo
   ? `<img src="${assetUrl(b.logo)}" alt="${b.name}">`
   : `<div class="mono">${b.initials}</div>`;
@@ -107,7 +106,7 @@ const html = tpl
 mkdirSync(dirname(out), { recursive: true });
 const htmlPath = out.replace(/\.png$/i, '') + '.card.html';
 writeFileSync(htmlPath, html);
-const fileUrl = 'file:///' + htmlPath.replace(/\\/g, '/');
+const fileUrl = pathToFileURL(htmlPath).href;
 
 execFileSync(CHROME, [
   '--headless=new', '--disable-gpu', '--hide-scrollbars',

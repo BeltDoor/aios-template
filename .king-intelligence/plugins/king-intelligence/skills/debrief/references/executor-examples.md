@@ -1,7 +1,5 @@
 # Executor Examples
 
-*Provided as part of your King Intelligence engagement. Not for resale or redistribution.*
-
 **Not a catalog. Not a switch statement.** Use this only as a sanity check that you picked a reasonable tool for the action you detected. If your action isn't here, that's fine — figure out the right tool from `awareness-surfaces.md` and use it.
 
 Format: `Action intent` -> `executor candidate` -> `why / gotchas`
@@ -16,7 +14,7 @@ Format: `Action intent` -> `executor candidate` -> `why / gotchas`
 - Gotcha: Draft ID must match what's actually in Gmail — if the user edited or deleted the draft, this fails. Surface the failure in Phase E, don't silently retry.
 
 **Send a PDF attachment to a specific recipient.**
-- `Bash: gws gmail users drafts create` with `--attachment <path>` (see `references/client-deliverable-pipeline-5-13-26` memory for the auth.mjs workaround), then `gws gmail users drafts send --id <new_draft_id>`.
+- `Bash: gws gmail users drafts create` with `--attachment <path>` (see your deliverable-pipeline notes for the auth.mjs workaround if attachments fail), then `gws gmail users drafts send --id <new_draft_id>`.
 - Why: `gws --upload` sends as `application/octet-stream` which Gmail rejects. Use the auth.mjs path.
 
 **Draft an intro email (don't send).**
@@ -29,15 +27,15 @@ Format: `Action intent` -> `executor candidate` -> `why / gotchas`
 
 **Write the user's voice for any prospect-facing email FIRST.**
 - `Skill: email`
-- Why: Encodes EMAIL-VOICE.md rules, blacklist, fabrication check. Never freelance prospect email copy.
+- Why: Encodes the email voice rules, blacklist, fabrication check. Never freelance prospect email copy.
 
 ---
 
-## CRM (Trello)
+## CRM (Trello, or your configured board)
 
-The CRM board id and list ids come from `references/king-intelligence-config.md` (`## debrief` section). Full mechanics + recipes: your repo's `references/trello-api.md`.
+The CRM is your Trello board (id = the `crmBoardId` from your settings), with lists per your `crmList.*` settings (typically something like Need My Help NOW / Need My Help FUTURE / Don't Want To Talk To / Clients / Partners-COIs). Full mechanics + recipes: `references/trello-api.md`. Do NOT write to a dormant/replaced CRM if one is configured as such in your settings.
 
-**Move a card between lists.**
+**Move a card between lists (the only "stage change" now).**
 - `PUT /1/cards/<cardId>?idList=<newListId>` — resolve list ids live from the board, never hardcode.
 - Gotcha: GET the card's current list first; passed-in/CLAUDE.md state goes stale.
 
@@ -47,7 +45,7 @@ The CRM board id and list ids come from `references/king-intelligence-config.md`
 
 **Log a meeting on a card.**
 - `POST /1/cards/<cardId>/actions/comments` with a dated note (date, summary path, top 3 actions).
-- Note: `/debrief` Phase 4E does this automatically (housekeeping, no gate).
+- Note: `/debrief` Phase 4E does this automatically now (housekeeping, no gate).
 
 ---
 
@@ -55,9 +53,9 @@ The CRM board id and list ids come from `references/king-intelligence-config.md`
 
 **Create + send a calendar invite for the next meeting.**
 - `Bash: gws calendar events create` with attendees + start/end + summary + location/conferencing.
-- Why: The `mcp__claude_ai_Google_Calendar__*` server only exposes `__authenticate` and `__complete_authentication` — it's OAuth-only. Use the `gws calendar` CLI for actual event creation. See your repo's `references/calendar-api.md` if it exists.
+- Why: The `mcp__claude_ai_Google_Calendar__*` server only exposes `__authenticate` and `__complete_authentication` — it's OAuth-only. Use the `gws calendar` CLI for actual event creation. See `references/calendar-api.md` if you maintain one.
 - Default: send invite to attendees, include video link or location from the call.
-- Gotcha: TZ. Build datetimes with the user's local timezone (check `references/king-intelligence-config.md` for `timezone` setting).
+- Gotcha: TZ. Build datetimes with the user's explicit local timezone.
 
 **Schedule a self-reminder ("follow up Friday if no reply").**
 - `ScheduleWakeup` (one-off) or `CronCreate` (recurring)
@@ -68,10 +66,10 @@ The CRM board id and list ids come from `references/king-intelligence-config.md`
 ## Payments
 
 **Create a Stripe draft invoice.**
-- `Bash` + `STRIPE_API_KEY` (env var, see your repo's `references/stripe-api.md`)
+- `Bash` + `STRIPE_API_KEY` (env var, see `references/stripe-api.md`)
 - Default: draft only, don't finalize/send.
-- Critical gotchas (from memory):
-  - Stripe's `send_invoice` auto-emails ONLY `customer.email`. Verify the email is the A/P contact, not the primary contact.
+- Critical gotchas:
+  - Stripe `send_invoice` auto-emails ONLY `customer.email`. Verify the email is the A/P contact, not the primary contact.
   - `due_date` is un-editable on non-draft invoices. If we need to set/change it, do it BEFORE finalize.
 - Output: surface the `hosted_invoice_url` in Phase E so the user can paste it into a Gmail reply if they want to bypass Stripe's email.
 
@@ -100,17 +98,17 @@ The CRM board id and list ids come from `references/king-intelligence-config.md`
 
 ## Publishing / repo
 
-**Publish a page to the user's website (GitHub Pages).**
+**Publish a page to your public site.**
 - `Write` to `docs/<slug>/index.html`, then `Bash: git add docs/<slug>/index.html && git commit -m "feat(site): <description>" && git push`
-- Why: GitHub Pages serves `docs/` automatically. Live within ~1 min of push.
-- Pattern: see any existing files under `docs/` for the naming convention.
+- Why: GitHub Pages serves `docs/` automatically if that's how your site is hosted. Live within ~1 min of push.
+- Pattern: look for prior examples already in your `docs/` folder.
 
 **Update a client's CLAUDE.md (e.g., to add a new commitment).**
 - `Edit` directly. (Read first — that's an existing skill rule.)
 
-**Update the auto-memory index.**
-- `Write` to the memory slug file AND add a 1-line pointer to `MEMORY.md` (path from `references/king-intelligence-config.md` `memoryFilePath`, or the repo's `memory/` convention).
-- See your repo's `CLAUDE.md` memory section for the full memory rules.
+**Update your root MEMORY.md.**
+- `Write` to your auto-memory folder's `<slug>.md` AND add a 1-line pointer to `MEMORY.md`.
+- See your root CLAUDE.md memory section for the full memory rules.
 
 **Queue a social post.**
 - `mcp__blotato__blotato_create_post` (for direct API) or invoke `Skill: marketing:campaign-plan` for a campaign.

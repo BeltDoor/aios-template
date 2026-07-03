@@ -1,6 +1,6 @@
 # Hosted services to Codex connectors
 
-How the services a Claude Code repo reaches through claude.ai connectors map to Codex's own connectors. Verified against official OpenAI docs; an adversarial pass corrected two fabricated recipes, flagged below. The big picture: almost everything has a real Codex path now, so the old "hosted connectors are the hard part" worry mostly dissolved.
+How the services a Claude Code repo reaches through claude.ai connectors map to Codex's own connectors. Verified against official OpenAI docs (an adversarial pass corrected two fabricated recipes, flagged below). The big picture: almost everything has a real Codex path now, so the old "hosted connectors are the hard part" worry mostly dissolved.
 
 Two ways Codex connects to a service: a **first-party plugin** (browse with `/plugins` in the app or CLI, "Curated by OpenAI") or an **MCP server** (`codex mcp add <name> --url <url>`, or a `[mcp_servers.<name>]` block). Cloud features need a Plus plan or higher; no free tier.
 

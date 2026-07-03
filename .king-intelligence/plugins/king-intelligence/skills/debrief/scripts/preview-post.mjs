@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // preview-post.mjs — render a mock LinkedIn post and (optionally) open it in
-// the native browser so the user SEES the post exactly as their audience will,
+// the user's native browser so they SEE the post exactly as their audience will,
 // BEFORE anything is published.
 //
 // Contract:
@@ -15,17 +15,19 @@
 import { readFileSync, writeFileSync, copyFileSync, existsSync } from 'fs';
 import { spawn } from 'child_process';
 import { dirname, join, basename } from 'path';
+import { pathToFileURL } from 'url';
 
-// LAB_DIR: path to your branded-styles lab (the branded-styles folder from the content app).
-// Update this to your local absolute path before running.
-const LAB_DIR = process.env.LAB_DIR || '';
-const AVATAR_SRC = LAB_DIR ? LAB_DIR + '/assets/avatar.png' : '';
-// CHROME: path to your Chrome executable (or leave blank to use system default open).
-const CHROME = process.env.CHROME_PATH || '';
-// Preview only — NOT published. LinkedIn uses the user's real profile headline at post time.
-// Set NAME and HEADLINE to match your LinkedIn profile for an accurate preview.
+// LAB_DIR / AVATAR_SRC point at your local branded-styles template library.
+// Override with env vars if yours lives somewhere other than the plugin default.
+const LAB_DIR = process.env.LAB_DIR || new URL('../assets/branded-styles', import.meta.url).pathname;
+const AVATAR_SRC = process.env.AVATAR_SRC || (LAB_DIR + '/assets/avatar.png');
+const CHROME = process.env.CHROME_PATH
+  || (process.platform === 'win32' ? 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+    : process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+    : '/usr/bin/google-chrome');
+// Preview chrome only — NOT published. LinkedIn uses the user's real profile headline at post time.
 const NAME = process.env.PREVIEW_NAME || 'Your Name';
-const HEADLINE = process.env.PREVIEW_HEADLINE || 'Your Title · Your tagline here';
+const HEADLINE = process.env.PREVIEW_HEADLINE || 'Your LinkedIn headline';
 
 // --- args --------------------------------------------------------------------
 const args = {};
@@ -116,20 +118,13 @@ const htmlPath = join(outDir, 'preview.html');
 writeFileSync(htmlPath, html);
 
 if (args.open) {
-  const fileUrl = 'file:///' + htmlPath.replace(/\\/g, '/');
+  const fileUrl = pathToFileURL(htmlPath).href;
   try {
     // detached + unref: a NEW window comes to the foreground (a background tab behind VS Code does not),
     // and the script returns immediately instead of blocking until the browser closes.
-    let child;
-    if (CHROME && existsSync(CHROME)) {
-      child = spawn(CHROME, ['--new-window', fileUrl], { detached: true, stdio: 'ignore' });
-    } else if (process.platform === 'darwin') {
-      child = spawn('open', [htmlPath], { detached: true, stdio: 'ignore' });
-    } else if (process.platform === 'win32') {
-      child = spawn('cmd', ['/c', 'start', '', htmlPath.replace(/\//g, '\\')], { detached: true, stdio: 'ignore' });
-    } else {
-      child = spawn('xdg-open', [htmlPath], { detached: true, stdio: 'ignore' });
-    }
+    const child = existsSync(CHROME)
+      ? spawn(CHROME, ['--new-window', fileUrl], { detached: true, stdio: 'ignore' })
+      : spawn('cmd', ['/c', 'start', '', htmlPath.replace(/\//g, '\\')], { detached: true, stdio: 'ignore' });
     child.unref();
   } catch (e) { console.error('could not auto-open browser: ' + e.message + ' (open manually: ' + htmlPath + ')'); }
 }

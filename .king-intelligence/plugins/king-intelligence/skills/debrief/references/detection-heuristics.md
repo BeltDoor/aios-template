@@ -1,7 +1,5 @@
 # Detection Heuristics
 
-*Provided as part of your King Intelligence engagement. Not for resale or redistribution.*
-
 Patterns to look for when reading a context to surface actions. **NOT exhaustive.** The detector is reasoning — use these as priming, not as a checklist.
 
 The job: read the context like a sharp assistant. Surface every discrete action the user would normally do as a result of this conversation. Don't pad. Don't force-fit. If the call generated 2 real actions, surface 2.
@@ -14,11 +12,11 @@ These are the strongest. When the user (or the other party) commits to a deliver
 
 | Pattern in transcript | Likely action |
 |---|---|
-| *"I'll send you the proposal Friday"* | Send the PDF from the client's deliverables folder (or generate it if not there) |
+| *"I'll send you the proposal Friday"* | Send the PDF from `clients/<name>/03-deliverables/` (or generate it if not there) |
 | *"I'll email you the agenda"* | Draft + send agenda email |
 | *"Let me put together a one-pager and send it over"* | Generate PDF via `document-skills:pdf` + email |
 | *"I'll get you that quote by Monday"* | Create Stripe draft invoice / proposal doc + schedule a Monday wakeup |
-| *"I'll introduce you to X"* | Draft intro email (don't send — user reviews) |
+| *"I'll introduce you to X"* | Draft intro email (don't send — the user reviews) |
 | *"I'll look into Y before our next session"* | Kick off `Agent` background research |
 | *"I'll send a calendar invite"* | Create + send calendar invite |
 | *"I'll loop in [name]"* | Draft a "looping in [name]" email |
@@ -30,7 +28,7 @@ These are the strongest. When the user (or the other party) commits to a deliver
 
 | Pattern | Likely action |
 |---|---|
-| *"Let's meet Thursday at 12:30"* | Create calendar invite (use the next Thursday in the future; default Eastern TZ) |
+| *"Let's meet Thursday at 12:30"* | Create calendar invite (use the next Thursday in the future; default to the user's local timezone) |
 | *"Same time next week"* | Create calendar invite one week from the meeting date, same time |
 | *"How about Tuesday morning"* | Either send a tentative invite or draft a Gmail asking for confirmation (judgment call — when the call ended without nailing time, draft the ask) |
 
@@ -87,12 +85,12 @@ If the meeting commits the user to building / installing / setting up anything o
 
 | Pattern + context | Likely action (runs FIRST) |
 |---|---|
-| Build-engagement signal + `pre_session_blockers` field is null or empty | `Agent` to research client's hardware/OS compatibility with the intended stack; output to `clients/<name>/01-research/infrastructure-blockers.md` |
+| Build-engagement signal + `pre_session_blockers` field is null or empty | `Agent` to research client's hardware/OS compatibility with the user's intended stack; output to `clients/<name>/01-research/infrastructure-blockers.md` |
 | Build-engagement signal + client CLAUDE.md flags Chromebook / locked corporate laptop / iPad / Linux dev mode | `Agent` to research the specific blocker + substitute stack; output to research folder; surface in gate as "blockers known, here's the substitute plan" |
 | Email already parked committing to "Session 1 win on your machine" without verified hardware | Flag in Phase E status: *"Heads up — the parked draft commits to deliverables, but we never verified [client]'s hardware. The Chromebook risk: ... Edit the draft if needed before sending."* |
 | Build-engagement signal + IT-locked corporate environment (locked corporate laptop pattern) | Surface as `[manual]` action: "Confirm whether [client] has personal-machine workaround before scheduling Session 1" |
 
-**Source incident:** A /debrief run was about to propose creating a CRM deal + scheduling Session 1 without realizing the client was on a Chromebook (Claude Desktop / Claude Code / VS Code all unavailable). The build engagement was technically infeasible as scoped, and the parked email already committed the user to it. The blocker research has to be the FIRST action, not a peer of the others.
+**Why this matters:** a build engagement can look ready to schedule while the client's actual hardware makes the intended stack infeasible (a Chromebook blocks Claude Desktop / Claude Code / VS Code entirely). If a follow-up email already commits to deliverables before that's verified, the blocker research has to run FIRST, not as a peer of the other actions.
 
 ---
 
@@ -121,7 +119,7 @@ If a commitment has a future deadline AND no other action is queued to satisfy i
 Don't surface these:
 
 - **Things already done on the call** ("We agreed X = 5") — already in the summary.
-- **Things the OTHER party committed to** without a corresponding action for the user ("Client will get back to me with the spec next week" — no action unless the user needs to follow up if they don't).
+- **Things the OTHER party committed to** without a corresponding action for the user ("Client will get back to me with the spec next week" — no action for the user unless they need to follow up if they don't).
 - **Pure relationship moments** ("Loved that story about your kid's BJJ tournament") — those go in the client CLAUDE.md, not the action gate.
 - **Stuff the housekeeping phases of `/debrief` already handled** — transcript saved, summary written, MEMORY updated, engagement logged. These are already done by the time `/handle-it` runs.
 
@@ -130,7 +128,7 @@ Don't surface these:
 ## Edge cases
 
 - **Multiple actions from one sentence:** *"I'll send the proposal and book the follow-up"* = 2 actions (send PDF + create calendar invite).
-- **Conditional actions:** *"Send the contract only if Sam approves"* — surface as `[conditional]` in the gate, don't execute even if approved. Better to leave for the user to trigger.
+- **Conditional actions:** *"Send the contract only if Riley approves"* — surface as `[conditional]` in the gate, don't execute even if approved. Better to leave for the user to trigger.
 - **Ambiguous timing:** *"Sometime next week"* — schedule a Monday wakeup to nudge the user to actually book the thing.
 - **The call ran long and the same action was mentioned twice:** dedupe. One action.
 - **Action requires data not in the context:** surface in gate as `[needs-info: what's missing]` so the user fills it in before approving.

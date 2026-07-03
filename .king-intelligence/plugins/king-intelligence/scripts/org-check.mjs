@@ -27,11 +27,27 @@
 // MODES:
 //   (default)     report — print folders missing a required CLAUDE.md + whether the
 //                 folder-layout map has drifted from disk. Exit 0 if clean, 1 if not
-//                 (so it can gate a script / CI / the close-out).
+//                 (so it can gate a script / CI / the close-out). Also prints the fast
+//                 ROT checks (broken relative links + expired dated rules) as
+//                 INFORMATIONAL lines — they never affect the exit code.
 //   --json        same checks, machine-readable JSON to stdout (for /end-session).
 //   --fix         scaffold a starter CLAUDE.md for every missing required folder AND
 //                 regenerate the AUTO-LAYOUT block in folder-layout.md from disk truth.
 //   --print-tree  preview the generated folder tree to stdout, write nothing (debug).
+//   --health      the deep rot report: everything above PLUS folder freshness (folders
+//                 whose git activity is newer than the newest dated entry in their
+//                 CLAUDE.md). Slower (one git call per folder); run monthly or on demand.
+//
+// ROT CHECKS (added 7/2/26 audit — rot should announce itself, not silently mislead):
+//   links   — every relative markdown link in operating-layer .md files must resolve on
+//             disk. Skips http(s)/mailto/#, template placeholders ({{…}}, ${…}, "url",
+//             "path.md", "slug.md"), _archive folders, and vendored/mirrored trees.
+//   expiry  — any `<!-- EXPIRES: YYYY-MM-DD note -->` marker whose date has passed is
+//             reported (and markers coming due within 7 days get a heads-up). Put one
+//             next to any rule with a shelf life.
+//   fresh   — (--health only) compares each required folder's last git commit date to
+//             the newest `## YYYY-MM-DD` heading in its CLAUDE.md; flags folders worked
+//             on ≥14 days after their doc was last updated.
 //
 // SAFE BY DESIGN: only ever CREATES a missing CLAUDE.md (never overwrites an existing
 // one) and only ever rewrites the text BETWEEN the AUTO-LAYOUT markers in folder-layout.md
@@ -39,6 +55,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 
 // ---------- configuration (portable: --arg > config file > sensible default) ----------
 // This script ships to client repos via the King Intelligence plugin, so NOTHING here is
@@ -362,17 +379,144 @@ function check() {
   return { nodes, missing, layoutDrift, layoutReason, expected };
 }
 
+// ---------- rot checks (links / expiry / freshness) ----------
+
+const ROT_SKIP_DIRS = new Set(['node_modules', 'vendor', 'dist', 'build', 'coverage', '_archive', '_snapshots']);
+const ROT_PLACEHOLDER = /^(url|path\.md|slug\.md)$|\{\{|\$\{|^<.*>$/;
+
+/** All .md files worth rot-checking: every CLAUDE.md, root .md files, and the
+ *  operating layer (references/, templates/, decisions/, prompts/, workflows/,
+ *  security/, audits/, .claude/skills/). Vendored/mirrored/archived trees skipped. */
+function rotTargets() {
+  const out = [];
+  const roots = ['', '.claude/skills'];
+  const walk = (rel) => {
+    const abs = path.join(REPO_ROOT, rel);
+    let entries;
+    try { entries = fs.readdirSync(abs, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const childRel = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isDirectory()) {
+        if (ROT_SKIP_DIRS.has(e.name) || e.name.startsWith('_')) continue; // _archive-*, _snapshots, …
+        if (e.name.startsWith('.') && childRel !== '.claude/skills') continue;
+        walk(childRel);
+      } else if (e.name.endsWith('.md')) {
+        const isOperating = e.name === 'CLAUDE.md'
+          || !childRel.includes('/')
+          || /^(references|templates|decisions|prompts|workflows|security|audits|\.claude\/skills)\//.test(childRel);
+        if (isOperating) out.push(childRel);
+      }
+    }
+  };
+  for (const r of roots) walk(r);
+  return out;
+}
+
+/** Broken relative links across the operating layer. Returns [{file, link}]. */
+function checkLinks() {
+  const broken = [];
+  const homeClaude = path.join(process.env.HOME || '', '.claude');
+  const linkRe = /\]\(([^)#\s]+)(?:#[^)]*)?\)/g;
+  for (const rel of rotTargets()) {
+    let text;
+    try { text = fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8'); } catch { continue; }
+    // strip fenced code blocks + inline code — links inside them are examples/templates
+    text = text.replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]*`/g, '');
+    let m;
+    while ((m = linkRe.exec(text))) {
+      const target = m[1].trim();
+      if (/^(https?:|mailto:|tel:|#|<)/.test(target) || ROT_PLACEHOLDER.test(target)) continue;
+      let dec; try { dec = decodeURIComponent(target); } catch { continue; }
+      const abs = dec.startsWith('/') ? dec : path.resolve(path.dirname(path.join(REPO_ROOT, rel)), dec);
+      if (fs.existsSync(abs)) continue;
+      // a relative link that escapes both the repo and ~/.claude is template text
+      // (a snippet meant to be pasted somewhere else) — not checkable from here
+      if (!abs.startsWith(REPO_ROOT + path.sep) && !(homeClaude && abs.startsWith(homeClaude + path.sep))) continue;
+      broken.push({ file: rel, link: target });
+    }
+  }
+  return broken;
+}
+
+/** Expired / soon-to-expire `<!-- EXPIRES: YYYY-MM-DD note -->` markers. */
+function checkExpiry() {
+  const expired = [], upcoming = [];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const soon = new Date(today.getTime() + 7 * 86400000);
+  const re = /<!--\s*EXPIRES:\s*(\d{4}-\d{2}-\d{2})\s*([^>]*?)-->/g;
+  for (const rel of rotTargets()) {
+    let text;
+    try { text = fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8'); } catch { continue; }
+    let m;
+    while ((m = re.exec(text))) {
+      const d = new Date(m[1] + 'T00:00:00');
+      const item = { file: rel, date: m[1], note: m[2].trim() };
+      if (d < today) expired.push(item);
+      else if (d <= soon) upcoming.push(item);
+    }
+  }
+  return { expired, upcoming };
+}
+
+/** (--health) Folders whose git activity is ≥14 days newer than the newest
+ *  `## YYYY-MM-DD` heading in their CLAUDE.md. Skips silently if git is unavailable. */
+function checkFreshness(nodes) {
+  const stale = [];
+  for (const n of nodes) {
+    if (!n.hasMd) continue;
+    let gitDate;
+    try {
+      gitDate = execSync(`git log -1 --format=%cs -- "${n.rel}"`, { cwd: REPO_ROOT, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    } catch { continue; }
+    if (!gitDate) continue;
+    let text;
+    try { text = fs.readFileSync(path.join(n.abs, 'CLAUDE.md'), 'utf8'); } catch { continue; }
+    const dates = [...text.matchAll(/^##+\s*(\d{4})-(\d{2})-(\d{2})/gm)].map(m => `${m[1]}-${m[2]}-${m[3]}`).sort();
+    const docDate = dates[dates.length - 1] || null;
+    if (!docDate) continue; // no dated entries — nothing to compare
+    const gap = (new Date(gitDate) - new Date(docDate)) / 86400000;
+    if (gap >= 14) stale.push({ rel: n.rel, gitDate, docDate, gapDays: Math.round(gap) });
+  }
+  return stale.sort((a, b) => b.gapDays - a.gapDays);
+}
+
+function printRot({ deep, nodes }) {
+  const broken = checkLinks();
+  const { expired, upcoming } = checkExpiry();
+  console.log(broken.length
+    ? `  ✗ rot: ${broken.length} broken relative link(s) — worst first:`
+    : '  ✓ rot: no broken relative links');
+  for (const b of broken.slice(0, 15)) console.log(`      ${b.file} -> ${b.link}`);
+  if (broken.length > 15) console.log(`      …and ${broken.length - 15} more (run --health for context)`);
+  console.log(expired.length
+    ? `  ✗ rot: ${expired.length} EXPIRED dated rule(s):`
+    : '  ✓ rot: no expired dated rules');
+  for (const e of expired) console.log(`      ${e.file} — expired ${e.date} (${e.note})`);
+  for (const u of upcoming) console.log(`  ⏳ rot: ${u.file} — rule expires ${u.date} (${u.note})`);
+  if (deep) {
+    const stale = checkFreshness(nodes);
+    console.log(stale.length
+      ? `  ✗ rot: ${stale.length} folder(s) worked on ≥14 days after their CLAUDE.md was last updated:`
+      : '  ✓ rot: folder docs keep pace with folder activity');
+    for (const s of stale.slice(0, 20)) console.log(`      ${s.rel}/ — last commit ${s.gitDate}, doc last dated ${s.docDate} (${s.gapDays}d behind)`);
+  }
+  return { broken: broken.length, expired: expired.length };
+}
+
 // ---------- modes ----------
 
-function report({ json } = {}) {
+function report({ json, deep } = {}) {
   const r = check();
   if (json) {
+    const broken = checkLinks();
+    const { expired, upcoming } = checkExpiry();
     console.log(JSON.stringify({
       ok: r.missing.length === 0 && !r.layoutDrift,
       required: r.nodes.length,
       missingClaudeMd: r.missing,
       layoutDrift: r.layoutDrift,
       layoutReason: r.layoutReason,
+      rot: { brokenLinks: broken.length, expiredRules: expired.length, expiringSoon: upcoming.length },
     }, null, 2));
   } else {
     console.log(`Org check: ${r.nodes.length} folders require a CLAUDE.md.`);
@@ -385,6 +529,7 @@ function report({ json } = {}) {
     console.log(r.layoutDrift
       ? `  ✗ folder map out of date: ${r.layoutReason} — run: node scripts/org-check.mjs --fix`
       : '  ✓ folder map matches disk');
+    printRot({ deep, nodes: r.nodes }); // informational — never affects the exit code
   }
   process.exit(r.missing.length === 0 && !r.layoutDrift ? 0 : 1);
 }
@@ -437,6 +582,7 @@ function printTree() {
 try {
   if (ARGV.includes('--fix')) fix();
   else if (ARGV.includes('--print-tree')) printTree();
+  else if (ARGV.includes('--health')) report({ json: false, deep: true });
   else report({ json: ARGV.includes('--json') });
 } catch (e) {
   console.error('ERROR:', e.message);
