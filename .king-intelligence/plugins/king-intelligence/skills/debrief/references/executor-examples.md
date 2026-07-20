@@ -111,7 +111,7 @@ The CRM is your Trello board (id = the `crmBoardId` from your settings), with li
 - See your root CLAUDE.md memory section for the full memory rules.
 
 **Queue a social post.**
-- `mcp__blotato__blotato_create_post` (for direct API) or invoke `Skill: marketing:campaign-plan` for a campaign.
+- `mcp__blotato__blotato_create_post` (direct API).
 - Or: drop content into the content-app pipeline at `king-intelligence/king-ai-content-app/`.
 
 ---

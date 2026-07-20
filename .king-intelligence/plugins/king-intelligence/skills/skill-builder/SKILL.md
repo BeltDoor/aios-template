@@ -1,32 +1,37 @@
 ---
 name: skill-builder
-description: Build a new skill end-to-end inside your repo, or modify an existing one. Use when the user says "build me a skill", "automate this", "turn this into a skill", "I keep doing X by hand", "I want a skill for Y", "what should I automate next", or pastes a recurring task they want encoded, even if they never say the word "skill". Also use when extending, fixing, or re-triggering an existing skill.
+description: Build a new skill end-to-end inside this repo, or modify an existing one. Use when the user says "build me a skill", "automate this", "turn this into a skill", "I keep doing X by hand", "I want a skill for Y", "what should I automate next", or pastes a recurring task they want encoded, even if they never say the word "skill". Also use when extending, fixing, or re-triggering an existing skill.
 ---
 
 # /skill-builder
+
 *Provided as part of your King Intelligence engagement. Not for resale or redistribution.*
 
-The compositional engine that grows new skills inside your repo. Routes to the right thinking partner (`/grill-me` if there's a plan, `/brainstorming` if there isn't), locks the spec, enforces prerequisites, generates the SKILL.md, tests it once, and commits.
+The compositional engine that grows new skills inside this repo. I route you to the right thinking partner (`/grill-me` if there's a plan, `/brainstorming` if there isn't), lock the spec, enforce prerequisites, generate the SKILL.md, test it once, and commit.
+
+The voice gate points at your existing voice profile, decisions log to `decisions/log.md`, and TIME-SAVED self-ping is scoped to recurring real-time-saver skills only (deep-dives and setup tools are exempt). Triggering, cost, and durability rules draw on established skill-authoring methodology (Pocock `write-a-skill`, obra `superpowers/writing-skills`, Anthropic `skill-creator`).
 
 ## What this skill is for
 
-Building a new skill, end-to-end, in one session. The user has a recurring task they want automated. By the end, that task is a `/skill` they can invoke any time, the catalog (`SKILLS.md`) reflects it, and if it's a real time-saver, `TIME-SAVED.md` starts tracking the minutes they get back.
+Building a new skill, end-to-end, in one session. The user has a recurring task they want automated. By the end, that task is a `/skill` they can invoke any time, the catalog (`SKILLS.md`) reflects it, and if it's a real time-saver, `TIME-SAVED.md` starts tracking the minutes the user gets back.
 
 ## What this skill is NOT
 
 - **Not for one-off scripts.** Skills are for recurring work. If the task happens once and never again, just do it manually.
 - **Not a brainstorming partner.** If the user doesn't know what to build yet, route to `/brainstorming`.
-- **Not a benchmark lab.** For a quantitative with-skill-vs-baseline benchmark on a high-value skill, that's a separate benchmarking workflow (see Out of scope). This skill tests once against one real record and ships.
+- **Not a benchmark lab.** For a quantitative with-skill-vs-baseline benchmark on a high-value skill, that's `document-skills:skill-creator` (see Out of scope). This skill tests once against one real record and ships.
 
 ## Before you start, read these (always)
 
 In this order:
 
-1. `SKILLS.md` in the repo root — what already exists. So we don't build a duplicate.
-2. `CONNECTIONS.md` in the repo root — what tools are connected. So we don't propose something unhooked.
-3. `CLAUDE.md` in the repo root — voice rules, AskUserQuestion default, verify-before-asserting, MCP credit guardrails.
+1. `SKILLS.md` — what already exists. So we don't build a duplicate.
+2. `CONNECTIONS.md` — what tools are connected. So we don't propose something unhooked.
+3. `CLAUDE.md` — voice rules, AskUserQuestion default, verify-before-asserting, MCP credit guardrails.
 
-Read the matching operating reference docs on demand before touching those domains.
+Read the matching operating-rules reference for the topic on demand if your repo has one (e.g. a git-and-backup guide before commit, an api-keys guide if a new key surfaces during the build).
+
+Also on hand: [`references/writing-effective-skills.md`](references/writing-effective-skills.md) — a compact do/don't + ship checklist for skill authoring, and (its most useful part) a **security checklist for auditing any downloaded/third-party skill before adopting it**. Read that section whenever pulling a skill in from outside this repo.
 
 ## The workflow
 
@@ -50,7 +55,7 @@ Run `/grill-me` on the skill the user wants. The output is a tight spec: what tr
 
 ### 3. Overlap check (BEFORE baseline capture)
 
-Re-read `SKILLS.md`. Does the proposed skill overlap with something already there? Match on **trigger phrases** (any overlap counts) OR **domain + source + output triple** (e.g., both write a draft email to a customer based on a meeting transcript = overlap).
+Re-read `SKILLS.md`. Does the proposed skill overlap with something already there? Match on **trigger phrases** (any overlap counts) OR **domain + source + output triple** (e.g., both write a draft email to a customer based on an Otter transcript = overlap).
 
 If overlap exists, `AskUserQuestion` with three options:
 
@@ -62,7 +67,7 @@ If no overlap, keep going.
 
 ### 4. Manual-time baseline (time-savers only)
 
-First, decide whether this skill is a **recurring real time-saver** or a **deep-dive / setup / one-shot tool**. Deep-dives (like `/grill-me`, `/brainstorming`) and setup/one-shot tools are **exempt** from TIME-SAVED tracking. If the skill is exempt, **skip this step and the self-ping append in § 8**: no baseline, no row, no footer.
+First, decide whether this skill is a **recurring real time-saver** or a **deep-dive / setup / one-shot tool**. Deep-dives (like `/grill-me`, `/brainstorming`) and setup/one-shot tools are **exempt** from TIME-SAVED tracking per CLAUDE.md. If the skill is exempt, **skip this step and the self-ping append in § 8**: no baseline, no row, no footer.
 
 If it IS a recurring time-saver, ask the user how long this task takes them by hand. `AskUserQuestion`:
 
@@ -85,29 +90,29 @@ This integer is what gets baked into the generated skill's self-ping line (§ AI
 
 ### 5. Connector gap — HARD GATE
 
-Identify every tool the new skill will need (Gmail, CRM, meeting transcripts, billing, anything else). Check `CONNECTIONS.md` § 1 (Connected).
+Identify every tool the new skill will need (Gmail, Trello, Otter, Stripe, anything else). Check `CONNECTIONS.md` § 1 (Connected).
 
 If any required tool is **not** in § 1: **stop. Do not draft the SKILL.md.**
 
-Walk the user through connecting it: go to their Claude settings → Connectors → search the tool → Connect → sign in. Then verify the new MCP server is reachable by running `claude mcp list` (don't claim it's connected without checking). Update `CONNECTIONS.md` § 1 manually; `/end-session` will re-confirm on session close.
+Walk the user through connecting it: claude.ai → Settings → Connectors → search the tool → Connect → sign in. Then verify the new MCP server is reachable by running `claude mcp list` (per CLAUDE.md § Verify before asserting, don't claim it's connected without checking). Update `CONNECTIONS.md` § 1 by hand for now; `/end-session` will re-confirm on session close.
 
 Resume only after every required tool is verified connected. No "ship with TODO." No "ship with hard gate inside the skill." Every skill that ships works on first invocation.
 
 ### 5.5. Cost surface — HARD GATE (metered tools only)
 
-If the skill will call a metered or paid tool (any per-call API, vision API, scraping service, etc.), do three things before drafting:
+If the skill will call a metered or paid tool (Vizard, KIE.AI, Apify, Firecrawl, Perplexity, any per-call API), do three things before drafting:
 
-1. **Name the spend per run out loud** ("each run burns ~61 credits", "~$0.12/image"). The user signs off on the cost shape, not just the behavior.
+1. **Name the spend per run out loud** ("each run burns ~61 Vizard credits", "~$0.12/image on nano-banana-pro"). The user signs off on the cost shape, not just the behavior.
 2. **Bake a guardrail into the generated skill**: a cap, a confirm-before-spend gate, OR an explicit banned-call list. The skill must make the expensive path hard to trigger by accident.
-3. **Cross-check the MCP credit guardrails in CLAUDE.md** so the generated skill never proposes a banned or out-of-scope call.
+3. **Cross-check the MCP credit guardrails in CLAUDE.md** (Firecrawl scope, Perplexity `reason`/`research` ban) so the generated skill never proposes a banned or out-of-scope call.
 
-This gate exists because the most expensive mistakes are metered-API mistakes: credits burning silently mid-batch, banned research calls racking up charges. A skill that quietly loops an expensive call is worse than no skill. Skip this gate only if the skill touches no paid API.
+This gate exists because the most expensive mistakes in this repo are metered-API mistakes: 305 Vizard credits burned re-uploading a podcast, $15.99 burned on a banned Perplexity call in 25 hours, KIE.AI credits depleting mid-batch. A skill that quietly loops an expensive call is worse than no skill. Skip this gate only if the skill touches no paid API.
 
 ### 6. Voice profile — HARD GATE (draft-related skills only)
 
 **What "draft-related" means.** The skill PRODUCES text the user sends or posts AS THEMSELVES. Includes: emails, social posts, SMS, Slack messages, blog posts, video scripts, customer-facing copy. **Excludes:** internal summaries, action-item lists, meeting minutes, time audits, status snapshots, anything the user reads but doesn't send as-them.
 
-If the user has a voice profile in their repo (commonly at a `voice-profile/` folder), **read it before drafting** and bake the voice-read line (§ 8) into the generated skill so it reads it too.
+If a voice profile already exists in the repo (e.g. `voice-profile/VOICE-PROFILE.md` and `EMAIL-VOICE.md`), and the skill is draft-related, **read those before drafting** and bake the voice-read line (§ 8) into the generated skill so it reads them too.
 
 Only if that profile is somehow missing: **stop, don't draft, and tell the user the voice profile is gone.** It's the source of truth for everything they send as themselves, and a draft-related skill can't ship without it.
 
@@ -115,11 +120,11 @@ Only if that profile is somehow missing: **stop, don't draft, and tell the user 
 
 Use the Pocock `write-a-skill` chassis: gather requirements → draft → review-with-user. Layer in these rules:
 
-- **Description = WHEN to trigger, not the workflow.** Open with one short clause naming what it does (for human scanning of SKILLS.md). Then the heavy lifting: pure "Use when…" triggers, seeded with the actual words the user used when they asked (pull synonyms from the `/grill-me` transcript), deliberately pushy, ending with "even if they don't say `<skill-name>`." **Never restate the skill's step-by-step or step count in the description.** Testing across reference sources shows the model will follow the description's workflow summary instead of reading the body. Pushy beats precise: undertriggering is worse than overtriggering.
-- **Explain the why; treat caps as a yellow flag.** Prefer reasoning over bare rules. If you catch yourself writing ALWAYS / NEVER / MUST in caps, that's a yellow flag — reframe it as the reason behind the rule so the model can judge edge cases. Reserve hard imperatives for true bright lines: security, PII, fabrication, and metered-API spend.
-- **Progressive disclosure.** Keep the SKILL.md lean. Split to `references/*.md` when SKILL.md passes ~100 lines, OR a section is advanced and rarely-needed, OR it's a long lookup table. Keep references exactly one level deep from SKILL.md (the model only partially reads files referenced from referenced files).
+- **Description = WHEN to trigger, not the workflow.** Open with one short clause naming what it does (for human scanning of SKILLS.md). Then the heavy lifting: pure "Use when…" triggers, seeded with the actual words the user used when they asked (pull synonyms from the `/grill-me` transcript), deliberately pushy, ending with "even if they don't say `<skill-name>`." **Never restate the skill's step-by-step or step count in the description.** Testing across all three reference sources shows Claude will follow the description's workflow summary instead of reading the body (a description saying "review between tasks" made Claude do one review when the body specified two). Pushy beats precise: undertriggering is worse than overtriggering.
+- **Explain the why; treat caps as a yellow flag.** Prefer reasoning over bare rules. If you catch yourself writing ALWAYS / NEVER / MUST in caps, that's a yellow flag, reframe it as the reason behind the rule so Claude can judge edge cases. Reserve hard imperatives for true bright lines: security, PII, fabrication, and metered-API spend.
+- **Progressive disclosure.** Keep the SKILL.md lean. Split to `references/*.md` when SKILL.md passes ~100 lines, OR a section is advanced and rarely-needed, OR it's a long lookup table. Keep references exactly one level deep from SKILL.md (Claude only partial-reads files referenced from referenced files).
 - **When to bundle a script.** Add a `scripts/` file when the op is deterministic, the same code would be regenerated every run, or errors need explicit handling. Deterministic, fewer tokens, fewer re-bugs than generated code.
-- **Durability (don't let it rot).** Don't hardcode dates, current client lists, or "we currently use X" into a generated skill. Point at the live source (`CONNECTIONS.md`, `SKILLS.md`) so the skill stays true as the repo changes.
+- **Durability (don't let it rot).** Don't hardcode dates, current client lists, or "we currently use X" into a generated skill. Point at the live source (CONNECTIONS.md, SKILLS.md) so the skill stays true as the repo changes.
 
 Length cap for generated skills: soft **100 lines**. Past 150 = split into two skills or push depth into `references/`.
 
@@ -127,9 +132,9 @@ Length cap for generated skills: soft **100 lines**. Past 150 = split into two s
 
 For a **time-saver** skill, end the generated SKILL.md with the **self-ping block**; for an **exempt** skill (§ 4), skip it. For a **draft-related** skill, open the body with the **voice-read line**.
 
-See [`${CLAUDE_PLUGIN_ROOT}/skills/skill-builder/references/aios-appends.md`](references/aios-appends.md) for the exact paste text. Substitute `<skill-name>` and `<manual_time_minutes>` from the spec and the baseline.
+See [`references/aios-appends.md`](references/aios-appends.md) for the exact paste text. Substitute `<skill-name>` and `<manual_time_minutes>` from the spec and the baseline.
 
-Do **not** restate voice rules, AskUserQuestion default, or verify-before-asserting in the generated skill. Those live in CLAUDE.md and auto-load as project instructions. Restating bloats the skill past the 100-line cap.
+Do **not** restate CEO voice rules, AskUserQuestion default, or verify-before-asserting in the generated skill. Those live in CLAUDE.md and auto-load as project instructions for every session. Restating bloats the skill past the 100-line cap.
 
 ### 9. Review with the user
 
@@ -141,17 +146,17 @@ Apply any structural edits the user calls out. Tight clarifications, not rewrite
 
 Before the real-data test, sanity-check that the description will actually fire. Silently generate 3 ways the user would naturally phrase this request (these SHOULD fire) and 2 near-misses that share keywords but should route elsewhere (these should NOT fire). Reason against the written description: does it catch all 3 and reject both near-misses?
 
-If a real phrasing wouldn't fire, or a near-miss would wrongly fire, fix the description before shipping. Keep this silent. Only surface it if there's a problem to fix. The dominant real-world failure for a solo operator isn't a bad output — it's a skill that never fires or the wrong skill firing, because users describe tasks in their own words.
+If a real phrasing wouldn't fire, or a near-miss would wrongly fire, fix the description before shipping. Keep this silent. Only surface it if there's a problem to fix (per the lock-in rule: no menus). The dominant real-world failure for a solo operator isn't a bad output, it's a skill that never fires or the wrong skill firing, because the user describes tasks in their own words.
 
 ### 10. Test with one real record
 
 Run the skill end-to-end, **once**, with one real input:
 
-- **Reads from a connected system?** Pull one real record. Default picks: latest unread email (Gmail), most-recent meeting transcript (Otter/Zoom), most recently touched CRM card, today's first calendar event. User can override any default.
+- **Reads from a connected system?** Pull one real record. Default picks: latest unread email (Gmail), most-recent meeting transcript (Otter), most recently touched CRM card (Trello), today's first calendar event (Calendar). User can override any default.
 - **Takes user-pasted input?** User pastes one real example.
 - **Creates output?** Show the output in chat (text), or print the file path with a one-line preview (docs / sheets / decks).
 
-For a genuine **discipline / guardrail skill** (a gate, a refusal, a spend guard), add one pressure check: would the skill hold if the easy shortcut were available? Watch a bare attempt skip the rule, confirm the skill stops it. Most skills are not this type — skip it for them (see Out of scope).
+For a genuine **discipline / guardrail skill** (a gate, a refusal, a spend guard), add one pressure check: would the skill hold if the easy shortcut were available? Watch a bare attempt skip the rule, confirm the skill stops it. Most skills are not this type, skip it for them (see Out of scope).
 
 User signs off in chat:
 
@@ -162,9 +167,9 @@ One pass, not a benchmark loop.
 
 ### 11. Iterate cap — 2 fix cycles, then ship-or-scrap
 
-- **Cycle 1.** User names ONE specific issue. Fix that one thing. **Fix the class of problem, not the one record:** if a fix only makes sense for this exact test record, that's an overfit signal — generalize it or re-grill. The skill has to work on the next hundred inputs, not just this one. Re-run the test against the SAME real record from § 10. Show the new output.
+- **Cycle 1.** User names ONE specific issue. Fix that one thing. **Fix the class of problem, not the one record:** if a fix only makes sense for this exact test record, that's an overfit signal, generalize it or re-grill. The skill has to work on the next hundred inputs, not just this one. Re-run the test against the SAME real record from § 10. Show the new output.
 - **Cycle 2.** Same loop. One more fix. One more re-run.
-- **If the test run kept regenerating the same non-trivial code** (a scrape, a poll, a transform the model would obviously rewrite every invocation), bundle it as `scripts/<name>.{mjs,py}` now rather than leaving it as generated code.
+- **If the test run kept regenerating the same non-trivial code** (a scrape, a poll, a transform Claude would obviously rewrite every invocation), bundle it as `scripts/<name>.{mjs,py}` now rather than leaving it as generated code.
 - **After cycle 2**, `AskUserQuestion`:
   - "Ship as-is, I'll edit it manually if I need to (Recommended if it's 80% there)"
   - "Scrap and re-grill, the design has a fundamental issue, take me back to `/grill-me`"
@@ -210,15 +215,15 @@ One 10-second eyeball pass before staging:
 Append a dated entry to the top of `decisions/log.md` ONLY when a non-obvious architectural choice was made during the build. Examples that DO warrant an entry:
 
 - Scope tradeoff: "Built draft-only mode; auto-send deferred because user wanted an approval gate."
-- Tool choice: "Used scraping over a direct API because the target is a portal without a public API."
-- Workaround: "Caches results to avoid API rate-limit on every invocation."
+- Tool choice: "Used Apify scrape over Firecrawl because target is LinkedIn."
+- Workaround: "Caches results to avoid Otter API rate-limit on every invocation."
 
 Examples that do NOT warrant an entry:
 
 - "Built /follow-up-invoices. Uses Gmail. Manual time 30 min." (run-of-the-mill build)
 - Anything the SKILL.md itself already explains in its body.
 
-Reserve the log for calls future-Claude or the user would want to know about when revisiting the skill.
+Reserve the log for calls a future session would want to know about when revisiting the skill. Run-of-the-mill builds don't earn entries.
 
 ## Modify-existing flow (compressed)
 
@@ -237,12 +242,12 @@ When Step 3's overlap check routes to "Extend existing" instead of new build:
 
 ## Out of scope (parked, not v1.0)
 
-- **Heavyweight benchmarking.** For a quantitative with-skill-vs-baseline benchmark on a high-value skill (graded assertions, mean ± stddev over runs, an HTML viewer, an automated description optimizer), use a dedicated benchmarking workflow. skill-builder deliberately does NOT re-implement that machinery.
-- **Full TDD / pressure-testing for every skill.** The § 10 single pressure check covers the rare guardrail skill; the full loop is parked for most builds.
+- **Heavyweight benchmarking.** For a quantitative with-skill-vs-baseline benchmark on a high-value skill (graded assertions, mean ± stddev over runs, an HTML viewer, an automated description optimizer), invoke `document-skills:skill-creator` directly. skill-builder deliberately does NOT re-implement that machinery: the user is the sole reviewer and won't hand-run a Python eval harness, and their volume doesn't justify it.
+- **Full TDD / pressure-testing for every skill.** obra's "no skill without a failing test first" and combined-pressure scenarios are right for adversarial discipline skills, wrong for the automation/draft skills that make up most of this library. The § 10 single pressure check covers the rare guardrail skill; the full loop is parked.
 - **Periodic revalidation / rot detection.** A skill can silently break when a connector or vendor UI changes underneath it. Catching that is a separate health-check concern, not part of authoring.
 - **Cross-session resume.** If /skill-builder is interrupted mid-build, expect re-invocation from scratch.
-- **Self-build.** Bootstrap exception: this SKILL.md was authored by hand and should not be rebuilt by itself.
+- **Self-build.** Bootstrap exception: this SKILL.md predates `/skill-builder` and was hand-authored rather than built through the tool itself.
 - **Semantic-embedding overlap detection.** Step 3 is keyword + structural. Embedding-based is a later idea.
 - **Bulk build.** One skill per invocation.
 
-> Note: `/skill-builder` does NOT self-ping. It's a build/meta tool, exempt from TIME-SAVED tracking. The value it creates is tracked downstream, in the self-pings of the time-saver skills it builds.
+> Note: `/skill-builder` does NOT self-ping. It's exempt from TIME-SAVED tracking (a build/meta tool, per CLAUDE.md). The value it creates is tracked downstream, in the self-pings of the time-saver skills it builds.

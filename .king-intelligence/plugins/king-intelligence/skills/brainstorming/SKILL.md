@@ -23,49 +23,15 @@ Every project goes through this process. A quick client email, a one-page offer,
 
 You MUST create a task for each of these items and complete them in order:
 
-1. **Explore context** — check relevant files, the folder's CLAUDE.md (if one exists), recent work
+1. **Explore context** — check relevant files, the folder's CLAUDE.md, recent work
 2. **Offer visual companion** (if topic will involve visual questions) — this is its own message, not combined with a clarifying question. See the Visual Companion section below.
-3. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
+3. **Ask clarifying questions** — one at a time, until you can state the purpose, constraints, and success criteria back and the user confirms them
 4. **Propose 2-3 approaches** — with trade-offs and your recommendation
 5. **Present design** — in sections scaled to their complexity, get user approval after each section
-6. **Write design doc** — save to the relevant project folder as `YYYY-MM-DD-<topic>-design.md` and (if the project uses version control) commit it
+6. **Write design doc** — save to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit
 7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
-8. **User reviews written spec** — ask the user to review the spec file before proceeding
-9. **Transition to execution** — capture the approved design as a short PLAN.md in the relevant project folder, then begin the work
-
-## Process Flow
-
-```dot
-digraph brainstorming {
-    "Explore project context" [shape=box];
-    "Visual questions ahead?" [shape=diamond];
-    "Offer Visual Companion\n(own message, no other content)" [shape=box];
-    "Ask clarifying questions" [shape=box];
-    "Propose 2-3 approaches" [shape=box];
-    "Present design sections" [shape=box];
-    "User approves design?" [shape=diamond];
-    "Write design doc" [shape=box];
-    "Spec self-review\n(fix inline)" [shape=box];
-    "User reviews spec?" [shape=diamond];
-    "Write PLAN.md, then begin work" [shape=doublecircle];
-
-    "Explore project context" -> "Visual questions ahead?";
-    "Visual questions ahead?" -> "Offer Visual Companion\n(own message, no other content)" [label="yes"];
-    "Visual questions ahead?" -> "Ask clarifying questions" [label="no"];
-    "Offer Visual Companion\n(own message, no other content)" -> "Ask clarifying questions";
-    "Ask clarifying questions" -> "Propose 2-3 approaches";
-    "Propose 2-3 approaches" -> "Present design sections";
-    "Present design sections" -> "User approves design?";
-    "User approves design?" -> "Present design sections" [label="no, revise"];
-    "User approves design?" -> "Write design doc" [label="yes"];
-    "Write design doc" -> "Spec self-review\n(fix inline)";
-    "Spec self-review\n(fix inline)" -> "User reviews spec?";
-    "User reviews spec?" -> "Write design doc" [label="changes requested"];
-    "User reviews spec?" -> "Write PLAN.md, then begin work" [label="approved"];
-}
-```
-
-**The terminal state is a written, approved plan.** Once the design is approved, capture it as a short PLAN.md in the relevant project folder, then proceed to do the work. Don't skip ahead to building — a pitch site, a deck, an email send, an automation — before the design is approved.
+8. **User reviews written spec** — ask user to review the spec file before proceeding
+9. **Transition to execution** — capture the approved design as a short PLAN.md in the relevant project folder (per the root CLAUDE.md), then begin the work
 
 ## The Process
 
@@ -84,6 +50,7 @@ digraph brainstorming {
 - Propose 2-3 different approaches with trade-offs
 - Present options conversationally with your recommendation and reasoning
 - Lead with your recommended option and explain why
+- **YAGNI ruthlessly** — remove unnecessary features from every design
 
 **Presenting the design:**
 
@@ -110,10 +77,9 @@ digraph brainstorming {
 
 **Documentation:**
 
-- Write the validated design (spec) to the relevant project folder as `YYYY-MM-DD-<topic>-design.md`
+- Write the validated design (spec) to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`
   - (User preferences for spec location override this default)
-- Write it clearly and concisely.
-- If the project is under version control, commit the design document.
+- Commit the design document to git
 
 **Spec Self-Review:**
 After writing the spec document, look at it with fresh eyes:
@@ -128,23 +94,14 @@ Fix any issues inline. No need to re-review — just fix and move on.
 **User Review Gate:**
 After the spec review loop passes, ask the user to review the written spec before proceeding:
 
-> "Spec written and saved to `<path>`. Please review it and let me know if you want to make any changes before we start writing out the plan."
+> "Spec written and committed to `<path>`. Please review it and let me know if you want to make any changes before we start writing out the plan."
 
 Wait for the user's response. If they request changes, make them and re-run the spec review loop. Only proceed once the user approves.
 
 **Execution:**
 
-- Capture the approved design as a short PLAN.md in the relevant project folder.
+- Capture the approved design as a short PLAN.md in the relevant project folder (per the root CLAUDE.md).
 - Then begin the work. Don't kick off any other skill or concrete action before the design is approved.
-
-## Key Principles
-
-- **One question at a time** - Don't overwhelm with multiple questions
-- **Multiple choice preferred** - Easier to answer than open-ended when possible
-- **YAGNI ruthlessly** - Remove unnecessary features from all designs
-- **Explore alternatives** - Always propose 2-3 approaches before settling
-- **Incremental validation** - Present design, get approval before moving on
-- **Be flexible** - Go back and clarify when something doesn't make sense
 
 ## Visual Companion
 
@@ -155,12 +112,7 @@ A browser-based companion for showing mockups, diagrams, and visual options duri
 
 **This offer MUST be its own message.** Do not combine it with clarifying questions, context summaries, or any other content. The message should contain ONLY the offer above and nothing else. Wait for the user's response before continuing. If they decline, proceed with text-only brainstorming.
 
-**Per-question decision:** Even after the user accepts, decide FOR EACH QUESTION whether to use the browser or the terminal. The test: **would the user understand this better by seeing it than reading it?**
+Even after acceptance, decide browser vs terminal per question — the guide covers how.
 
-- **Use the browser** for content that IS visual — mockups, wireframes, layout comparisons, architecture diagrams, side-by-side visual designs
-- **Use the terminal** for content that is text — requirements questions, conceptual choices, tradeoff lists, A/B/C/D text options, scope decisions
-
-A question about a UI topic is not automatically a visual question. "What does personality mean in this context?" is a conceptual question — use the terminal. "Which wizard layout works better?" is a visual question — use the browser.
-
-If they agree to the companion, read the detailed guide in this skill folder before proceeding:
-`visual-companion.md`
+If they agree to the companion, read the detailed guide before proceeding:
+`${CLAUDE_PLUGIN_ROOT}/skills/brainstorming/visual-companion.md`

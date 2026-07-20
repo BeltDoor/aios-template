@@ -2,6 +2,8 @@
 
 Patterns to look for when reading a context to surface actions. **NOT exhaustive.** The detector is reasoning — use these as priming, not as a checklist.
 
+Vocabulary note: this file predates the lane model. Read "the gate" / "Phase E status report" as the closing report (its "Ready to send" and "Flagged" sections), and "surface in gate as `[manual]`" as "list under Flagged as `[manual]`". Lanes and the closing report are defined in [lane-model.md](lane-model.md).
+
 The job: read the context like a sharp assistant. Surface every discrete action the user would normally do as a result of this conversation. Don't pad. Don't force-fit. If the call generated 2 real actions, surface 2.
 
 ---

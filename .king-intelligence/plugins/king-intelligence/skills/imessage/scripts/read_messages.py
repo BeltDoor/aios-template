@@ -10,7 +10,7 @@ NEVER writes to the database. Opens read-only (mode=ro), respects the live WAL.
 
 Usage:
   read_messages.py --recent 20                 # last N messages across all conversations
-  read_messages.py --contact "Sam" --limit 30  # one thread, by name / number / email
+  read_messages.py --contact "Riley" --limit 30 # one thread, by name / number / email
   read_messages.py --search "invoice" --limit 30
   read_messages.py --list-chats                # recent conversations overview
   read_messages.py --selftest                  # privacy-preserving decoder check (no content printed)

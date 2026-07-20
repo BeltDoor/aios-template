@@ -1,6 +1,6 @@
 ---
 name: end-session
-description: Run the session-closing ritual for your repo. Detects what changed in the session (git + conversation), updates folder CLAUDE.md files with status/next-steps/blockers (creating one for any folder that lacks it, and keeping the folder-layout map in sync with what's on disk), drafts new memory entries (user/feedback/project/reference) using the root CLAUDE.md memory rules, runs the memory conveyor automatically to keep the index under its load budget (ages overflow into a dated archive, never deletes, no prompt), harvests the gotchas logged mid-session into their permanent homes so a future session never re-hits them, writes a RESUME briefing for the next session, closes out with a plain-English caveman receipt of what the whole session accomplished and what got filed where, and commits + pushes so the next session has full context. ALWAYS invoke when the user says any of "stopping for the day", "wrapping up", "ending session", "done for the day", "calling it", "calling it a day", "taking a break", "logging off", "finished for now", or types /end-session directly. Also invoke when the user says they're about to step away or the session feels like it's wrapping up. The whole point is that they never have to explain how they want things organized — be smart about detecting what was learned, what was done, and what belongs where.
+description: Run the session-closing ritual for your repo — detect what the session did and file everything into its permanent homes so the next session starts with full context. ALWAYS invoke when the user says any of "stopping for the day", "wrapping up", "ending session", "done for the day", "calling it", "calling it a day", "taking a break", "logging off", "finished for now", or types /end-session directly. Also invoke when the user says they're about to step away or the session feels like it's wrapping up. Not for a mid-task commit or a mid-session summary.
 ---
 
 # /end-session
@@ -233,41 +233,15 @@ If a repo lacks `SKILLS-DETAIL.md` (an install that never split), regenerate SKI
 
 This is the one place the session's time saved gets captured. Phase 3.5 just refreshed the per-skill `TIME-SAVED.md` (the deterministic skills spine), so those minutes are already counted. This phase captures the **ad-hoc remainder** — the real work this session that did NOT run through a tracked skill (a contract reviewed, a doc drafted, an inbox triaged, a site fixed). Most sessions have some; a pure-skills session may have none.
 
-**The number is honest or it is nothing.** A non-technical owner (and a skeptical prospect later) only trusts this if it's a floor they could defend. So the estimate follows these rules, hard:
-
-1. **Competent-peer baseline, not worst-case.** Estimate how long the task takes a competent person doing it by hand — unhurried but not fumbling. Never the slowest-possible human, never "if you'd had to learn it first."
-2. **The ×0.2 calibration — permanent, never skip it.** Sum the competent-peer lines, **multiply the total by 0.2 (divide by 5)**, THEN round down to the nearest 15 minutes. Real-world calibration shows uncut estimates run 4–5x what an owner would actually credit; this multiplier is the permanent fix, not a per-session judgment call. The logged number is always the already-calibrated one.
-3. **Credit the human time displaced, never the AI's wall-clock.** If it took Claude 5 minutes to do something that would have taken the human an hour by hand, credit ≤1 hour (before calibration) — never the 5 minutes, never an inflated "it would've taken you all day."
-4. **Silent — never ask.** No confirm question, no AskUserQuestion, no pop-up, ever. Build the breakdown internally, calibrate, log it, and carry ONE receipt line into Phase 8 Receipt 1 (e.g. "Time back: logged 45 min saved — running total 50h"). If the owner objects to a logged figure afterward, re-run `record` with the SAME session-id and the corrected minutes (idempotent replace — that's the veto path).
-5. **"I don't know" → credit 0.** A low floor beats an invented ceiling.
-6. **Per-session soft cap ~8 hours of ad-hoc (post-calibration).** If your figure exceeds it, re-check each line before logging (a runaway session must not poison the lifetime number).
-
 **Do NOT double-count.** Anything already represented by a `TIME-SAVED.md` skill row this session is counted by the spine — exclude it from this ad-hoc figure.
 
-Steps:
+Run the review exactly per [`references/time-back-review.md`](references/time-back-review.md): build the calibrated figure silently (competent-peer baseline, **×0.2 calibration — multiply the total by 0.2, then round down to the nearest 15 minutes — permanent, never skip it**; no confirm question, no AskUserQuestion, no breakdown shown, ever), then record it via the **timeSavedSyncScript from your settings**, passing the Phase-1 short HEAD hash as the stable session id (idempotent — a re-run can't double-count) plus today's date and the `candidate_wins` JSON. Carry `totalHours`, `adhocHours`, and whether the send landed into the Phase 8 Receipt 1 line — that single receipt line is the only place this phase ever surfaces to the owner.
 
-1. **Build the figure silently.** From `per_folder_summary` + the conversation (the same material Phase 8 Receipt 1 uses), list the ad-hoc items internally and credit each per the rules above, then apply the ×0.2 calibration and round down to 15 min. If there's no ad-hoc work, the figure is 0 — that's honest, log it as such. Do NOT show a breakdown or ask anything.
-2. **Record it deterministically.** Run the **timeSavedSyncScript from your settings** with the calibrated figure. Pass the Phase-1 HEAD hash (short) as the stable session id so a re-run can't double-count, today's date, and the `candidate_wins` you held from Phase 1 as JSON:
-
-   ```bash
-   node <timeSavedSyncScript> record \
-     --adhoc-min <calibrated minutes> \
-     --summary "<one-line what this session did>" \
-     --session-id <short HEAD hash from Phase 1> \
-     --date <today MM/DD/YY from Phase 1> \
-     --wins-json '<JSON array of {"text":...,"minutes":...} from candidate_wins, or []>' \
-     --send
-   ```
-
-   The script folds it into the **timeSavedState** ledger (recomputing the skills spine from `TIME-SAVED.md`, the ad-hoc total, sessions/weeks/streak, tools, milestones — all deterministically), then `--send` POSTs the full cumulative snapshot up to the members portal using the per-member token already on this machine. **It always exits 0:** offline, or a setup with no portal token (or a legacy key), just keeps the number local and queues the send for next time — it never blocks the close. Read the JSON it prints (`totalHours`, `adhocHours`, `dollarValue`, `send.sent`).
-
-3. **Never ask about a dollar rate.** If the ledger has no hourly rate set, hours alone is a complete, honest number. Only set a rate if the owner brings it up themselves (`node <timeSavedSyncScript> set-rate <n>`).
-
-Carry `totalHours`, `adhocHours`, and whether the send landed into the Phase 8 Receipt 1 line — that single receipt line is the only place this phase ever surfaces to the owner.
+**Never ask about a dollar rate.** If the ledger has no hourly rate set, hours alone is a complete, honest number. Only set a rate if the owner brings it up themselves (`node <timeSavedSyncScript> set-rate <n>`).
 
 ## Phase 3.6: Organization sweep — every folder documented, the map current (automatic, EVERY run)
 
-So the repo never drifts out of organization, run the **orgCheckScript from your settings** (example: `scripts/org-check.mjs`). **First check the script exists on disk; only run it if it does.**
+So the repo never drifts out of organization, run the **orgCheckScript from your settings** (default: `${CLAUDE_PLUGIN_ROOT}/scripts/org-check.mjs`). **First check the script exists on disk; only run it if it does.**
 
 ```bash
 node <orgCheckScript> --fix
@@ -328,7 +302,7 @@ Fold a one-line tidy receipt into the Phase 8 close-out (e.g. "Map tidy: 3 gaps 
 
 Memory is a cache, not a vault. `MEMORY.md` is the always-loaded index, but Claude Code only loads the first **200 lines OR 25KB, whichever comes first** (verified: code.claude.com/docs/en/memory.md). An unmanaged index can silently balloon past that (hundreds of entries, hundreds of KB), so most of it never loads. This conveyor keeps it under a 24KB safety budget: pinned entries stay, fresh entries ride newest-first, and the oldest non-pinned overflow ages out into a dated `ARCHIVE-YYYY-MM.md` (same folder, NOT auto-loaded — a deliberate non-CLAUDE.md filename so it never reloads the bloat). **Nothing is ever deleted, so nothing needs the owner's approval.**
 
-After writing this session's new entries (Phase 3), run the conveyor once — using the **conveyorScript from your settings** (example: `scripts/memory-conveyor.mjs`). **First check the configured script actually exists on disk; only run it if it does.** If no conveyorScript is configured or the file is missing, fall back to manual hygiene: trim the index to one line per entry, keep it under the load budget by hand, and note in the close-out that the automatic conveyor wasn't available.
+After writing this session's new entries (Phase 3), run the conveyor once — using the **conveyorScript from your settings** (default: `${CLAUDE_PLUGIN_ROOT}/scripts/memory-conveyor.mjs`). **First check the configured script actually exists on disk; only run it if it does.** If no conveyorScript is configured or the file is missing, fall back to manual hygiene: trim the index to one line per entry, keep it under the load budget by hand, and note in the close-out that the automatic conveyor wasn't available.
 
 ```bash
 node <conveyorScript> --enforce
@@ -336,7 +310,7 @@ node <conveyorScript> --enforce
 
 It normalizes entries to one line, re-detects `[PIN]` / fresh / dead-marker (CORRECTION/PRUNED/DEPRECATED) classification, moves overflow + dead-marked entries into the dated archive (**topic files stay on disk untouched**), verifies conservation (every note still lives in MEMORY ∪ archive), atomically rewrites `MEMORY.md`, and prints a one-line receipt.
 
-**This runs silently — no AskUserQuestion, no "prune now or defer."** That question is gone for good. The only thing that ever stops it is a hard failure:
+**This runs silently — no AskUserQuestion, no "prune now or defer."** The only thing that ever stops it is a hard failure:
 
 - If the script exits non-zero (a conservation check failed), it has **written nothing** — MEMORY.md is untouched. Surface the one-line error in the close-out receipt and leave memory as-is. Do NOT hand-edit to "fix" it; flag it for the owner. (Rollback master, if ever needed: the byte-for-byte snapshots in `memory/_snapshots/`.)
 - That is the whole gate. There is no other.
@@ -345,7 +319,7 @@ Fold the receipt into the Phase 8 "what I filed" block (e.g. "Memory: 4 new note
 
 **Consolidation still matters, but it lives in Phase 3, not here.** The conveyor handles SIZE (bytes under budget); the Phase 3 dedup-before-write rule handles COUNT (fold two entries on the same person/project into one current entry instead of adding a near-duplicate). Keeping the entry count down is what keeps the conveyor from aging out useful notes too fast.
 
-**To inspect without changing anything (when the conveyorScript exists):** `node <conveyorScript> --analyze` (read-only report of entries + the load cliff) or `--verify` (confirm MEMORY + archive still cover every note vs the latest `_snapshots/` baseline). The one-time `--collapse` that built this system already ran; you won't run it again.
+**To inspect without changing anything (when the conveyorScript exists):** `node <conveyorScript> --analyze` (read-only report of entries + the load cliff) or `--verify` (confirm MEMORY + archive still cover every note vs the latest `_snapshots/` baseline).
 
 ## Phase 5: Write RESUME briefing
 
@@ -430,7 +404,7 @@ NEVER auto-resolve. NEVER force-push without explicit per-incident approval.
 
 ## Phase 8: Caveman close-out — two receipts
 
-This is the moment the user sees their whole day at a glance, so deliver it in the **`/caveman` voice** — that skill (`${CLAUDE_PLUGIN_ROOT}/skills/caveman/SKILL.md`) is the source of truth for this format. Lead with the answer, plain CEO English, no jargon, one short line per action, any failure or skip on its own line. No wall of text.
+This is the moment the user sees their whole day at a glance, so deliver it in the **`/caveman` voice** — that skill ([`../caveman/SKILL.md`](../caveman/SKILL.md)) is the source of truth for this format. Lead with the answer, plain CEO English, no jargon, one short line per action, any failure or skip on its own line. No wall of text.
 
 Print TWO receipts, in order (terminal output, no AskUserQuestion). The first is the one that's easy to forget and the one the user actually cares about most: **what the session was worth.**
 
@@ -465,20 +439,8 @@ Don't ask "anything else?" — the user is stopping. Close out cleanly.
 
 - **No changes detected since last run:** print "Nothing to write since last /end-session run on `<date>`. Have a good break." Don't commit. Skip Phases 3-7.
 - **Mid-run interruption:** all writes are atomic per file. Sentinel only updates after successful commit. Rerun is safe — pick up where you left off.
-- **`--dry-run` flag passed:** log everything you would do, write nothing. Useful for verifying the skill before letting it run for real.
-- **Push or pull conflict:** halt, surface the exact error, AskUserQuestion for manual recovery. Never auto-rebase, never force-push.
 - **No conversation context (e.g., 5-min session):** still detect git changes and write the RESUME if anything was touched. For memory, just skip if there's nothing classifier-worthy. The skill should be useful even on tiny sessions.
 - **MEMORY.md or root CLAUDE.md unreadable:** halt, surface the error, ask the user to investigate. Don't try to recover with partial data.
-
-## Anti-patterns to avoid
-
-- **Don't ask the user what to write down.** That's the whole point of this skill. Detect from git + conversation. If you're tempted to ask "what did we work on?" — go re-read the transcript and the diff.
-- **Don't commit do-not-commit files.** CSVs (PII), `.env`, `.claude.json`, real passwords. See root CLAUDE.md security section. Stage explicitly, never `add -A`.
-- **Don't dump every detail to memory.** Apply the classifier ruthlessly. Today's task → RESUME briefing. Code patterns / file paths / git history → skip entirely. New rule from a correction → memory.
-- **Don't write a 10-bullet RESUME for a 3-bullet session.** Match the length to the session.
-- **Don't skip the dedup check.** Updating an existing memory entry is almost always better than adding a new one. Memory rot is mostly accretion, not absence.
-- **Don't auto-rebase or force-push.** On any conflict, halt and ask.
-- **Don't run /end-session mid-task.** This skill is for closing OUT a session.
 
 ## When NOT to invoke this skill
 

@@ -37,7 +37,7 @@ Anything a person receives: the follow-up email, a calendar invite, a Stripe inv
 - **Email:** check for an existing draft or live thread before composing a new one. Reply into the thread when one exists; don't start a parallel one. (Post-meeting follow-ups are new threads — no "re:" — but a genuine reply continues its thread. See [gmail-draft.md](gmail-draft.md).)
 - **Invoice:** check Stripe for an existing draft before creating one.
 
-**The follow-up email is Lane 2 + inline.** Build everything the email *needs* (per the razor) inline and bake it in. **Always do BOTH — show it inline in chat AND create the Gmail draft, every time** (the user's rule, not gated on approval). Never send (they send). If money was agreed, the "needed" thing is a real **Stripe payment link** in the body, not a "I'll invoice you" promise — create it live (`STRIPE_API_KEY`, `references/stripe-api.md`: make a price for the amount, then a payment_link, drop the `buy.stripe.com` URL in). Procedure + signature: [gmail-draft.md](gmail-draft.md).
+**The follow-up email is Lane 2 + inline.** Build everything the email *needs* (per the razor) inline and bake it in. **Always do BOTH — show it inline in chat AND create the Gmail draft, every time** (the user's rule, not gated on approval). Never send (they send). If money was agreed, the "needed" thing is the hosted link of a real Stripe invoice in the body, not an "I'll invoice you" promise — build it per SKILL.md Phase 3C (a real numbered invoice with a due date and a PDF; that phase is the single source for the flow). Procedure + signature: [gmail-draft.md](gmail-draft.md).
 
 **Batch, don't drip.** Present all outward items together in the closing report under "Ready to send (your trigger)" — the email draft, the perfected invite, the invoice draft. One list, the user acts. No per-item approval gate.
 
@@ -53,7 +53,7 @@ Standalone work the email doesn't need: prep for a different meeting, a new skil
 
 **No cap, but rank + flag.** List Lane-3 prompts ranked by urgency/value. Flag time-sensitive ones with the date ("Riley — Thursday, prep before then"). If a session spawns five, list five.
 
-**Escape hatch:** if the user says "just do X now," build it inline instead of handing the prompt. The prompt is the default for standalone work, not a wall.
+**Escape hatch:** if the user says "just do it now," build it inline instead of handing the prompt. The prompt is the default for standalone work, not a wall.
 
 ### Loaded-prompt template
 

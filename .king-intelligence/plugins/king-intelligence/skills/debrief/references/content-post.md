@@ -105,7 +105,7 @@ This builds a mock LinkedIn post (their avatar, name, the words, the card) and o
 **Fallback path: Playwright** (reliable, handles anything the primary tool chokes on). Drive the user's logged-in LinkedIn via a persistent browser profile: open the feed, start a post, attach the local card PNG directly (no public URL needed), paste the caption, publish. (Recovery if the profile is wedged: kill playwright chrome procs + remove the lock file.)
 
 **Gate + caveats:**
-- Fire ONLY on an explicit "post it." Never auto-publish (matches debrief rule 6 — nothing outward without the user's trigger).
+- Fire ONLY on an explicit "post it." Never auto-publish (matches debrief rule 5 — nothing outward without the user's trigger).
 - **No auto-comment fires on this path.** Keep any pricing auto-comment logic on its own direct-OAuth path if you have one; a Blotato/Playwright post goes out clean. That's intended for "here's what I learned" posts.
 - **No API delete.** Once it's live there's no programmatic undo (manual removal in the LinkedIn app only). On the FIRST live post, say so plainly in the gate: "Once this fires it's live on your LinkedIn and there's no undo button on my end. Good to go?" The first real post IS the production test.
 

@@ -85,7 +85,7 @@ const MEM_DIR = deriveMemDir();
 const MEMORY_PATH = path.join(MEM_DIR, 'MEMORY.md');
 const EOL = '\n';                      // MEMORY.md is LF-only (verified)
 const HARD_CAP = 25600;                // the real 25KB load cliff
-const BUDGET = 24000;                  // safety budget: ~1.3KB headroom under the cliff
+const BUDGET = 16800;                  // safety budget: Claude Code's built-in PostToolUse memory hook (verified firing 7/5/26) warns at 24.4KB and demands <=17.1KB, tighter than the old 25KB cliff — stay under the hook's target
 const LINE_BUDGET = 185;               // Claude Code loads first 200 LINES *or* 25KB, whichever first; cap lines too (margin under 200)
 const MAX_LINE = 240;                  // max bytes for a single one-liner index entry
 const PIN_TAG = '[PIN]';
@@ -333,8 +333,12 @@ function verify() {
   if (!snap) { console.error('No PRECONVEYOR snapshot found to verify against.'); process.exit(1); }
   const origIds = new Set(parse(fs.readFileSync(snap, 'utf8')).sections.map(s => s.id));
   const memIds = new Set(readMemory().sections.map(s => s.id));
-  const arcPath = archivePath();
-  const arcIds = fs.existsSync(arcPath) ? new Set(parse(fs.readFileSync(arcPath, 'utf8')).sections.map(s => s.id)) : new Set();
+  // union EVERY dated archive, not just the current month's — notes aged out in a
+  // prior month live in that month's ARCHIVE-*.md and are still fully covered
+  const arcIds = new Set();
+  for (const f of fs.readdirSync(MEM_DIR).filter(f => /^ARCHIVE-\d{4}-\d{2}\.md$/.test(f))) {
+    for (const s of parse(fs.readFileSync(path.join(MEM_DIR, f), 'utf8')).sections) arcIds.add(s.id);
+  }
   const covered = new Set([...memIds, ...arcIds]);
   const missing = [...origIds].filter(id => !covered.has(id));
   const memBytes = Buffer.byteLength(fs.readFileSync(MEMORY_PATH, 'utf8'), 'utf8');
