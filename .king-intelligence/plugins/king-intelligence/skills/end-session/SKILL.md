@@ -1,6 +1,6 @@
 ---
 name: end-session
-description: Run the session-closing ritual for your repo — detect what the session did and file everything into its permanent homes so the next session starts with full context. ALWAYS invoke when the user says any of "stopping for the day", "wrapping up", "ending session", "done for the day", "calling it", "calling it a day", "taking a break", "logging off", "finished for now", or types /end-session directly. Also invoke when the user says they're about to step away or the session feels like it's wrapping up. Not for a mid-task commit or a mid-session summary.
+description: Run the session-closing ritual for your repo — detect what the session did and file everything into its permanent homes so the next session starts with full context. Use this when the user clearly ends a work session — says something like "stopping for the day", "ending session", "done for the day", "logging off", or types /end-session directly. If the phrasing is casual or ambiguous ("wrapping up", "taking a break"), ask before firing rather than assuming. Not for a mid-task commit or a mid-session summary. If this setup has its own tailored version of this skill, prefer that one.
 ---
 
 # /end-session
@@ -36,7 +36,9 @@ The **memory folder path and the default git branch are NOT in config** — they
 
 Before the change-detection in Phase 1, discover the two locations this skill depends on. Do NOT hardcode them.
 
-**The default branch.** Detect it, don't assume `main`. Try `git symbolic-ref --quiet --short refs/remotes/origin/HEAD` (strip the `origin/` prefix); if that's empty, fall back to the branch `git rev-parse --abbrev-ref HEAD` reports, or `git remote show origin` and read "HEAD branch." Use the detected branch everywhere this skill says "the default branch" (Phase 2 ahead/behind check, Phase 7 push).
+**Does a cloud backup even exist?** Run `git remote get-url origin` first. If it errors (no remote configured), this repo is local-only: set that fact aside as NO-REMOTE and SKIP every fetch/pull/push step in this skill (Phase 2 ahead/behind, Phase 7 push) — commit locally only, never error, and say it once in the close-out receipt in plain words: "saved on this computer; no cloud backup is set up for this folder." Do not treat a missing remote as a failure and do not try to create one.
+
+**The default branch.** Detect it, don't assume `main`. Try `git symbolic-ref --quiet --short refs/remotes/origin/HEAD` (strip the `origin/` prefix); if that's empty, fall back to the branch `git rev-parse --abbrev-ref HEAD` reports, or `git remote show origin` and read "HEAD branch" (with NO-REMOTE, just use `git rev-parse --abbrev-ref HEAD`). Use the detected branch everywhere this skill says "the default branch" (Phase 2 ahead/behind check, Phase 7 push).
 
 **The auto-memory folder.** Claude Code keeps per-project auto-memory under the user's home `.claude/projects/` tree. Find this project's folder by matching the working directory to its slug:
 
@@ -82,6 +84,8 @@ Build a working map (in your head, no temp file):
 If `--dry-run` flag was passed: do all detection + classification, log what you would write, then stop. Write nothing. Useful for checking the skill before letting it run for real.
 
 ## Phase 2: Fetch and pull only if behind
+
+With NO-REMOTE (Phase 0): skip this entire phase — there is nothing to fetch from.
 
 Run `git fetch origin`, then `git rev-list --left-right --count HEAD...origin/main` to check ahead/behind status.
 
@@ -394,6 +398,8 @@ chore(session): YYYY-MM-DD - <one-line summary>
 
 Pass via HEREDOC per the repo's commit conventions.
 
+With NO-REMOTE (Phase 0): stop after the commit — there is nowhere to push. The receipt says "saved on this computer; no cloud backup is set up for this folder" and that is the correct, complete outcome, not an error.
+
 Push to the default branch you detected in Phase 0: `git push origin <default-branch>` (don't hardcode `main`). On failure, AskUserQuestion for manual recovery:
 
 - "Try `git pull --rebase` then push again (Recommended if push failed due to non-fast-forward)"
@@ -430,7 +436,7 @@ And here's what I filed so nothing's lost:
 - Memory: M new notes, kept K loading, aged J older ones into this month's archive (nothing deleted)
 - Registries refreshed: <the registries from your settings that changed, as applicable, or "none kept here">
 - Next-session briefing saved: .claude/last-session.md
-- Backed up to the cloud: <commit short hash>   (or "saved on your computer, cloud backup still open" if the push didn't run)
+- Backed up to the cloud: <commit short hash>   (or "saved on your computer, cloud backup still open" if the push didn't run; with NO-REMOTE: "saved on this computer; no cloud backup is set up for this folder")
 ```
 
 Don't ask "anything else?" — the user is stopping. Close out cleanly.

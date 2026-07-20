@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: "You MUST use this before any creative or build work — a new feature or tool, a client offer or deliverable, a workflow or automation, a piece of content, or any meaningful change. Explores intent, requirements, and design before building or acting."
+description: "Use this before creative or build work — a new feature or tool, a client offer or deliverable, a workflow or automation, a piece of content, or any meaningful change. Explores intent, requirements, and design before building or acting. If this setup has its own tailored brainstorming skill, prefer that one."
 ---
 
 # Brainstorming Ideas Into Designs

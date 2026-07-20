@@ -109,8 +109,20 @@ Recording the version updates `lastSyncedVersion`, so next time only genuinely-n
 - **I looked at but left alone:** a one-line read of the deep audit (folder health from `pillars.folders`, the connections they have from `pillars.connections.servers`, config status from `pillars.config`), and any duplicate that was just a display quirk rather than a real file.
 - **Safety:** "Nothing of yours was overwritten. Your cloud backup is your undo."
 
+## Turning off individual skills (survives every update)
+
+Some clients already have their own tailored version of a skill (their own email drafter, their own brainstorming flow) and don't want the King Intelligence copy competing with it. That's fine — this toolkit should fit around what they've built, not fight it.
+
+To turn a skill off: add its folder name to a `disabledSkills` list in the plugin's own settings file at `$CLAUDE_PLUGIN_DATA/config.json`, for example:
+
+```json
+{ "disabledSkills": ["email", "brainstorming"] }
+```
+
+The background updater removes those skills at every session start and again right after each update lands, so an update can never bring a disabled skill back. To turn one back on, remove its name from the list; it returns on the next update or reinstall. When the client asks to disable or re-enable a skill, make this edit for them (it's the ONE key in `config.json` that may be edited directly; everything else still goes through `patterns-record.mjs`), then confirm in plain words which skills are off. Never suggest deleting skill folders by hand or maintaining a custom prune script — this list is the supported way.
+
 ## Pausing updates (rare)
 
 If you ever want to stop updates for a while, run `claude plugin disable king-intelligence@king-intelligence` — that pauses the whole toolkit and its background updates. Turn it back on with `claude plugin enable king-intelligence@king-intelligence`. You shouldn't normally need this: if anything ever ships wrong, Jacob fixes it at the source and your setup quietly heals itself the next time you open Claude Code.
 
-**Hard rules for Part 3:** never edit anything under the plugin code folder (`CLAUDE_PLUGIN_ROOT`). The only things you write are the client's own `CLAUDE.md` (additively, on a yes), their `config.json` (only via `patterns-record.mjs`), and the skill-archive MOVE (never a delete). Never overwrite a personalization. Mask any secret as `xxxx` if one appears. The audit is read-only; if any pillar comes back unavailable, say so plainly and continue. (If a Part 2 migration already adopted `gotcha-capture` or `folder-org`, they're already in `patterns.adopted` and the audit won't surface them.)
+**Hard rules for Part 3:** never edit anything under the plugin code folder (`CLAUDE_PLUGIN_ROOT`). The only things you write are the client's own `CLAUDE.md` (additively, on a yes), their `config.json` (only via `patterns-record.mjs`, with one exception: the `disabledSkills` list may be edited directly per the section above), and the skill-archive MOVE (never a delete). Never overwrite a personalization. Mask any secret as `xxxx` if one appears. The audit is read-only; if any pillar comes back unavailable, say so plainly and continue. (If a Part 2 migration already adopted `gotcha-capture` or `folder-org`, they're already in `patterns.adopted` and the audit won't surface them.)

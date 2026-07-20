@@ -7,7 +7,7 @@
 // there is no new version it still surfaces unseen suggestions. Throttled to once / ~20h. ALWAYS
 // exits 0. Set KI_AUTOUPDATE_DRYRUN=1 (+ optional KI_AUTOUPDATE_FAKE_LATEST=x.y.z) to exercise the
 // message paths without touching the real install.
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, rmSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { join } from "node:path";
 import { homedir } from "node:os";
@@ -59,6 +59,27 @@ function latestWhatsNew() {
   return null;
 }
 
+// PER-SKILL OPT-OUT (added 7/20/26, client feedback). A client can turn off individual skills by
+// listing folder names under `disabledSkills` in $CLAUDE_PLUGIN_DATA/config.json, e.g.
+// { "disabledSkills": ["email", "brainstorming"] }. This prunes those folders from the installed
+// plugin so they never load — and because it runs EVERY session start (before the 20h throttle)
+// and again right after a silent update applies, an update can never resurrect a disabled skill.
+// Unknown names are ignored; native commands (adapt/update) are untouchable by design. Returns the
+// number of folders pruned this run (0 when already clean).
+function pruneDisabledSkills(root, data) {
+  try {
+    const cfg = JSON.parse(readFileSync(join(data, "config.json"), "utf8"));
+    const list = Array.isArray(cfg.disabledSkills) ? cfg.disabledSkills : [];
+    let pruned = 0;
+    for (const name of list) {
+      if (typeof name !== "string" || !/^[a-z0-9][a-z0-9-]*$/i.test(name)) continue; // no path tricks
+      const dir = join(root, "skills", name);
+      if (existsSync(dir)) { try { rmSync(dir, { recursive: true, force: true }); pruned++; } catch {} }
+    }
+    return pruned;
+  } catch { return 0; }
+}
+
 function unseenPatternCount(root, data) {
   try {
     const shipped = readdirSync(join(root, "patterns")).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, ""));
@@ -73,6 +94,10 @@ try {
   const data = process.env.CLAUDE_PLUGIN_DATA;
   const root = process.env.CLAUDE_PLUGIN_ROOT;
   if (!data || !root) process.exit(0);
+
+  // enforce the client's per-skill opt-out on EVERY session start, before the throttle can exit —
+  // cheap, and it guarantees a disabled skill stays gone no matter when the last update landed.
+  pruneDisabledSkills(root, data);
 
   // throttle
   const marker = join(data, ".last-autocheck");
@@ -100,6 +125,9 @@ try {
       let applied = false;
       if (DRY) { applied = true; }
       else { try { execSync('claude plugin update king-intelligence@king-intelligence', { timeout: 60000, stdio: "ignore" }); applied = true; } catch {} }
+
+      // the fresh update just restored every skill folder — re-apply the client's opt-out now
+      if (applied && !DRY) pruneDisabledSkills(root, data);
 
       const n = unseenPatternCount(root, data); // file-level "ways of working" not yet seen
       const whatsNew = latestWhatsNew();
