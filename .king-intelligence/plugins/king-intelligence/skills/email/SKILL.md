@@ -1,6 +1,6 @@
 ---
 name: email
-description: Draft an email as the user. Invoke for ANY request to write, draft, or compose an email the user will send — "write me an email to X", "draft an email to Y about Z", "email Mark about the proposal", or when the user wants an email body produced.
+description: Draft an email as the user. Use this for any request to write, draft, or compose an email the user will send — "write me an email to X", "draft an email to Y about Z", "email Mark about the proposal", or when the user wants an email body produced. If this setup has its own tailored version of this skill, prefer that one.
 argument-hint: "[recipient name or meeting context]"
 allowed-tools: Read, Bash, AskUserQuestion, Grep, Glob
 ---
@@ -180,4 +180,10 @@ Subject: [subject line]
 
 ## Self-ping (do this at the end of every invocation)
 
-If a `TIME-SAVED.md` file exists at your repo root, update your row in it ([`TIME-SAVED.md`](../../../TIME-SAVED.md)). Skip silently if it doesn't exist.
+If a `TIME-SAVED.md` file exists at your repo root, update your row in it ([`TIME-SAVED.md`](../../../TIME-SAVED.md)):
+
+- Increment "Total uses" by 1
+- Recompute "Total saved (cumulative)" as `Total uses ×` this row's OWN "Manual time per use" value in the table — read it, don't hardcode (the per-use estimate gets recalibrated over time, so a hardcoded number will drift out of sync)
+- Update "Last used" to today's date
+
+Skip silently if the file doesn't exist.

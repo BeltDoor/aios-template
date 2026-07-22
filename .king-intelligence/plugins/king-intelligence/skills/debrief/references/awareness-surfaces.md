@@ -19,7 +19,7 @@ When you've detected the actions in Phase B, for each action ask:
    to lock in (e.g., a video-polish skill encodes "RAW audio + 60fps + brand-spec
    end card" rules; `email` enforces voice rules + blacklist + fabrication check).
    Always prefer the Skill over freelancing the same task.
-2. **Is there an MCP or API for the target system?** Trello (REST, references/trello-api.md), Calendar, Gmail, Notion,
+2. **Is there an MCP or API for the target system?** Your CRM (REST or CLI, see its own reference doc if you have one), Calendar, Gmail, Notion,
    Stripe (via Bash), etc. Use it instead of building API calls by hand.
 3. **Is there a repo script?** `scripts/otter-pull.mjs`, the content app pipeline,
    the SEO engine, etc.

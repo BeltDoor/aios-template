@@ -19,7 +19,7 @@ Trivial mechanical updates are their own thing (Lane 1) regardless of the razor.
 Mechanical, safe, reversible work. Just do it, no gate. Then list what you touched so the user can catch errors.
 
 - Update the client's `CLAUDE.md`, the `clients/CLAUDE.md` rollup, auto-memory, knowledge graph.
-- Log the meeting as a dated comment on the person's Trello card (the CRM board — see `references/trello-api.md`; skip any dormant/replaced CRM per your settings).
+- Log the meeting as a dated comment/touch on the person's CRM card (see your CRM's own reference doc if you have one; skip any dormant/replaced CRM per your settings).
 - Person-to-person cross-references into other files (signal type 3).
 
 **Cross-client safety:** writing into a DIFFERENT client's file based on this transcript (e.g. "Sam knows Riley" → Riley's file) is allowed only at **high diarization confidence**. If the source line is garbled, downgrade it to a flagged item in the report instead of writing it. Never propagate a possible mishearing into another client's record.

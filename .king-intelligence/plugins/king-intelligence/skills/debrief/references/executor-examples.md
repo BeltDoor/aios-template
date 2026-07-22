@@ -31,20 +31,20 @@ Format: `Action intent` -> `executor candidate` -> `why / gotchas`
 
 ---
 
-## CRM (Trello, or your configured board)
+## CRM (your configured board)
 
-The CRM is your Trello board (id = the `crmBoardId` from your settings), with lists per your `crmList.*` settings (typically something like Need My Help NOW / Need My Help FUTURE / Don't Want To Talk To / Clients / Partners-COIs). Full mechanics + recipes: `references/trello-api.md`. Do NOT write to a dormant/replaced CRM if one is configured as such in your settings.
+The CRM is the `crm` from your settings (board id = the `crmBoardId` from your settings), with lists per your `crmList.*` settings. Full mechanics + recipes: your CRM's own API/CLI reference doc, if you maintain one. Do NOT write to a dormant/replaced CRM if one is configured as such in your settings.
 
 **Move a card between lists (the only "stage change" now).**
-- `PUT /1/cards/<cardId>?idList=<newListId>` — resolve list ids live from the board, never hardcode.
-- Gotcha: GET the card's current list first; passed-in/CLAUDE.md state goes stale.
+- Re-fetch the card's CURRENT list first (passed-in/CLAUDE.md state goes stale), then move it via your CRM's update endpoint or CLI — never hardcode a list id.
+- Never move a card into a "won"/client stage without a real verbal yes, especially if that stage fires an automation on your board.
 
 **Create a new card (prospect onboarding).**
-- Dedup first: `GET /1/search?query=<name>&modelTypes=cards` (try person AND company name).
-- `POST /1/cards` with name `First Last - Company`, desc = title/company/email/phone + one context line, right list per /debrief Phase 4E, AIOS/SMM label if the offer fit is clear. No due dates (board rule).
+- Dedup first: search by person name, then by company name (and email, if your CRM supports it, including archived cards).
+- Create with name = the person's name only (company goes in its own field, never the title), notes/description = title/email/phone + one context line, right list per /debrief Phase 4E, a label/tag if the offer fit is clear. No due dates (a common board rule).
 
 **Log a meeting on a card.**
-- `POST /1/cards/<cardId>/actions/comments` with a dated note (date, summary path, top 3 actions).
+- Add a dated note/comment/touch (date, summary path, top 3 actions) — this is what keeps the card's last-activity honest.
 - Note: `/debrief` Phase 4E does this automatically now (housekeeping, no gate).
 
 ---
@@ -112,7 +112,7 @@ The CRM is your Trello board (id = the `crmBoardId` from your settings), with li
 
 **Queue a social post.**
 - `mcp__blotato__blotato_create_post` (direct API).
-- Or: drop content into the content-app pipeline at `king-intelligence/king-ai-content-app/`.
+- Or: drop content into whatever content pipeline you use for social.
 
 ---
 

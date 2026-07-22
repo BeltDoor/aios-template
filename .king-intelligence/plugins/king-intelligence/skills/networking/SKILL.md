@@ -1,91 +1,115 @@
 ---
 name: networking
-description: Fill your Google Calendar with tentative (purple) networking events for the next ~60 days — your recurring anchors plus a fresh batch of new local events worth attending in your travel radius. Use when the user types /networking or says "refresh my networking calendar", "find me events to go to", "what should I attend", "fill my calendar with networking", "add some networking events", "any good events coming up", or hands over any ask about which local rooms to show up at — even if the skill name is never mentioned. When run, it lists every event inline first, then drops each onto the calendar as a tentative purple hold with a Yes/No/Maybe RSVP button on the event. NOT for 1-on-1 coffees (those are referral/Calendly driven, not discoverable) and NOT for getting booked to SPEAK (that is the separate speaking pipeline).
-argument-hint: "[optional: '30 days' | '90 days' | 'AI only' | 'benefits only']"
+description: Finds local networking events worth going to and, once approved, puts them on the user's calendar. Use when the user types /networking or says "refresh my networking calendar", "find me events to go to", "what should I attend", "fill my calendar with networking", "add some networking events", "any good events coming up", "what's happening locally", "find me some rooms", "I need to get out and meet people", "any referral groups I should visit", or hands over any ask about which local rooms to show up at. Use even if they don't say networking. NOT for one-on-one coffees (referral/Calendly driven, not discoverable) and NOT for getting booked to speak.
+argument-hint: "[optional: '60 days' | 'AI only' | 'chambers only' | 'BNI visits']"
 disable-model-invocation: false
 ---
 
-# /networking — auto-fill the calendar with the right rooms
+# /networking
 
 *Provided as part of your King Intelligence engagement. Not for resale or redistribution.*
 
-## Step 0 — load your settings
+Your calendar should always have somewhere worth going. This finds those rooms, proves the dates are real, checks you're actually free, and shows you everything on an approval page. **Nothing reaches your calendar until you check a box.**
 
-Before anything else, read **`references/king-intelligence-config.md`** from the repo root (use the Read tool on that exact repo-relative path; the session CWD is the repo root). Find the **`## networking`** section and parse its `- key: value` lines. These are the per-user settings this skill runs on:
+This flow is approve-first by design: an earlier automatic-insert version treated the calendar RSVP itself as the curation step, which meant a bad suggestion could sit on the calendar looking real. This version never writes anything until you've explicitly said yes.
 
-- **`city`** — home base for the radius filter and the search anchor.
-- **`homeZip`** — the ZIP the drive-time radius is measured from.
-- **`radius`** — how far to travel for an event. Default to **~30-min drive** if missing.
-- **`calendarTool`** — `google`, `outlook`, `other`, or `none`. Decides whether events auto-insert or just get handed over as a list.
-- **`selfEmail`** — the email to add as a guest so the Yes/No/Maybe RSVP prompt shows. Passed to the inserter script.
-- **`calendarColor`** — the colorId for the tentative holds (e.g. `3` = purple).
-- **`icpProfile`** — the buyer/peer mix to aim for (e.g. balanced — half buyer rooms, half peer/referral).
-- **`metroCarveOut`** — any exception to the radius (e.g. a nearby metro allowed only if explicitly AI-focused).
-- **`anchorsFile`** — the repo-relative path to the recurring-anchor definitions + filter rules. Read the anchor list from THERE, not from this skill folder.
+## Step 0 — load settings and state
 
-If the file or the `## networking` section is missing, tell the user to create it (you may scaffold a starter `## networking` block from the keys above), then continue with safe generic fallbacks: city/zip unknown so ask once, ~30-min radius, `calendarTool: none` (hand over a copy-paste list instead of auto-inserting), no self-as-guest RSVP, a balanced buyer/peer mix, no metro carve-out, and the anchors guide at `references/anchors.md` inside this skill folder.
+1. Read `references/king-intelligence-config.md` from the repo root (use the Read tool on that exact repo-relative path; the session CWD is the repo root) → the `## networking` section. Keys: `city`, `homeZip`, `radius`, `horizonDays`, `weeklyCapacity`, `conflictRule`, `confirmedDatesOnly`, `calendarTool`, `selfEmail`, `calendarColor`, `metroCarveOut`, `anchorsFile`, `blocklistFile`.
+2. Read the `anchorsFile` → the recurring series, the filter rules, and the accumulated gotchas.
+3. Read the `blocklistFile` → rooms the user killed and why. **Filter these out before they ever see them**, both exact titles and the learned patterns. Re-showing a room they already rejected is the friction that makes them stop running this.
+4. Get today's date: `date '+%m/%-d/%y - %H:%M %Z'` (bare `date`, never a `TZ=` override).
 
-Everywhere below that says "the `<key>` from your settings," use the value you just parsed.
+If the config or its `## networking` section is missing, tell the user once (you may scaffold a starter `## networking` block from the keys above), then continue with safe generic fallbacks: ask once for city/ZIP, 30-min radius, 30-day horizon, 2 events/week, confirmed-dates-only, and hand over a list instead of writing to a calendar.
+
+## The flow
+
+### 1. Research, four categories, in parallel
+
+Fan out one subagent per category (`model: sonnet` — this is gathering, not judgment). Source lists and per-category query tactics are in [`references/sources.md`](references/sources.md). A sensible default weighting, most businesses find:
+
+1. **AI-specific events** — often the highest-converting category. Attendance self-selects for people who already care about AI, which matters if that's part of the pitch.
+2. **Structured referral networks** — visitor days at other BNI chapters, LeTip, AmSpirit, Gold Star. For a referral-driven business, visiting undrained chapters is usually the highest-confidence bet on the list.
+3. **Every chamber in radius** — including the ones with no machine-readable calendar. Dig their event pages and Facebook rather than writing them off.
+4. **Trade and industry associations** — the rooms the user's actual clients live in.
+
+Service clubs (Rotary, Kiwanis, Lions) are out by default — they tend to pay off mainly if the user has an active speaking/visibility pipeline. Bring them back in with a focus argument (or adjust the weighting in `sources.md`) if that's a priority.
+
+**Spend guard.** Discovery costs roughly $0.30 to $0.60 per run. Cap each subagent at **12 `perplexity_search` calls** and the whole run at **60**. `perplexity_reason` and `perplexity_research` are banned and hook-blocked; Firecrawl is out of scope here. For depth, run more cheap searches and synthesise yourself.
+
+### 2. Prove every date
+
+A date only counts if it was read off a live page or listing this run. Cadence arithmetic is a hypothesis, not a source. The anchors file has recorded real drift before: a monthly series landing on the 2nd Friday one month when the file claimed the 3rd, and an Eventbrite page whose "Tuesday, September 16" turned out to be the prior year.
+
+- **Verified** → eligible for the calendar.
+- **Unverified** → goes to the page's "worth chasing" section with the specific person and number to contact. It does not become a hold. A hold the user can't trust teaches them to ignore the calendar.
+
+### 3. Filter
+
+- Inside `radius` of `homeZip`. Apply the `metroCarveOut` (a farther metro only if explicitly AI-focused).
+- Drop anything on the blocklist.
+- Drop duplicates of each other and of what's already on the calendar.
+- **Skip the user's own BNI chapter (or equivalent referral group)** — already a true recurring event. Visiting *other* chapters is a first-class suggestion.
+
+### 4. Check the user is actually free
+
+Write the survivors to `state/candidates.json` (shape in the script header), then:
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/skills/networking/scripts/check-conflicts.mjs
+```
+
+**Nothing on the calendar blocks anything. Everything is bendable**, with one exception: a single sacred commitment (defaults to the user's own referral chapter, e.g. BNI — see `references/king-intelligence-config.md` / the script header for how to change it) that never bends. The script annotates and never removes anything else.
+
+This rule was learned the hard way, twice in one day, on a real run: a version that blocked on any confirmed commitment hid most of the good options. A version that blocked only on work commitments still silently killed a confirmed recurring anchor and a chapter visit the user had specifically asked for — they never saw either, and the run just looked thin for no visible reason. The rule that survived: don't let anything on the calendar actually block a suggestion; let the user judge it themselves.
+
+So every candidate reaches the page carrying its collisions ("Overlaps your 9-10 AM team call"). The user judges in two seconds what a filter can't judge at all. Travel buffer stays 30 minutes, used only to decide what to *mention*.
+
+**The general lesson, worth applying beyond this skill: a filter that silently deletes options is worse than a page that shows a conflict the user can dismiss.**
+
+### 5. Rank and cut
+
+Score by: AI/referral category first, then drive time, then how soon, then cost, then freshness (a room the user hasn't worked beats one they have).
+
+Mark the top `weeklyCapacity`-worth as `recommended: true`. At a typical setting of about 2 events a week including their own anchor (e.g. BNI), that's roughly 4 or 5 for a 30-day window. Everything else still renders below a visible cut line. **Never truncate silently.**
+
+### 6. Show the approval page
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/skills/networking/scripts/preview-events.mjs --data <abs path to state/approval-data.json> --open
+```
+
+Each row gets Add / Skip this time / Never again, and "Never again" opens a one-line reason box. Give every row a real "why it fits" grounded in who is in that room, not a generic label.
+
+Also print the list inline in chat, tight and plain. Many users read chat before they open the page, and it's the only version that works from a phone.
+
+### 7. They approve, then write
+
+The user pastes the reply blob back. Then:
+
+1. Write only the ADD rows to `state/approved.json`.
+2. Append every NEVER row to the blocklist with their verbatim reason plus a conservatively derived `pattern`. When the reason is ambiguous, store the kill without a pattern rather than over-blocking good rooms.
+3. Insert:
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/skills/networking/scripts/add-events.mjs state/approved.json --dry-run   # read the JSON first
+node ${CLAUDE_PLUGIN_ROOT}/skills/networking/scripts/add-events.mjs state/approved.json             # real
+```
+
+Approved events land **confirmed** and purple, not tentative. That's what lets next month's conflict check see them.
+
+### 8. Receipt
+
+One short block: what landed, what was blocked and by what, what's on the chase list with who to call, and anything newly added to the blocklist. Then one concrete next action.
+
+## Re-running
+
+Monthly. A re-run never disturbs events the user already approved; it only adds new ones. If a series' real date drifts from the cadence in the anchors file, **fix the anchors file**. It's the memory that stops the next run repeating the mistake.
+
+## Out of scope
+
+One-on-one coffees (relationship-driven, not discoverable), speaking bookings, and post-event contact capture. This skill fills the calendar; it does not track what came of each event.
 
 ---
 
-The user networks in two layers. **Layer 1 — anchors:** recurring rooms they reliably show up to. **Layer 2 — new finds:** fresh local events worth attending. This skill shows the full list inline first, then refreshes both onto the calendar as tentative/purple holds. The user is added as a guest on each one so the calendar shows a Yes/No/Maybe RSVP prompt — that is how they curate: Yes locks it in, Maybe keeps it tentative, No drops it. No per-event approval gate in chat; the inline list is the preview and the RSVP is the decision.
-
-**Out of scope, on purpose:** one-on-one coffees (relationship/Calendly driven, not discoverable) and speaking bookings (separate pipeline). Never add those here.
-
-## What "done" looks like
-
-The user first sees the full inline list of every event the run found. Then the next ~60 days of their calendar hold in-window anchors plus ~5-10 new events, all tentative + the `calendarColor` from your settings, each with the user added as a guest (the `selfEmail` from your settings) so the Yes/No/Maybe RSVP prompt shows, none duplicated against what was already there. The user RSVPs on each event to curate.
-
-## How to run it
-
-### 1. Set the window and read context
-- Get today's date: `date '+%m/%-d/%y - %H:%M %Z'` (bare `date`, never a `TZ=` override).
-- Default horizon: **60 days**. An argument can override ("30 days", "90 days") or filter focus ("AI only", "benefits only").
-- Read the anchors guide at the `anchorsFile` from your settings (the recurring-series definitions + radius/ICP rules) and [`references/sources.md`](${CLAUDE_PLUGIN_ROOT}/skills/networking/references/sources.md) (where to look + the banned-tool rules). Read them every run; they are the source of truth, not anything hardcoded here.
-
-### 2. Build Layer 1 — anchors
-For each **core anchor** in the `anchorsFile` from your settings, compute its occurrence dates that fall inside the window from its cadence rule (e.g. "1st Tuesday", "3rd Friday"). Computing a known cadence is fine; do not invent a date for a series whose pattern you do not know.
-- Where a quick source check exists (an Eventbrite series link, an org calendar), confirm the real posted date with WebFetch. If it is posted, use it. If it is only projected from the cadence, keep it but tag it `(date projected — confirm)` in the receipt.
-- **Any anchor already set as a true recurring event on the calendar — never re-add it.** The dedup step will also catch it, but do not even build it as a candidate. The `anchorsFile` should note which series to skip.
-
-### 3. Build Layer 2 — new finds (~5-10, balanced)
-Discover fresh events in the window using **`perplexity_search` + WebSearch + WebFetch only** (see `sources.md` for the source list and per-source query tips). Aim for the balanced mix in the `icpProfile` from your settings: some buyer rooms (chamber / small-business / benefits + insurance) and some peer/referral rooms (AI community, founders, consultants).
-- Filter to the `radius` from your settings of the `homeZip` from your settings. Apply the `metroCarveOut` from your settings: e.g. a nearby metro only if explicitly AI-focused.
-- Drop anything that duplicates an anchor or an existing event.
-- Score by fit (buyer/peer balance, drive time, cost, how soon) and keep the best ~5-10. If a focus arg was given, weight to it.
-- **No silent truncation:** if you found more good events than the cap, say so in the receipt and name a couple you dropped.
-
-### 4. Show the user the full list inline FIRST
-Before anything touches the calendar, print the complete list in chat so the user sees what is coming. Plain language, no jargon, no em-dashes. Group it:
-- **Anchors** — date, name, time, cost, drive time, one-line why. Flag any tagged `(date projected — confirm)`.
-- **New finds** — same columns.
-- **Conflicts + things to decide** — two events the same morning, register-by deadlines, paid events, anything a source could not confirm (e.g. a phone-only chamber).
-
-This inline list is the preview. The user does not approve each one, but sees everything before it lands.
-
-### 5. Stage candidates and insert
-Write the combined anchor + new-find list to `state/candidates.json` (shape in the script header): each event with `summary`, `location`, `description`, `start`/`end` (`dateTime` + `timeZone` matching your locale). Put cost, registration link, drive time, a one-line "why it fits", and `Added by /networking <today>` in the description. No double-quotes inside description text (cmd.exe quoting).
-
-Then run the inserter. It lists the live calendar, dedupes (same day, ±150 min, similar title), and adds survivors as tentative/purple with the user added as a guest (so the RSVP prompt shows). Pass the `selfEmail` from your settings so the inserter adds them as a guest under the right address:
-
-```bash
-node ${CLAUDE_PLUGIN_ROOT}/skills/networking/scripts/add-events.mjs --self-email <selfEmail> --dry-run   # preview first
-node ${CLAUDE_PLUGIN_ROOT}/skills/networking/scripts/add-events.mjs --self-email <selfEmail>             # real insert
-```
-
-(`<selfEmail>` is the `selfEmail` from your settings; you can also set it once via the `NET_SELF_EMAIL` env var instead of the flag.) Always `--dry-run` first, read its `added`/`skipped`/`errors` JSON, sanity-check it, then run for real. The script is the only thing that writes to the calendar (deterministic, handles the Windows quoting, and adds the user as a guest with `sendUpdates:none` so no invite emails ever go out).
-
-### 6. Confirm
-One short line: how many anchors + new finds landed, how many were skipped as already-on-calendar. Remind the user they can RSVP **Yes / No / Maybe** on each event right on the calendar — No drops it from consideration, Maybe leaves it undecided, Yes locks it in.
-
-## Guardrails (do not cross)
-
-- **Tools:** `perplexity_search` (cheap, ~$0.005/call) for discovery; WebSearch + WebFetch to verify. **Never** Firecrawl, **never** `perplexity_reason`, **never** `perplexity_research` (banned + hook-blocked). Keep discovery to roughly 10-20 search calls.
-- **Never** duplicate or double-book — the script dedupes, but also reason about it when building candidates.
-- **Never** touch confirmed events. The skill only ever adds new tentative events; it does not edit or delete.
-- **Never** add coffees or speaking gigs.
-- **Never** fabricate an event date. Compute from a known cadence or verify from a source; otherwise say it is unconfirmed.
-
-## Why a script instead of inserting inline
-The calendar insert is deterministic and Windows `cmd.exe` quoting is genuinely error-prone (a "Lunch & Learn" title can break a raw insert). Bundling it in `scripts/add-events.mjs` keeps the quoting + dedup correct every run.
+**Self-ping.** Update the `/networking` row in [`TIME-SAVED.md`](../../../TIME-SAVED.md): increment Total uses, recompute Total saved as `uses × 25 min`, set Last used to today.

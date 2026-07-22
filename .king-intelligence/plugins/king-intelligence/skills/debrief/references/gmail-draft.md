@@ -85,7 +85,7 @@ If `sig_bytes` is near 0 or the script can't find the file, STOP and report — 
 
 ### Links in the body — always a pretty hyperlink
 
-Never drop a raw URL into the body, especially a long tokenized one (Zoom share links, signed download links). Render every link as a styled gold `<a>` with short, friendly anchor text:
+Never drop a raw URL into the body, especially a long tokenized one (Zoom share links, signed download links). Render every link as a styled brand-color `<a>` with short, friendly anchor text:
 
 ```js
 const url = 'https://full/url?including=any&pwd=token';   // the real, complete URL

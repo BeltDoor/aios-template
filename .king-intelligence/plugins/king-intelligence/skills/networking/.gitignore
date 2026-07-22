@@ -1,2 +1,8 @@
 # transient run state — rebuilt every invocation
 state/candidates.json
+state/approval-data.json
+state/approved.json
+state/networking-approval.html
+
+# blocklist.json is deliberately NOT ignored: the user's rejection reasons have to
+# persist across runs, that is the whole point of the never-again option.

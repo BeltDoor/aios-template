@@ -40,11 +40,12 @@ These are the strongest. When the user (or the other party) commits to a deliver
 
 | Pattern + context | Likely action |
 |---|---|
-| *"We're in"* / *"Let's move forward"* / verbal yes | Move the Trello card to **Clients** (verbal yes = client, no proposal stage exists) |
-| Discovery call ending with mutual fit + no existing card | Create the Trello card in **Need My Help NOW** (Phase 4E mechanics) |
-| *"Not right now"* / timing pushback but real need acknowledged | Move/create the card in **Need My Help FUTURE** |
-| Mentioned a NEW stakeholder by name (CTO, partner, A/P contact, etc.) | Either add a card / note it on the company's card OR surface it for the user to confirm relationship (judgment call) |
-| Stale info called out on the call (e.g., "we moved offices") | Update the card's description |
+| *"We're in"* / *"Let's move forward"* / verbal yes | **Surface it for the user, don't auto-move.** A verbal yes belongs in the `crmList.client` list — but if that stage fires any automation on your board, treat the move as a Phase 5 decision the user confirms rather than an auto-move. |
+| First real contact, met them, no read on need yet | Create the card in the `crmList.newPerson` list if configured (Phase 4E default — everyone the user meets gets carded) |
+| Discovery call ending with mutual fit + no existing card | Create the card in the `crmList.activeProspect` list (Phase 4E mechanics) |
+| *"Not right now"* / timing pushback but real need acknowledged | Move/create the card in the `crmList.futureProspect` list |
+| Mentioned a NEW stakeholder by name (CTO, partner, A/P contact, etc.) | Either add a card / note it as a touch on the company's card OR surface it for the user to confirm relationship (judgment call) |
+| Stale info called out on the call (e.g., "we moved offices") | Update the card's notes |
 
 ---
 
