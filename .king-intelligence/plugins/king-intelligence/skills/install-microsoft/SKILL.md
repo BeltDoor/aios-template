@@ -1,6 +1,6 @@
 ---
 name: install-microsoft
-description: Set up the Microsoft / Outlook tool so Claude can read, draft, and send the user's Outlook email and create, update, and delete their calendar events. This installs the Microsoft Graph PowerShell SDK (Connect-MgGraph plus the Mg- cmdlets), the Microsoft-side equivalent of the Google gws tool. Use when the user says "connect my Outlook", "set up Microsoft", "install Microsoft 365", "hook up my work email", "connect Outlook so you can send email and manage my calendar", "my email is on Microsoft / Outlook", or types /install-microsoft, and lean toward firing it whenever a new Outlook or Microsoft 365 user needs Claude wired into their email and calendar, even if they never name the skill.
+description: Set up the Microsoft / Outlook tool so Claude can read, draft, and send the user's Outlook email and create, update, and delete their calendar events. Two paths, one skill. In Claude Code it installs the Microsoft Graph PowerShell SDK (Connect-MgGraph plus the Mg- cmdlets), the Microsoft-side equivalent of the Google gws tool. For a user working in Claude Cowork, claude.ai, or the phone app, it walks the official Microsoft 365 connector setup instead (write tools shipped July 2026, verified working on individual plans). Use when the user says "connect my Outlook", "set up Microsoft", "install Microsoft 365", "hook up my work email", "connect Outlook so you can send email and manage my calendar", "my email is on Microsoft / Outlook", "I want Outlook in Cowork", or types /install-microsoft, and lean toward firing it whenever a new Outlook or Microsoft 365 user needs Claude wired into their email and calendar, even if they never name the skill.
 disable-model-invocation: false
 allowed-tools: Bash
 ---
@@ -11,7 +11,14 @@ allowed-tools: Bash
 
 ## What you get
 
-When this is done, Claude can fully run your Outlook for you: read your email for context, draft replies straight into your Outlook Drafts, send email on your say-so, and create, move, or cancel events on your calendar. This is the Microsoft side of the same setup Google users get. It is the only Microsoft path that does the whole job, both reading AND writing email plus full calendar control. The one-click Microsoft connector can only read, the lighter command-line tool cannot draft email or touch your calendar, and the older one is being shut down, so this is the right tool.
+When this is done, Claude can fully run your Outlook for you: read your email for context, draft replies straight into your Outlook Drafts, send email on your say-so, and create, move, or cancel events on your calendar. This is the Microsoft side of the same setup Google users get.
+
+**Pick the path first.**
+
+- **Working in Claude Code (a terminal)?** Use the PowerShell path below. It is the richest option: full email and calendar control, attachments, shared mailboxes, and it runs headlessly in scripts.
+- **Working in Claude Cowork, claude.ai in a browser, or the Claude phone app?** The terminal path cannot run there. Use the official Microsoft 365 connector instead, which since July 2026 can draft AND send email. Jump to "The Cowork / claude.ai path" near the end of this skill.
+
+(The lighter command-line tool cannot draft email or touch your calendar, and the older Graph CLI is being shut down, so those are never the answer.)
 
 ## Set expectations (say this to the client up front)
 
@@ -157,3 +164,26 @@ Invoke-KIGraphRetry { Get-MgUserMessage -UserId "<client-UPN>" -Top 5 }
 **A notetaker tool (for example Fyxer) seems to be in the way.** It is not. A notetaker and this Outlook connection do not talk to each other, so a notetaker cannot block or eat the draft. Do not chase this. Just confirm the draft directly in the Drafts folder in Outlook web.
 
 **The one thing you canNOT fix from the client's side.** If the client's Outlook is a locked-down managed work account, their company's IT can block this connection at the company level. You only find this out at the first login, when the approval gets refused. There is no client-side workaround. If you hit this, the client's IT department (their Global Admin) has to grant the approval. Plan around this for any managed corporate account: flag the possibility before you start, so a blocked login isn't a surprise.
+
+## The Cowork / claude.ai path (no terminal)
+
+Use this when the client works in Claude Cowork, claude.ai in a browser, or the Claude phone app. The official Microsoft 365 connector gained write tools in July 2026: create, update, and delete drafts, reply and reply-all drafts, send, forward, full calendar write, mailbox rules and auto-replies, and SharePoint / OneDrive file updates. Verified working end to end on an individual (non-Enterprise) Claude plan on 7/27/26: the draft landed in Outlook Drafts, the send delivered, and every write asks for a click of approval in the chat before it fires.
+
+### Setup (about 10 minutes)
+
+1. Confirm the client's email is a WORK Microsoft 365 account in their company's tenant. Personal @outlook.com / @hotmail.com addresses cannot use this connector at all.
+2. In Claude: Customize, then Connectors, find **Microsoft 365**, click Connect, then Continue, and sign in with the work Microsoft account.
+3. Microsoft shows a permission screen listing everything including "Send mail as you" and "Read and write access to your mail." If the client owns their own Microsoft setup (most small businesses), have them tick **"Consent on behalf of your organization"** and click Accept. Done. If a company IT department manages their Microsoft account, that IT admin has to approve this screen instead, same blocker as the terminal path, no workaround.
+4. If the company connected this Microsoft connector back when it was read-only (before July 7, 2026), the new tools stay hidden until you disconnect, reconnect, and re-approve the permission screen.
+5. Prove it with the same definition of done as the terminal path: ask Claude in a fresh conversation to "draft an email to myself, but don't send it," then confirm the draft is sitting in Outlook on the WEB.
+
+### The drafts-only lockdown (default posture for clients)
+
+Write tools start as "Needs approval," meaning Claude asks before every draft or send. For a client who should never auto-send, go one step further: in Customize, Connectors, Microsoft 365, set **Outlook send mail**, **Outlook send draft**, and **Outlook forward mail** to **Blocked**. Verified: blocked tools disappear from Claude's toolbox entirely (drafting keeps working), so a send physically cannot happen, no matter what anyone types. Settings changes only apply to NEW conversations, so start a fresh one after changing them.
+
+### Known limits of this path (tell the client up front)
+
+- **No attachments.** Sending, forwarding, and drafting all reject messages with attachments. If the client's workflow needs attachments, that lives on the terminal path.
+- Emails Claude sends carry a hidden technical marker identifying them as AI-assisted. Recipients never see it in normal reading; it exists in the message's plumbing and cannot be turned off.
+- Shared mailboxes ("send as info@") are not supported here; the terminal path handles those.
+- A brand-new Microsoft tenant (like a fresh trial) is blocked by Microsoft from emailing the outside world for a while (bounce code 550 5.7.501). That is Microsoft anti-spam on new tenants, not a broken connector; established company tenants are unaffected.
