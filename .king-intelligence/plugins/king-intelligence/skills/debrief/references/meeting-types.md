@@ -37,7 +37,7 @@ Auto-detect the meeting type from transcript content. Use these signal words and
 ### demo
 **Display name:** Product Demo
 **Signals:**
-- The user showing a product (Content App, cold email pipeline, RFQ system)
+- The user showing a product (a content app, cold email pipeline, RFQ system, etc.)
 - "Let me show you" / "Here's how it works" / "Watch this"
 - Client reacting to features ("That's cool" / "How does that work?")
 - Trial or next steps discussed after showing

@@ -35,7 +35,9 @@ Read the result and decide:
    - `claude plugin update king-intelligence@king-intelligence`
 2. If this repo already has the local maintenance scripts (a sign the org migration has run), refresh them to the current plugin version so they never drift. This is a no-op for a client who hasn't run the migration yet:
 
-   !`[ -d "${CLAUDE_PROJECT_DIR}/.claude/scripts" ] && cp -f "${CLAUDE_PLUGIN_ROOT}/scripts/org-check.mjs" "${CLAUDE_PLUGIN_ROOT}/scripts/memory-conveyor.mjs" "${CLAUDE_PROJECT_DIR}/.claude/scripts/" 2>/dev/null && echo "refreshed local maintenance scripts" || echo "no local maintenance scripts yet (the org setup migration installs them)"`
+   !`[ -d "${CLAUDE_PROJECT_DIR}/.claude/scripts" ] && cp -f "${CLAUDE_PLUGIN_ROOT}/scripts/org-check.mjs" "${CLAUDE_PLUGIN_ROOT}/scripts/memory-conveyor.mjs" "${CLAUDE_PLUGIN_ROOT}/scripts/time-saved-sync.mjs" "${CLAUDE_PROJECT_DIR}/.claude/scripts/" 2>/dev/null && echo "refreshed local maintenance scripts" || echo "no local maintenance scripts yet (the org setup migration installs them)"`
+
+   (`time-saved-sync.mjs` was MISSING from this list until v0.31.0. The one-time org migration installed all three, but the migration only ever runs once, so every client who set up before the time-saved tracker shipped never received that script and their member page silently stayed empty. Keep all three names here: this refresh is the only thing that heals an already-migrated repo.)
 
 3. Tell the user, in plain non-technical language, what changed and that they need to restart Claude Code for a new VERSION to fully take effect. Reassure them their saved settings were not touched.
 

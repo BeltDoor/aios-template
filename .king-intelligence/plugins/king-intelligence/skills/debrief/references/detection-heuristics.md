@@ -30,7 +30,7 @@ These are the strongest. When the user (or the other party) commits to a deliver
 
 | Pattern | Likely action |
 |---|---|
-| *"Let's meet Thursday at 12:30"* | Create calendar invite (use the next Thursday in the future; default to the user's local timezone) |
+| *"Let's meet Thursday at 12:30"* | Create calendar invite (use the next Thursday in the future; default Eastern TZ) |
 | *"Same time next week"* | Create calendar invite one week from the meeting date, same time |
 | *"How about Tuesday morning"* | Either send a tentative invite or draft a Gmail asking for confirmation (judgment call — when the call ended without nailing time, draft the ask) |
 
@@ -40,12 +40,12 @@ These are the strongest. When the user (or the other party) commits to a deliver
 
 | Pattern + context | Likely action |
 |---|---|
-| *"We're in"* / *"Let's move forward"* / verbal yes | **Surface it for the user, don't auto-move.** A verbal yes belongs in the `crmList.client` list — but if that stage fires any automation on your board, treat the move as a Phase 5 decision the user confirms rather than an auto-move. |
-| First real contact, met them, no read on need yet | Create the card in the `crmList.newPerson` list if configured (Phase 4E default — everyone the user meets gets carded) |
-| Discovery call ending with mutual fit + no existing card | Create the card in the `crmList.activeProspect` list (Phase 4E mechanics) |
-| *"Not right now"* / timing pushback but real need acknowledged | Move/create the card in the `crmList.futureProspect` list |
+| *"We're in"* / *"Let's move forward"* / verbal yes | **Surface it for the user, don't auto-move.** Verbal yes but not yet paying → the `crmList.activeProspect` column. Paying already → the `crmList.client` column. No column entry should fire any job on its own. |
+| First real contact, met them, no read on need yet | Create the card in the `crmList.newPerson` column (Phase 4E default — everyone met gets carded) |
+| Discovery call ending with mutual fit + no existing card | Create the card in the `crmList.newPerson` column (Phase 4E mechanics) |
+| *"Not right now"* / timing pushback but real need acknowledged | Move/create the card in the `crmList.futureProspect` column |
 | Mentioned a NEW stakeholder by name (CTO, partner, A/P contact, etc.) | Either add a card / note it as a touch on the company's card OR surface it for the user to confirm relationship (judgment call) |
-| Stale info called out on the call (e.g., "we moved offices") | Update the card's notes |
+| Stale info called out on the call (e.g., "we moved offices") | Update the card's `notes` |
 
 ---
 
@@ -64,8 +64,8 @@ These are the strongest. When the user (or the other party) commits to a deliver
 If `gmail_draft_id` was passed from `/debrief`, the draft is **input context**, NOT an action.
 
 - **Never** include "send the drafted follow-up email" in the gate.
-- Never wire `gws gmail users drafts send` into a `/handle-it` action.
-- Mention the parked draft as a one-line FYI in the Phase E status report so the user remembers it's there (e.g. *"Gmail draft `r123...` parked in your drafts for your review"*).
+- Never wire `gws gmail users drafts send` into a standalone-triage action.
+- Mention the parked draft as a one-line FYI in the closing report so the user remembers it's there (e.g. *"Gmail draft `r123...` parked in your drafts for your review"*).
 
 The user sends drafts manually, always. This rule overrides any other "verbal commitment → action" pattern when the deliverable is a Gmail draft.
 
@@ -84,16 +84,16 @@ The user sends drafts manually, always. This rule overrides any other "verbal co
 
 ## Build-engagement blocker signals (highest priority — runs BEFORE other build actions)
 
-If the meeting commits the user to building / installing / setting up anything on the client's hardware (AIOS, Build OS, Claude Code, MCP servers, CLIs, VS Code, n8n on their machine, cold-email pipeline on their account, etc.), the FIRST detected action should be infrastructure-blocker research. This MUST execute before any "Session 1 prep" action, before any Stripe invoice, before any committed-deliverable action.
+If the meeting commits the user to building / installing / setting up anything on the client's hardware (an AI operating system, Claude Code, MCP servers, CLIs, VS Code, n8n on their machine, cold-email pipeline on their account, etc.), the FIRST detected action should be infrastructure-blocker research. This MUST execute before any "Session 1 prep" action, before any Stripe invoice, before any committed-deliverable action.
 
 | Pattern + context | Likely action (runs FIRST) |
 |---|---|
-| Build-engagement signal + `pre_session_blockers` field is null or empty | `Agent` to research client's hardware/OS compatibility with the user's intended stack; output to `clients/<name>/01-research/infrastructure-blockers.md` |
+| Build-engagement signal + `pre_session_blockers` field is null or empty | `Agent` to research client's hardware/OS compatibility with the intended stack; output to `clients/<name>/01-research/infrastructure-blockers.md` |
 | Build-engagement signal + client CLAUDE.md flags Chromebook / locked corporate laptop / iPad / Linux dev mode | `Agent` to research the specific blocker + substitute stack; output to research folder; surface in gate as "blockers known, here's the substitute plan" |
-| Email already parked committing to "Session 1 win on your machine" without verified hardware | Flag in Phase E status: *"Heads up — the parked draft commits to deliverables, but we never verified [client]'s hardware. The Chromebook risk: ... Edit the draft if needed before sending."* |
+| Email already parked committing to "Session 1 win on your machine" without verified hardware | Flag in the closing report: *"Heads up — the parked draft commits to deliverables, but we never verified [client]'s hardware. The Chromebook risk: ... Edit the draft if needed before sending."* |
 | Build-engagement signal + IT-locked corporate environment (locked corporate laptop pattern) | Surface as `[manual]` action: "Confirm whether [client] has personal-machine workaround before scheduling Session 1" |
 
-**Why this matters:** a build engagement can look ready to schedule while the client's actual hardware makes the intended stack infeasible (a Chromebook blocks Claude Desktop / Claude Code / VS Code entirely). If a follow-up email already commits to deliverables before that's verified, the blocker research has to run FIRST, not as a peer of the other actions.
+**Source incident (why this scan exists):** a debrief for a client on a locked-down Chromebook once nearly proposed creating a CRM deal + scheduling Session 1 without realizing Claude Desktop, Claude Code, and VS Code were all unavailable on that machine. The build engagement was technically infeasible as scoped, and the parked email already committed the user to it. The blocker research has to be the FIRST action, not a peer of the others.
 
 ---
 
@@ -122,7 +122,7 @@ If a commitment has a future deadline AND no other action is queued to satisfy i
 Don't surface these:
 
 - **Things already done on the call** ("We agreed X = 5") — already in the summary.
-- **Things the OTHER party committed to** without a corresponding action for the user ("Client will get back to me with the spec next week" — no action for the user unless they need to follow up if they don't).
+- **Things the OTHER party committed to** without a corresponding action for the user ("Client will get back to me with the spec next week" — no action for the user unless they need to follow up if the client doesn't).
 - **Pure relationship moments** ("Loved that story about your kid's BJJ tournament") — those go in the client CLAUDE.md, not the action gate.
 - **Stuff the housekeeping phases of `/debrief` already handled** — transcript saved, summary written, MEMORY updated, engagement logged. These are already done by the time `/handle-it` runs.
 
@@ -131,7 +131,7 @@ Don't surface these:
 ## Edge cases
 
 - **Multiple actions from one sentence:** *"I'll send the proposal and book the follow-up"* = 2 actions (send PDF + create calendar invite).
-- **Conditional actions:** *"Send the contract only if Riley approves"* — surface as `[conditional]` in the gate, don't execute even if approved. Better to leave for the user to trigger.
+- **Conditional actions:** *"Send the contract only if Morgan approves"* — surface as `[conditional]` in the gate, don't execute even if approved. Better to leave for the user to trigger.
 - **Ambiguous timing:** *"Sometime next week"* — schedule a Monday wakeup to nudge the user to actually book the thing.
 - **The call ran long and the same action was mentioned twice:** dedupe. One action.
 - **Action requires data not in the context:** surface in gate as `[needs-info: what's missing]` so the user fills it in before approving.

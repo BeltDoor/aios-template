@@ -4,6 +4,7 @@
     "end-session": {
       "conveyorScript": ".claude/scripts/memory-conveyor.mjs",
       "orgCheckScript": ".claude/scripts/org-check.mjs",
+      "timeSavedSyncScript": ".claude/scripts/time-saved-sync.mjs",
       "scratchpadFile": ".claude/session-scratch.md",
       "folderLayoutDoc": "references/folder-layout.md"
     },

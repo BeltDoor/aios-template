@@ -1,6 +1,6 @@
 ---
 name: end-session
-description: Run the session-closing ritual for your repo — detect what the session did and file everything into its permanent homes so the next session starts with full context. Use this when the user clearly ends a work session — says something like "stopping for the day", "ending session", "done for the day", "logging off", or types /end-session directly. If the phrasing is casual or ambiguous ("wrapping up", "taking a break"), ask before firing rather than assuming. Not for a mid-task commit or a mid-session summary. If this setup has its own tailored version of this skill, prefer that one.
+description: Run the session-closing ritual for your repo — detect what the session did and file everything into its permanent homes so the next session starts with full context. Use this when the user says any of "stopping for the day", "wrapping up", "ending session", "done for the day", "calling it", "calling it a day", "taking a break", "logging off", "finished for now", or types /end-session directly. Also use it when the user says they're about to step away or the session feels like it's wrapping up. Not for a mid-task commit or a mid-session summary. If this setup has its own tailored version of this skill, prefer that one.
 ---
 
 # /end-session
@@ -15,16 +15,16 @@ Before anything else, read your per-user settings so this skill adapts to whoeve
 
 Find the `## end-session` section and parse its `- key: value` lines. The keys this skill uses:
 
-- **registries** — comma-separated list of root-level registry files to refresh in Phase 3.5 (example: `SKILLS.md, CONNECTIONS.md, TIME-SAVED.md`).
-- **registryPreserveSections** — comma-separated list of hand-maintained `## ` section headings inside `SKILLS.md` that must be preserved, never regenerated (example: `## Plugins & platform tools, ## Removed / status`).
-- **knowledgeGraph** — the in-repo knowledge-graph folder path for the Phase 3 knowledge-layer step (example: `knowledge/`).
-- **conveyorScript** — the memory-conveyor script path run in Phase 4 (default: `${CLAUDE_PLUGIN_ROOT}/scripts/memory-conveyor.mjs`). If this script doesn't exist on disk, skip the conveyor call and use the manual hygiene fallback noted in Phase 4.
-- **orgCheckScript** — the organization checker run in Phase 3.6 (default: `${CLAUDE_PLUGIN_ROOT}/scripts/org-check.mjs`). It scaffolds a `CLAUDE.md` for any project-level folder still missing one and regenerates the folder map from disk truth. If it doesn't exist on disk, skip the org sweep and note it in the close-out.
-- **scratchpadFile** — the in-session gotcha buffer harvested in Phase 3 (example: `.claude/session-scratch.md`). Claude logs errors/blockers/dead-ends here the moment they happen; this skill files each into its permanent home and resets the file. If not configured or absent, skip the harvest (still do the Phase 1 backup scan for unlogged gotchas).
-- **folderLayoutDoc** — the folder-layout map that the orgCheckScript regenerates in Phase 3.6 (example: `references/operating/folder-layout.md`). The map's tree lives between `AUTO-LAYOUT` markers and is owned by the script, so never hand-edit the tree.
-- **memoryIndexFormat** — how the memory index is shaped in Phase 3/4 (example: `pin-band` — a `[PIN]` band at the top, fresh entries newest-first below).
-- **timeSavedSyncScript** — the deterministic time-saved core run in Phase 3.55 (default: `${CLAUDE_PLUGIN_ROOT}/scripts/time-saved-sync.mjs`). It folds the session's calibrated roll-up into the local ledger (silently — no confirm question) and phones the number up to the members portal. **Opt-in: if this key isn't set OR the script isn't on disk, skip Phase 3.55 entirely and silently.**
-- **timeSavedState** — the local time-saved ledger file the Phase 3.55 review writes + Phase 7 commits (example: `.claude/time-saved/state.json`).
+- **registries** — comma-separated list of root-level registry files to refresh in Phase 3.5 (a typical value: `SKILLS.md, CONNECTIONS.md, TIME-SAVED.md`).
+- **registryPreserveSections** — comma-separated list of hand-maintained `## ` section headings inside `SKILLS.md` that must be preserved, never regenerated (a typical value: `## Plugins & platform tools, ## Removed / status`).
+- **knowledgeGraph** — the in-repo knowledge-graph folder path for the Phase 3 knowledge-layer step (a typical value: `knowledge/`).
+- **conveyorScript** — the memory-conveyor script path run in Phase 4 (a typical value: `scripts/memory-conveyor.mjs`). If this script doesn't exist on disk, skip the conveyor call and use the manual hygiene fallback noted in Phase 4.
+- **orgCheckScript** — the organization checker run in Phase 3.6 (a typical value: `scripts/org-check.mjs`). It scaffolds a `CLAUDE.md` for any project-level folder still missing one and regenerates the folder map from disk truth. If it doesn't exist on disk, skip the org sweep and note it in the close-out.
+- **scratchpadFile** — the in-session gotcha buffer harvested in Phase 3 (a typical value: `.claude/session-scratch.md`). Claude logs errors/blockers/dead-ends here the moment they happen; this skill files each into its permanent home and resets the file. If not configured or absent, skip the harvest (still do the Phase 1 backup scan for unlogged gotchas).
+- **folderLayoutDoc** — the folder-layout map that the orgCheckScript regenerates in Phase 3.6 (a typical value: `references/operating/folder-layout.md`). The map's tree lives between `AUTO-LAYOUT` markers and is owned by the script, so never hand-edit the tree.
+- **memoryIndexFormat** — how the memory index is shaped in Phase 3/4 (a typical value: `pin-band` — a `[PIN]` band at the top, fresh entries newest-first below).
+- **timeSavedSyncScript** — the deterministic time-saved core run in Phase 3.55 (a typical value: `scripts/time-saved-sync.mjs`; the default for a new setup is `.claude/scripts/time-saved-sync.mjs`). It folds the session's calibrated roll-up into the local ledger (silently — no confirm question) and phones the number up to the members portal. **Opt-in: if this key isn't set OR the script isn't on disk, skip Phase 3.55 entirely and silently.**
+- **timeSavedState** — the local time-saved ledger file the Phase 3.55 review writes + Phase 7 commits (a typical value: `.claude/time-saved/state.json`).
 
 Throughout the phases below, wherever it says "the `<key>` from your settings," use the value you parsed here.
 
@@ -42,8 +42,8 @@ Before the change-detection in Phase 1, discover the two locations this skill de
 
 **The auto-memory folder.** Claude Code keeps per-project auto-memory under the user's home `.claude/projects/` tree. Find this project's folder by matching the working directory to its slug:
 
-1. List the projects parent. On macOS/Linux it's `~/.claude/projects/` (`$HOME/.claude/projects`). On Windows it's `C:/Users/<user>/.claude/projects/` (`$USERPROFILE\.claude\projects`, which `$HOME` also resolves to under Git Bash/MSYS).
-2. Compute this project's slug from the repo root path: take the absolute working-directory path, drop the drive-letter colon if present, and replace every `/` and `\` with `-`. Example: `/Users/sam/myrepo` becomes `-Users-sam-myrepo`; `C:/Users/riley/Documents/myrepo` becomes `c--Users-riley-Documents-myrepo`. Slugs are case-sensitive on disk, so if no exact match is found, match case-insensitively.
+1. List the projects parent. On macOS it's `~/.claude/projects/` (`$HOME/.claude/projects`). On Windows it's `%USERPROFILE%\.claude\projects\` (`$USERPROFILE\.claude\projects`, which `$HOME` also resolves to under Git Bash/MSYS).
+2. Compute this project's slug from the repo root path: take the absolute working-directory path, drop the drive-letter colon if present, and replace every `/` and `\` with `-`. Example: a macOS repo path turns into something like `-home-sam-my-repo`; a Windows repo path turns into something like `c--home-sam-my-repo`. Slugs are case-sensitive on disk, so if no exact match is found, match case-insensitively.
 3. The matched subfolder is this project's auto-memory home. The index is `<that subfolder>/memory/MEMORY.md`; individual entries are sibling `*.md` files in the same `memory/` folder.
 4. If no matching subfolder or no `memory/MEMORY.md` exists, this repo has no auto-memory yet — skip the memory steps (Phase 3 memory drafting, Phase 4 conveyor) and note it once in the close-out. Don't create one unprompted.
 
@@ -51,11 +51,11 @@ Hold the discovered default branch and memory path in your working context for t
 
 ## Mental model
 
-You are the user's **secretary for the second brain**, and the second brain is the operational backbone of their business — so this close-out is the job that keeps the whole thing from drifting. Take meticulous notes on what the session covered, file every durable fact in its correct home (the right folder CLAUDE.md, memory, the knowledge graph, the registries), and leave the desk clean so tomorrow opens with full context and nothing lost. The user has spelled out their organizational rules in the root CLAUDE.md and in their auto-memory system; apply those rules without making them repeat them. If you're tempted to ask "what did we work on?" — re-read the transcript and the diff instead. That's the whole point of this skill.
+You are the user's **secretary for their second brain**, and that second brain is the operational backbone of their business — so this close-out is the job that keeps the whole thing from drifting. Take meticulous notes on what the session covered, file every durable fact in its correct home (the right folder CLAUDE.md, memory, the knowledge graph, the registries), and leave the desk clean so tomorrow opens with full context and nothing lost. The user has spelled out their organizational rules in the root CLAUDE.md and in their auto-memory system; apply those rules without making them repeat them. If you're tempted to ask "what did we work on?" — re-read the transcript and the diff instead. That's the whole point of this skill.
 
-And brief them the way a good secretary briefs a CEO: plain English, no jargon, lead with what happened. That voice lands hardest in the Phase 8 close-out receipt, but keep it in every gate and prompt along the way too.
+And brief him the way a good secretary briefs a CEO: plain English, no jargon, lead with what happened. That voice lands hardest in the Phase 8 close-out receipt, but keep it in every gate and prompt along the way too.
 
-**Nothing in this skill is destructive, so nothing needs a confirmation gate.** Memory hygiene is now a one-command automatic conveyor (Phase 4) that only ever MOVES overflow notes into a dated archive — it never deletes. Being asked "prune now or defer?" every close (and it never happening) is exactly the failure mode this avoids; that question is gone. The only thing that ever stops the run is a hard failure (a conservation check, a push conflict), surfaced as one plain line, not a choice.
+**Nothing in this skill is destructive, so nothing needs a confirmation gate.** Memory hygiene is now a one-command automatic conveyor (Phase 4) that only ever MOVES overflow notes into a dated archive — it never deletes. The user got sick of being asked "prune now or defer?" every close and it never happening; that question is gone. The only thing that ever stops the run is a hard failure (a conservation check, a push conflict), surfaced as one plain line, not a choice.
 
 **AskUserQuestion discipline.** On the rare occasion you must present a real choice (a push conflict, a genuine ambiguity), it goes through the AskUserQuestion tool, never free-text "pick A/B/C." Always include a "(Recommended)" option as the FIRST item, with a smart pick (one you'd actually defend, not "first option safest").
 
@@ -69,13 +69,13 @@ Run these in parallel:
 - `hostname` — capture the current laptop name (for sentinel + RESUME briefing)
 - Read `.claude/.session-state.json` if it exists, to find the last run's metadata
 - Read the `MEMORY.md` at the memory path you discovered in Phase 0 — needed for dedup (Phase 3); the conveyor (Phase 4) handles sizing
-- Read the **scratchpadFile from your settings** (example: `.claude/session-scratch.md`) if it exists — its `[GOTCHA]` / `[OPEN]` / `[NOTE]` / `[WIN]` lines are this session's logged captures, harvested in Phase 3 (gotchas/open/note) and Phase 3.55 (wins). Hold the `[WIN]` lines in working context NOW, because Phase 3 resets the scratchpad before Phase 3.55 runs.
-- Get the current local time: `date '+%m/%-d/%y - %H:%M %Z'` (per the root CLAUDE.md timezone rule — check that file for any timezone-override caveat before adding one)
+- Read the **scratchpadFile from your settings** (a typical value: `.claude/session-scratch.md`) if it exists — its `[GOTCHA]` / `[OPEN]` / `[NOTE]` / `[WIN]` lines are this session's logged captures, harvested in Phase 3 (gotchas/open/note) and Phase 3.55 (wins). Hold the `[WIN]` lines in working context NOW, because Phase 3 resets the scratchpad before Phase 3.55 runs.
+- Get the current EST time: `date '+%m/%-d/%y - %H:%M %Z'` (per the root CLAUDE.md timezone rule — do NOT use `TZ='America/New_York'`, MSYS2 breaks it)
 
 Build a working map (in your head, no temp file):
 
 - **touched_files**: every file changed since the last run (uncommitted + committed-since-sentinel)
-- **touched_folders**: for each touched file, the **project-level folder that owns it** — the nearest ancestor that is a top-level folder OR a direct child of a container (`clients/`, `king-intelligence/`, `personal/`). That's the folder whose CLAUDE.md gets this session's note, and the folder that must HAVE a CLAUDE.md (Phase 3A creates it if missing). Don't stop at a deeper subfolder that doesn't carry its own CLAUDE.md, and don't roll a brand-new project folder up into its parent just because it has no CLAUDE.md yet.
+- **touched_folders**: for each touched file, the **project-level folder that owns it** — the nearest ancestor that is a top-level folder OR a direct child of a top-level container folder (e.g. a clients folder or a personal folder). That's the folder whose CLAUDE.md gets this session's note, and the folder that must HAVE a CLAUDE.md (Phase 3A creates it if missing). Don't stop at a deeper subfolder that doesn't carry its own CLAUDE.md, and don't roll a brand-new project folder up into its parent just because it has no CLAUDE.md yet.
 - **per_folder_summary**: per touched folder, what changed and why (synthesize from conversation + diff, NOT just the diff — the conversation has the *why*)
 - **candidate_memories**: things learned this session that pass the memory-write classifier (Phase 3)
 - **candidate_gotchas**: the lessons to file in Phase 3 — every `[GOTCHA]`/`[OPEN]`/`[NOTE]` line already in the scratchpad, PLUS a backup scan of the conversation for any error/blocker/dead-end you hit and resolved but never logged (the early-session stumble you forgot). Don't double-count one already in the scratchpad.
@@ -107,7 +107,7 @@ For each entry in `touched_folders`, do two things:
 ```markdown
 # <Folder title>
 
-_created: <local time> _
+_created: <EST time> _
 
 **Purpose:** <one tight, factual sentence — what this folder is for. This is the line that feeds the folder map in Phase 3.6, so make it descriptive.>
 
@@ -119,16 +119,16 @@ _created: <local time> _
 **2. Append this session's note** under that folder's `## Recent sessions` heading (create the heading if it doesn't exist). Newest at top:
 
 ```markdown
-## YYYY-MM-DD - HH:MM <timezone>
+## YYYY-MM-DD - HH:MM EST
 **Status:** <one line>
 **Done this session:** <bullets>
 **Next steps:** <bullets>
 **Blockers:** <bullets, or "none">
 ```
 
-Use the local time you captured in Phase 1.
+Use the EST time you captured in Phase 1.
 
-**Don't hand-edit the folder map here.** The folder tree in the **folderLayoutDoc from your settings** (example: `references/operating/folder-layout.md`) is regenerated deterministically by the orgCheckScript in Phase 3.6 — new folders, deletions, renames, and changed `**Purpose:**` lines all get picked up there. The tree lives in the folder-layout doc, NOT in root CLAUDE.md (CLAUDE.md is the lean behavioral spine and only points to it).
+**Don't hand-edit the folder map here.** The folder tree in the **folderLayoutDoc from your settings** (a typical value is `references/operating/folder-layout.md`) is regenerated deterministically by the orgCheckScript in Phase 3.6 — new folders, deletions, renames, and changed `**Purpose:**` lines all get picked up there. The tree lives in the folder-layout doc, NOT in root CLAUDE.md (CLAUDE.md is the lean behavioral spine and only points to it).
 
 ### Gotcha harvest — file the session's lessons so they never repeat
 
@@ -144,7 +144,7 @@ Dedup first (same anti-rot rule as memory): if the lesson is already in its targ
 
 ### Memory entries — the 7-step classifier
 
-For every "thing learned this session" (extracted from the conversation, not the diff), apply this classifier. The rules come from the root CLAUDE.md auto-memory section — apply them verbatim, don't reinvent:
+For every "thing learned this session" (extracted from the conversation, not the diff), apply this classifier. The rules come from the user's root CLAUDE.md auto-memory section — apply them verbatim, don't reinvent:
 
 1. **Derivable from code or git history alone?** → Skip. Don't write. *(This includes prior `chore(session):` commits made by `/end-session` itself — those are pure git-history bookkeeping and should never be re-processed.)*
 2. **Status / next-step / blocker for a specific project?** → Already covered in folder CLAUDE.md (above). Don't duplicate to memory.
@@ -194,46 +194,59 @@ One line, no `- See` second line. The headline carries the gist; the pointer goe
 
 ### Knowledge layer updates
 
-If a **knowledgeGraph from your settings** is configured (example: `knowledge/`), that folder is the wikilinked Obsidian knowledge graph over the repo (see its own `CLAUDE.md` for the full spec). It must **compound** — every session that surfaces a new
+If a **knowledgeGraph from your settings** is configured (a typical value is `knowledge/`), that folder is the wikilinked Obsidian knowledge graph over the repo (see its own `CLAUDE.md` for the full spec). It must **compound** — every session that surfaces a new
 entity or materially updates one feeds it. For each "thing learned this session," also check:
 
 - **New or materially-changed person, company, concept, playbook, project, tool, or decision?**
   → Create or update the matching note in the right subfolder of the knowledgeGraph folder, following its
   `CLAUDE.md` frontmatter spec (`type`, `created`, `tags`, `related`, `source`).
-- **A changed FACT counts as a material update, not just a new entity.** If this session changed a fact that an existing note carries (a price, an offer shape, a person's status such as prospect to client or churned, a project's state such as shipped or archived, a revenue figure), refresh that note NOW. A note carrying an old value misleads every future `/recall`, and this is the #1 way a knowledge graph rots: only *new* entities trigger writes, so existing notes quietly go stale.
-- **Hub rule:** project and company notes are HUBS. When a person newly belongs to a product/project
+- **A changed FACT counts as a material update, not just a new entity.** If this session changed a fact
+  that an existing note carries — a price, an offer shape, a person's status (prospect→client, churned),
+  a project's state (shipped, archived), an MRR-ish figure — refresh that note NOW. A note carrying last
+  month's price misleads every future `/recall`; this is the #1 way the graph rots (learned 7/2/26: the
+  AIOS notes sat 48 days with dead pricing because only *new* entities triggered writes).
+- **Hub rule** — project and company notes are HUBS: when a person newly belongs to a product/project
   (a new trial, a discovery, a signed client), add their `[[link]]` to that project note's People section
   (and the person's note links back). Clicking a project must show its people.
 - **Dedup first** — search the knowledgeGraph folder for an existing note on the entity; prefer updating it
   over creating a near-duplicate (same anti-rot rule as memory).
 - **Link it** — add `[[wikilinks]]` to related knowledge notes and a `source:` provenance path
   back to the repo/memory file the update came from. No fabrication — every claim traces to `source:`.
-- **Keep any parity config current, if you use one** (example: a `knowledge/.parity.json` file listing rosters and known facts): a person newly on a product roster gets added to that hub's roster list; a business-wide fact changing (e.g. a price raise) means moving the OLD value into a "dead facts" list and the NEW one into a "required facts" list. That's what makes the next drift machine-detectable in Phase 3.7 instead of silent.
+- **Keep the parity config current** (only if `knowledge/.parity.json` exists): a person newly on a
+  product roster → add them to that hub's `roster` list; a business-wide fact changed (e.g. a price
+  raise) → move the OLD value into `deadFacts` and the NEW one into `requiredFacts`. That's what makes
+  the next drift machine-detectable in Phase 3.7 instead of silent.
 - This is in-repo (unlike memory), so these files DO get committed in Phase 7.
 
 Skip this entire step if no knowledgeGraph is configured, or if the session was purely operational and surfaced no new durable entities AND changed no fact a note carries — don't force it.
 
 ## Phase 3.5: Regenerate registries from truth
 
-So the root-level registries never drift from reality, refresh them every close. Refresh ONLY the files named in the **registries from your settings** (example: `SKILLS.md`, `CONNECTIONS.md`, `TIME-SAVED.md`); check each one exists first, and skip any that aren't configured. The per-registry instructions below apply to whichever of those files you actually have.
+So the root-level registries never drift from reality, refresh them every close. Refresh ONLY the files named in the **registries from your settings** (a typical value: `SKILLS.md`, `CONNECTIONS.md`, `TIME-SAVED.md`); check each one exists first, and skip any that aren't configured. The per-registry instructions below apply to whichever of those files you actually have.
 
-**`SKILLS.md` + `SKILLS-DETAIL.md` — full regenerate as a TWO-FILE pair (if SKILLS.md is in your registries).** Some setups split the registry to keep the always-on session payload lean: `SKILLS.md` is the THIN trigger index (loads every session), `SKILLS-DETAIL.md` is the on-demand full detail. If your setup uses this split, glob `.claude/skills/*/SKILL.md` and parse each frontmatter `name` + `description`, then regenerate BOTH from the live set (deleted skills drop out, new ones appear):
-- `SKILLS.md` (thin): one bullet per skill, in the form `- **/<name> [⏱️ if time-tracked]:** <the "Invoke when" trigger phrases from the description's "Use when…" part>`. Nothing else per skill (no Status, Purpose, or Integrates; those live in DETAIL). Keep the top header (with its pointer to SKILLS-DETAIL.md) and the same category groupings.
-- `SKILLS-DETAIL.md` (full): the rich block per skill, `### /<name>`, **Status** `[live]`, **Purpose** (first sentence of the description), **Invoke when** (full trigger phrases), **Integrates** (cross-skill wiring). Keep its header note pointing back at the thin index.
+**`SKILLS.md` + `SKILLS-DETAIL.md` — regenerate as a TWO-FILE pair (if SKILLS.md is in your registries).** Glob `.claude/skills/*/SKILL.md` and parse each frontmatter `name` + `description` + `disable-model-invocation`, then regenerate from the live set (deleted skills drop out, new ones appear).
 
-If a repo lacks `SKILLS-DETAIL.md` (an install that never split), regenerate SKILLS.md in whatever single-file format it already uses instead.
+**The rule that keeps `SKILLS.md` small (7/24/26 context-engineering audit — do not undo this):** Claude Code already auto-loads the `name` + `description` of every skill and every installed plugin into the session. Those descriptions already carry the trigger phrases AND the "NOT for X, use Y instead" disambiguation, so re-listing them in `SKILLS.md` is a second copy of the same index — it cost ~27KB of every session and bought nothing. So:
 
-**PRESERVE, do not regenerate or delete, the hand-maintained sections named in the registryPreserveSections from your settings** (example: `## Plugins & platform tools` and `## Removed / status`; if you're using the two-file split, these live in both files, full text in DETAIL and kept verbatim in the thin index too, since they cover tools with no frontmatter to regenerate from). They document plugin + built-in tools that are NOT in `.claude/skills/`, so a frontmatter regenerate would wrongly wipe them (same preserve-the-curated-block rule as CONNECTIONS.md §1). If a plugin was installed or removed this session, update those preserved sections' facts by hand.
+- `SKILLS.md` regenerates **ONE section only**: `## User-invoked only`, containing a bullet for each skill whose frontmatter has `disable-model-invocation: true`. Those are the only skills whose descriptions do NOT load, so they are the only ones Claude can't see. Format: `- **/<name> [⏱️ if time-tracked]** — <trigger phrases from the description>`. **Never add a bullet for a skill without that flag** — it already advertises itself.
+  - **Parse the frontmatter VALUE, not a plain grep.** Read only the `---` block and require the value to be exactly `true`. Many skills set it to `false` (they DO auto-load), and the phrase also appears in prose inside this skill and `pocock-writing-great-skills`, so a bare `grep -l disable-model-invocation` returns 21 false positives against the real 10. Caught 7/24/26.
+- `SKILLS-DETAIL.md` (full, on-demand — this one stays comprehensive): the rich block per skill — `### /<name>`, **Status** `[live]`, **Purpose** (first sentence of the description), **Invoke when** (full trigger phrases), **Integrates** (cross-skill wiring). Keep its header note pointing back at the thin index.
 
-**Reflect new skills AND cross-skill integrations.** Any skill added or removed this session MUST be picked up (regenerating from the live `.claude/skills/` dir is what guarantees this). Beyond the per-skill block, capture how skills connect: where one skill calls, feeds, or draws from another, say so on BOTH entries so the integration is discoverable from either side — e.g. `/email` runs a `/stop-slop` structural anti-slop pass (and `/stop-slop` is the source it draws from), `/debrief` calls `/handle-it`, `/skill-builder` routes to `/grill-me`. Never leave an integration documented on only one side. When a session explicitly wires skill A into skill B, that wiring belongs in SKILLS-DETAIL.md (or SKILLS.md, if you aren't using the split), not just in the skills' own files.
+**PRESERVE, do not regenerate or delete, the hand-maintained sections named in the registryPreserveSections from your settings.** They cover overrides on skills the user doesn't own, non-invocable shared modules, removed/status history, and parked items — none of which have frontmatter to regenerate from, so a frontmatter regenerate would wrongly wipe them (same preserve-the-curated-block rule as CONNECTIONS.md §1). If a plugin was installed or removed this session, update those preserved sections' facts by hand.
 
-**`CONNECTIONS.md` — reconcile § 1, preserve the rest (if it's in your registries).** Run `claude mcp list`. Reconcile the § Tier-1 / Tier-2 **Status** column against what's actually connected; flag any drift (a row marked Active whose MCP isn't listed, or a live MCP with no row). Do NOT clobber the curated sections (Recommended starter context, the **API keys captured** index, Hard rules, Read-vs-write) — only refresh the connected-status truth. If a new tool was connected this session, add its row + remind to capture its key per your API-key procedure doc (e.g. `references/operating/api-keys.md`).
+**Retiring a skill:** move the whole folder out of `.claude/skills/` (a typical archive location: `references/_archive/retired-skills/<name>`) and note it under `## Removed / status`. Never leave a retired skill in place with a "do not invoke" note — its description still auto-loads and advertises itself, directly contradicting the note, and Claude pays to resolve that conflict every session.
 
-**`TIME-SAVED.md` — recompute totals (if it's in your registries).** For each of the tracked time-saver rows, recompute `Total saved = Total uses × Manual time per use` and confirm `Last used` reflects any invocation this session. Only the tracked time-saver skills have rows; deep-dives and setup tools are exempt (per root CLAUDE.md / any standing decision log) — never add rows for them. If `TIME-SAVED.md` doesn't exist yet, skip (it's created out-of-band, not by this skill).
+**Reflect new skills AND cross-skill integrations.** Any skill added or removed this session MUST be picked up (regenerating from the live `.claude/skills/` dir is what guarantees this). Beyond the per-skill block, capture how skills connect: where one skill calls, feeds, or draws from another, say so on BOTH entries so the integration is discoverable from either side — e.g. `/email` runs a `/stop-slop` structural anti-slop pass (and `/stop-slop` is the source it draws from), `/debrief` calls `/handle-it`, `/skill-builder` routes to `/grill-me`. Never leave an integration documented on only one side. When a session explicitly wires skill A into skill B, that wiring belongs in SKILLS-DETAIL.md (the Integrates lines), not just in the skills' own files.
+
+**`CONNECTIONS.md` — reconcile § 1, preserve the rest (if it's in your registries).** Run `claude mcp list`. Reconcile the § Tier-1 / Tier-2 **Status** column against what's actually connected; flag any drift (a row marked Active whose MCP isn't listed, or a live MCP with no row). Do NOT clobber the curated sections (Recommended starter context, the **API keys captured** index, Hard rules, Read-vs-write) — only refresh the connected-status truth. If a new tool was connected this session, add its row + remind to capture its key per your `references/operating/api-keys.md` guide.
+
+**`TIME-SAVED.md` — recompute totals (if it's in your registries).** For each of the tracked time-saver rows, recompute `Total saved = Total uses × Manual time per use` and confirm `Last used` reflects any invocation this session. Only the tracked time-saver skills have rows; deep-dives and setup tools are exempt (per root CLAUDE.md / Decision 12/27) — never add rows for them. If `TIME-SAVED.md` doesn't exist yet, skip (it's created out-of-band, not by this skill).
 
 ## Phase 3.55: Time-Back review — the time-saved capture (opt-in)
 
-**Gate:** only run this phase if a **timeSavedSyncScript from your settings** is configured AND the script exists on disk. If not, skip the whole phase silently (no mention in the close-out). This keeps it additive — a setup that hasn't enabled it never sees it.
+**Gate:** resolve the script path as the **timeSavedSyncScript from your settings** if that key is set, otherwise the standard location `.claude/scripts/time-saved-sync.mjs`. Run this phase if that file exists on disk. If it does not exist, skip the whole phase silently (no mention in the close-out).
+
+**The fallback matters (added v0.31.0).** The gate used to require the config KEY to be present, so a repo that had the script installed but predated the key skipped this phase forever and the owner's member page stayed empty with no error anywhere. Presence of the script on disk is now the only condition. A setup that genuinely doesn't have the tracker still has no file, so it still skips silently and this stays additive.
 
 This is the one place the session's time saved gets captured. Phase 3.5 just refreshed the per-skill `TIME-SAVED.md` (the deterministic skills spine), so those minutes are already counted. This phase captures the **ad-hoc remainder** — the real work this session that did NOT run through a tracked skill (a contract reviewed, a doc drafted, an inbox triaged, a site fixed). Most sessions have some; a pure-skills session may have none.
 
@@ -245,7 +258,7 @@ Run the review exactly per [`references/time-back-review.md`](references/time-ba
 
 ## Phase 3.6: Organization sweep — every folder documented, the map current (automatic, EVERY run)
 
-So the repo never drifts out of organization, run the **orgCheckScript from your settings** (default: `${CLAUDE_PLUGIN_ROOT}/scripts/org-check.mjs`). **First check the script exists on disk; only run it if it does.**
+So the repo never drifts out of organization, run the **orgCheckScript from your settings** (a typical value is `scripts/org-check.mjs`). **First check the script exists on disk; only run it if it does.**
 
 ```bash
 node <orgCheckScript> --fix
@@ -268,7 +281,15 @@ If it still flags a folder missing a CLAUDE.md (the script left a `TODO` stub be
 
 If no orgCheckScript is configured or the file is missing, skip this phase and note in the close-out that the org sweep wasn't available (at minimum, you still created a CLAUDE.md for any new folder you worked in, per Phase 3A).
 
-**Then keep the Codex adapter in sync (only if `scripts/sync-codex-adapter.mjs` exists on disk).** The repo runs on both Claude Code and OpenAI Codex; this script regenerates `AGENTS.md` from the same rule files `CLAUDE.md` imports and refreshes the `.agents/skills` mirror, so the Codex side never drifts from the Claude side. Run it once:
+**Then rebuild the operating spine (only if `scripts/build-spine.mjs` exists on disk).** `CLAUDE.md` imports ONE generated file, `references/operating/rules/_spine.md`, instead of importing each rule file raw. The rule files have to carry client-install packaging ("What this is" / "Merge guidance") for the publish rail, and loading that packaging into every session just to ignore it wasted ~4,600 characters a session. This script strips it. Run it once:
+
+```bash
+node scripts/build-spine.mjs
+```
+
+If a rule file's `## Canonical content` heading was renamed or deleted, the script fails loudly — fix the rule file, don't hand-edit `_spine.md` (it's generated and gets overwritten).
+
+**Then keep the Codex adapter in sync (only if `scripts/sync-codex-adapter.mjs` exists on disk).** The repo runs on both Claude Code and OpenAI Codex; this script regenerates `AGENTS.md` from the same rule set (it imports `SPINE` from `build-spine.mjs`, so the two sides cannot drift) and refreshes the `.agents/skills` mirror. Run it once, always AFTER the spine build:
 
 ```bash
 node scripts/sync-codex-adapter.mjs
@@ -276,9 +297,21 @@ node scripts/sync-codex-adapter.mjs
 
 It prints a short status and flags any subagent or hook still out of sync (informational, not blocking). If the script is missing, skip and move on. `AGENTS.md` is committed in Phase 7; the `.agents/` mirror is gitignored and regenerable.
 
+## Phase 3.65: Shared-skill publish drift check (automatic, silent when clean)
+
+Clients auto-pull the published skill library daily, but it only moves when a publish actually runs — an edited shared master that never gets published silently strands every client on the old version. Close that gap here.
+
+**Only if `.claude/skills/publish-skills/scripts/publish.mjs` exists on disk** (skip silently otherwise), run from the repo root:
+
+```bash
+node .claude/skills/publish-skills/scripts/publish.mjs detect
+```
+
+Count the entries in `changed`, `scripts.changed`, `rules.changed`, and `removed`. If ALL are empty, say nothing and move on. If anything changed, add ONE plain line to the close-out receipt: "N shared skill(s) changed since the last publish, so clients don't have the latest yet. Run /publish-skills when ready." Never auto-publish from here — publishing is its own gated ritual.
+
 ## Phase 3.7: Knowledge graph tidy-up — keep the map clean (automatic, EVERY run)
 
-The compounding in Phase 3 GROWS the graph; this keeps it HONEST. So the wikilinked map never rots, run the graph health check and clear what it finds, in ONE bounded pass. Only do this if a **knowledgeGraph from your settings** is configured (example: `knowledge/`) and `scripts/wiki-health.mjs` exists on disk.
+The compounding in Phase 3 GROWS the graph; this keeps it HONEST. So the wikilinked map never rots, run the graph health check and clear what it finds, in ONE bounded pass. Only do this if a **knowledgeGraph from your settings** is configured (a typical value is `knowledge/`) and `scripts/wiki-health.mjs` exists on disk.
 
 ```bash
 node scripts/wiki-health.mjs
@@ -287,7 +320,7 @@ node scripts/wiki-health.mjs
 It reports broken `[[wikilinks]]`, orphans, dead-ends, missing `source:`, and duplicate slugs. Resolve what it flags, routing by what each one actually is — and **NO FABRICATION**; the cardinal rule of the whole graph applies hardest here because this runs unattended:
 
 - **Broken link that's a typo or nickname for an existing note** (check it against the real slug list) → repoint the link to the real note. Use the alias form `[[real-slug|the words as written]]` so the sentence still reads naturally (e.g. `[[aios]]` → `[[ai-operating-system|AIOS]]`).
-- **Broken link to a genuine entity you can SOURCE from the repo** (a real person, company, tool, concept with actual content in a client folder / reference / memory) → create a short note per the knowledge folder's own `CLAUDE.md` spec: frontmatter (`type`, `created`, `tags`, `related`, `source`), an atomic body of ONLY sourced facts, `[[wikilinks]]` to notes that already exist. Cite the `source:` file for every claim.
+- **Broken link to a genuine entity you can SOURCE from the repo** (a real person, company, tool, concept with actual content in a client folder / reference / memory) → create a short note per your `knowledge/CLAUDE.md` spec: frontmatter (`type`, `created`, `tags`, `related`, `source`), an atomic body of ONLY sourced facts, `[[wikilinks]]` to notes that already exist. Cite the `source:` file for every claim.
 - **Broken link to a memory entry, a script, a test artifact, or anything that isn't a real knowledge entity** → de-link it: drop the `[[ ]]` brackets, leave the words as plain readable text.
 - **Can't source it at all?** Leave it as a deliberate stub (a `[[link]]` to a not-yet-written note is allowed by the graph spec) or de-link it — but **NEVER invent a note's contents to make the number go down.** A flagged stub is honest; a fabricated note corrupts the brain.
 - **An orphan or dead-end among THIS session's own new notes** → wire it in with a `[[link]]`. Pre-existing orphans you didn't create: note them once in the RESUME (Phase 5), don't force-fix.
@@ -296,17 +329,21 @@ Then re-run `node scripts/wiki-health.mjs` to confirm broken links are back near
 
 The report also flags `bad source fmt` / `bad status` / `bad date` (frontmatter drift from the spec) — fix those the same bounded pass, matching the `knowledge/CLAUDE.md` frontmatter spec. Finally run `node scripts/wiki-health.mjs --fix-home` to refresh HOME.md's note count + "as of" date from disk truth, so the home page never goes stale. (Commit HOME.md in Phase 7 if it changed.)
 
-**Parity check (only if your setup has a coverage/parity script for the knowledge graph on disk).** wiki-health keeps the graph structurally honest; a parity check keeps it COMPLETE and CURRENT against the rest of the repo. This is opt-in and has no hard dependency: if no such script exists, skip this check silently and move on. If you have one, run it now, in the same ONE bounded pass as the wiki-health pass above.
+**Parity check (only if `scripts/vault-parity.mjs` exists on disk):** wiki-health keeps the graph structurally honest; this keeps it COMPLETE and CURRENT against the operational repo. Run:
 
-A good parity check reports things like: client/project folders with no matching note (coverage gaps), roster people missing from a hub note's people list, hub notes that don't link their people, notes missing from their Map of Content, and facts a note still carries after the real value changed. Clear what it flags with the same no-fabrication bar as above: create/update only what you can source, add the missing `[[links]]` to hubs and MOCs, fix stale facts from their source files. A brand-new folder from THIS session with no note yet is exactly what this catches. Re-run until it exits clean or you hit something that genuinely needs the user, then note it in the RESUME instead of guessing.
+```bash
+node scripts/vault-parity.mjs
+```
+
+It reports client folders with no note (coverage), roster people missing from the AIOS index note set, hub notes that don't link their people, notes missing from their Map of Content, and dead/required facts (config: `knowledge/.parity.json`). Clear what it flags in the same ONE bounded pass, same no-fabrication bar: create/update only what you can source, add the missing `[[links]]` to hubs and MOCs, fix stale facts from their source files. A brand-new client folder from THIS session with no note yet is exactly what this catches. Re-run until it exits clean or you hit something that genuinely needs the user; then note it in the RESUME instead of guessing.
 
 Fold a one-line tidy receipt into the Phase 8 close-out (e.g. "Map tidy: 3 gaps filled, 2 links fixed, 1 de-linked, broken links 6 → 0"). If `wiki-health.mjs` isn't present or no knowledgeGraph is configured, skip this phase silently.
 
 ## Phase 4: Memory conveyor — automatic, no prompt (EVERY run)
 
-Memory is a cache, not a vault. `MEMORY.md` is the always-loaded index, but Claude Code only loads the first **200 lines OR 25KB, whichever comes first** (verified: code.claude.com/docs/en/memory.md). An unmanaged index can silently balloon past that (hundreds of entries, hundreds of KB), so most of it never loads. This conveyor keeps it under a 24KB safety budget: pinned entries stay, fresh entries ride newest-first, and the oldest non-pinned overflow ages out into a dated `ARCHIVE-YYYY-MM.md` (same folder, NOT auto-loaded — a deliberate non-CLAUDE.md filename so it never reloads the bloat). **Nothing is ever deleted, so nothing needs the owner's approval.**
+Memory is a cache, not a vault. `MEMORY.md` is the always-loaded index, but Claude Code only loads the first **200 lines OR 25KB, whichever comes first** (verified: code.claude.com/docs/en/memory.md). The index used to be ~252KB / 353 entries, so ~90% never loaded. Now it's kept under a 24KB safety budget by a **conveyor**: pinned entries stay, fresh entries ride newest-first, and the oldest non-pinned overflow ages out into a dated `ARCHIVE-YYYY-MM.md` (same folder, NOT auto-loaded — a deliberate non-CLAUDE.md filename so it never reloads the bloat). **Nothing is ever deleted, so nothing needs the user's approval.**
 
-After writing this session's new entries (Phase 3), run the conveyor once — using the **conveyorScript from your settings** (default: `${CLAUDE_PLUGIN_ROOT}/scripts/memory-conveyor.mjs`). **First check the configured script actually exists on disk; only run it if it does.** If no conveyorScript is configured or the file is missing, fall back to manual hygiene: trim the index to one line per entry, keep it under the load budget by hand, and note in the close-out that the automatic conveyor wasn't available.
+After writing this session's new entries (Phase 3), run the conveyor once — using the **conveyorScript from your settings** (a typical value is `scripts/memory-conveyor.mjs`). **First check the configured script actually exists on disk; only run it if it does.** If no conveyorScript is configured or the file is missing, fall back to manual hygiene: trim the index to one line per entry, keep it under the load budget by hand, and note in the close-out that the automatic conveyor wasn't available.
 
 ```bash
 node <conveyorScript> --enforce
@@ -316,7 +353,7 @@ It normalizes entries to one line, re-detects `[PIN]` / fresh / dead-marker (COR
 
 **This runs silently — no AskUserQuestion, no "prune now or defer."** The only thing that ever stops it is a hard failure:
 
-- If the script exits non-zero (a conservation check failed), it has **written nothing** — MEMORY.md is untouched. Surface the one-line error in the close-out receipt and leave memory as-is. Do NOT hand-edit to "fix" it; flag it for the owner. (Rollback master, if ever needed: the byte-for-byte snapshots in `memory/_snapshots/`.)
+- If the script exits non-zero (a conservation check failed), it has **written nothing** — MEMORY.md is untouched. Surface the one-line error in the close-out receipt and leave memory as-is. Do NOT hand-edit to "fix" it; flag it for the user. (Rollback master, if ever needed: the byte-for-byte snapshots in `memory/_snapshots/`.)
 - That is the whole gate. There is no other.
 
 Fold the receipt into the Phase 8 "what I filed" block (e.g. "Memory: 4 new notes, kept N loading, aged M older ones into this month's archive — nothing deleted").
@@ -330,7 +367,7 @@ Fold the receipt into the Phase 8 "what I filed" block (e.g. "Memory: 4 new note
 Write `.claude/last-session.md` (committed to the repo so it's in git history, even though the next session will read it directly from disk):
 
 ```markdown
-# Last session — YYYY-MM-DD, HH:MM <timezone> (laptop: <hostname>)
+# Last session — YYYY-MM-DD, HH:MM EST (laptop: <hostname>)
 
 ## What we just did
 <3-5 bullets, synthesized from conversation + git diff>
@@ -340,7 +377,7 @@ Write `.claude/last-session.md` (committed to the repo so it's in git history, e
 - (one bullet per project touched)
 
 ## Do this first next session
-<the single most-pressing thing — be specific. "Reply to Sam's email if it landed" not "follow up on the open thread">
+<the single most-pressing thing — be specific. "Reply to Matt's email if it landed" not "follow up on UBA">
 
 ## Open blockers
 <bullets, or "none">
@@ -374,16 +411,16 @@ Stage SPECIFIC files only (NEVER `git add -A` or `git add .` — root CLAUDE.md 
 
 - Each folder CLAUDE.md you created or updated in Phase 3 / 3.6 (the ones you wrote AND any the orgCheckScript scaffolded)
 - Root CLAUDE.md (only if root-level behavioral rules were edited — the folder tree is NOT here anymore)
-- The folderLayoutDoc from your settings (example: `references/operating/folder-layout.md`) — whenever Phase 3.6 regenerated its map
-- Each registry from your settings that Phase 3.5 changed (example: `SKILLS.md`, `CONNECTIONS.md`, and `TIME-SAVED.md` if it exists and totals changed this session)
-- Any new or updated notes under the knowledgeGraph from your settings (example: `knowledge/`) — the knowledge-layer compounding from Phase 3, only if a knowledgeGraph is configured
+- The folderLayoutDoc from your settings (a typical value: `references/operating/folder-layout.md`) — whenever Phase 3.6 regenerated its map
+- Each registry from your settings that Phase 3.5 changed (a typical value: `SKILLS.md`, `CONNECTIONS.md`, and `TIME-SAVED.md` if it exists and totals changed this session)
+- Any new or updated notes under the knowledgeGraph from your settings (a typical value: `knowledge/`) — the knowledge-layer compounding from Phase 3, only if a knowledgeGraph is configured
 - `.claude/last-session.md`
 - `.claude/.session-state.json`
-- The scratchpadFile from your settings (example: `.claude/session-scratch.md`) — reset to empty in Phase 3 after harvesting
-- The timeSavedState from your settings (example: `.claude/time-saved/state.json`) — only if Phase 3.55 ran and changed it (committing it backs the number up + keeps it consistent across laptops)
+- The scratchpadFile from your settings (a typical value: `.claude/session-scratch.md`) — reset to empty in Phase 3 after harvesting
+- The timeSavedState from your settings (a typical value: `.claude/time-saved/state.json`) — only if Phase 3.55 ran and changed it (committing it backs the number up + keeps it consistent across laptops)
 - Any other files the user explicitly worked on this session that aren't on the do-not-commit list (CSVs with PII, `.env`, `.claude.json`, real passwords — see root CLAUDE.md security section)
 
-**Memory files are NOT in this commit.** Memory entries live in the auto-memory folder you discovered in Phase 0 (under the user's home `~/.claude/projects/…`) — that path is OUTSIDE this repo (user-scope, under `~/.claude/`). Git can't stage them. They're written to disk during Phase 3 and that's where they live. Don't try to add them to this commit.
+**Memory files are NOT in this commit.** Memory entries live in the auto-memory folder you discovered in Phase 0 (under the user's home `~/.claude/projects/…`) — that path is OUTSIDE the project repo (user-scope, under `~/.claude/`). Git can't stage them. They're written to disk during Phase 3 and that's where they live. Don't try to add them to this commit.
 
 Commit message:
 
@@ -396,7 +433,7 @@ chore(session): YYYY-MM-DD - <one-line summary>
 - RESUME briefing refreshed
 ```
 
-Pass via HEREDOC per the repo's commit conventions.
+Pass via HEREDOC per the user's commit conventions.
 
 With NO-REMOTE (Phase 0): stop after the commit — there is nowhere to push. The receipt says "saved on this computer; no cloud backup is set up for this folder" and that is the correct, complete outcome, not an error.
 
@@ -457,7 +494,7 @@ Don't ask "anything else?" — the user is stopping. Close out cleanly.
 
 ## Self-ping (do this at the end of every invocation)
 
-If a `TIME-SAVED.md` registry is in the **registries from your settings** and it exists on disk, update your row in it (example: `TIME-SAVED.md`). Skip silently if no such registry is tracked.
+If a `TIME-SAVED.md` registry is in the **registries from your settings** and it exists on disk, update my row in it (a typical value is `TIME-SAVED.md`). Skip silently if no such registry is tracked.
 
 - Increment "Total uses" by 1
 - Recompute "Total saved (cumulative)" as `Total uses × 5 min`

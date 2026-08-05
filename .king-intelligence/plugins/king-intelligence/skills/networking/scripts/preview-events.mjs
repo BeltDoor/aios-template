@@ -13,20 +13,20 @@
 //     "window": "23 Jul - 21 Aug 2026",
 //     "capacity": 5,
 //     "events": [
-//       { "n": 1, "title": "Riverside BNI visitor day", "when": "Wed 8/12 - 7:30-9:00 AM",
+//       { "n": 1, "title": "Riverside BNI chapter — visitor day", "when": "Wed 8/12 - 7:30-9:00 AM",
 //         "cost": "Free for visitors", "drive": "20 min", "category": "referral",
 //         "why": "Same mechanic that already works for you, aimed at a room you have not drained.",
 //         "source": "https://...", "recommended": true }
 //     ],
 //     "chasing": [
-//       { "title": "Chamber Morning Buzz (September)", "cadence": "monthly Friday, not yet posted",
-//         "contact": "Sam Riley, sam@acmechamber.org" }
+//       { "title": "Riverside Chamber morning mixer (September)", "cadence": "monthly, not yet posted",
+//         "contact": "Riley at the chamber (events desk)" }
 //     ]
 //   }
 //
 // `recommended: true` puts the event ABOVE the cut line (the realistic plan at
-// the user's stated pace, e.g. ~2 events/week including BNI). Everything else still
-// renders, below the line, so nothing is ever silently truncated.
+// the user's stated pace, e.g. ~2 events/week including BNI). Everything else
+// still renders, below the line, so nothing is ever silently truncated.
 //
 // Self-contained page: no server, no external calls beyond a font CDN.
 
@@ -57,6 +57,10 @@ catch (e) { console.error('bad --data json: ' + e.message); process.exit(2); }
 const windowLabel = String(data.window || 'the next 30 days');
 const events = Array.isArray(data.events) ? data.events : [];
 const chasing = Array.isArray(data.chasing) ? data.chasing : [];
+// Radar = AI + annual/marquee events beyond the calendar horizon (radarDays, 120).
+// Same shape as an event, plus an optional `deadline` string. These ARE addable —
+// that is the whole point, since marquee events can sell out weeks ahead.
+const radar = Array.isArray(data.radar) ? data.radar : [];
 if (!events.length) { console.error('no events in --data'); process.exit(2); }
 
 const capacity = Number(data.capacity) || events.filter((e) => e.recommended).length || 5;
@@ -99,6 +103,7 @@ function card(s, i) {
         ${src}
       </div>
       <p class="rat">${esc(s.why)}</p>
+      ${s.deadline ? `<p class="dead">Register by ${esc(s.deadline)}.</p>` : ''}
       ${s.softConflict ? `<p class="soft">Overlaps ${esc(s.softConflict)}. Not a hard clash, but you'd be moving something.</p>` : ''}
       <div class="opts">${opts}</div>
       <label class="notewrap reason" id="reason${i}">Why never again? (one line, so I stop suggesting rooms like it)
@@ -112,6 +117,15 @@ const below = events.filter((e) => !e.recommended);
 let idx = -1;
 const aboveCards = above.map((s) => card(s, ++idx)).join('');
 const belowCards = below.map((s) => card(s, ++idx)).join('');
+// radar indices continue the same sequence so tally()/generate() need no special case
+const radarCards = radar.map((s) => card(s, ++idx)).join('');
+
+const radarBlock = radar.length ? `
+  <h2 class="sect">On the radar</h2>
+  <p class="sectnote">Past the ${esc(windowLabel)} window, but worth knowing about now because these
+    are the rooms that fill up — marquee events like this can sell out weeks ahead. Add any of them
+    and it goes straight on the calendar the same as anything above.</p>
+  ${radarCards}` : '';
 
 const cutLine = below.length ? `
   <div class="cut">
@@ -168,6 +182,8 @@ const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
     font-size:12px;font-weight:600;color:#555;}
   .src{font-size:12px;font-weight:600;color:var(--gold-dark);}
   .rat{color:#2b2b2b;font-size:14.5px;line-height:1.5;margin:11px 0 15px;}
+  .dead{background:var(--cream);border-left:3px solid var(--gold);border-radius:0 7px 7px 0;
+    padding:8px 11px;font-size:13px;font-weight:600;color:#5a4300;margin:0 0 13px;}
   .soft{background:#fffaf0;border-left:3px solid var(--gold);border-radius:0 7px 7px 0;
     padding:9px 12px;font-size:13px;color:#5a4a2a;line-height:1.45;margin:0 0 14px;}
   .opts{display:flex;flex-wrap:wrap;gap:9px;}
@@ -222,6 +238,7 @@ const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
   </div>
   ${aboveCards}
   ${cutLine}
+  ${radarBlock}
   ${chaseBlock}
 </div>
 <div class="out" id="out">
@@ -232,12 +249,12 @@ const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
   </div>
 </div>
 <div class="bar">
-  <span class="count"><b id="answered">0</b> / ${events.length} decided &middot; <b id="adding">0</b> to add</span>
+  <span class="count"><b id="answered">0</b> / ${events.length + radar.length} decided &middot; <b id="adding">0</b> to add</span>
   <button class="reset" onclick="resetAll()">Reset</button>
   <button class="go" onclick="generate()">Generate reply &rarr;</button>
 </div>
 <script>
-  var TOTAL = ${events.length};
+  var TOTAL = ${events.length + radar.length};
   var WINDOW = ${JSON.stringify(windowLabel)};
   var LABELS = {add:'ADD', skip:'SKIP', never:'NEVER AGAIN'};
   function picked(i){ var el=document.querySelector('input[name="q'+i+'"]:checked'); return el?el.value:null; }

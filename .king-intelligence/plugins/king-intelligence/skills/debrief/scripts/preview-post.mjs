@@ -17,17 +17,17 @@ import { spawn } from 'child_process';
 import { dirname, join, basename } from 'path';
 import { pathToFileURL } from 'url';
 
-// LAB_DIR / AVATAR_SRC point at your local branded-styles template library.
-// Override with env vars if yours lives somewhere other than the plugin default.
-const LAB_DIR = process.env.LAB_DIR || new URL('../assets/branded-styles', import.meta.url).pathname;
-const AVATAR_SRC = process.env.AVATAR_SRC || (LAB_DIR + '/assets/avatar.png');
-const CHROME = process.env.CHROME_PATH
-  || (process.platform === 'win32' ? 'C:/Program Files/Google/Chrome/Application/chrome.exe'
-    : process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-    : '/usr/bin/google-chrome');
+// Swappable seam: this renders from a branded-styles asset folder. Override with
+// the KI_BRANDED_STYLES_DIR env var, or default to an assets folder next to this
+// skill. If the folder or avatar doesn't exist, the preview still works, just
+// without an avatar image.
+const LAB_DIR = process.env.KI_BRANDED_STYLES_DIR
+  || new URL('../assets/branded-styles', import.meta.url).pathname;
+const AVATAR_SRC = LAB_DIR + '/assets/avatar.png';
+const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 // Preview chrome only — NOT published. LinkedIn uses the user's real profile headline at post time.
-const NAME = process.env.PREVIEW_NAME || 'Your Name';
-const HEADLINE = process.env.PREVIEW_HEADLINE || 'Your LinkedIn headline';
+const NAME = process.env.KI_LINKEDIN_NAME || 'Your Name';
+const HEADLINE = process.env.KI_LINKEDIN_HEADLINE || 'Your headline goes here';
 
 // --- args --------------------------------------------------------------------
 const args = {};
@@ -67,7 +67,7 @@ const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
   *{margin:0;padding:0;box-sizing:border-box;}
   body{background:#F4F2EE;font-family:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;color:#000;
     display:flex;flex-direction:column;align-items:center;padding:32px 16px 80px;}
-  .note{max-width:555px;width:100%;background:#fff8e6;border:1px solid #DC990A;border-radius:8px;
+  .note{max-width:555px;width:100%;background:#fff8e6;border:1px solid #D97706;border-radius:8px;
     padding:12px 16px;font-size:14px;color:#3d2f00;margin-bottom:24px;}
   .post{max-width:555px;width:100%;background:#fff;border:1px solid #e6e6e6;border-radius:10px;
     box-shadow:0 1px 2px rgba(0,0,0,.08);overflow:hidden;}
@@ -124,7 +124,7 @@ if (args.open) {
     // and the script returns immediately instead of blocking until the browser closes.
     const child = existsSync(CHROME)
       ? spawn(CHROME, ['--new-window', fileUrl], { detached: true, stdio: 'ignore' })
-      : spawn('cmd', ['/c', 'start', '', htmlPath.replace(/\//g, '\\')], { detached: true, stdio: 'ignore' });
+      : spawn('open', [htmlPath], { detached: true, stdio: 'ignore' });
     child.unref();
   } catch (e) { console.error('could not auto-open browser: ' + e.message + ' (open manually: ' + htmlPath + ')'); }
 }

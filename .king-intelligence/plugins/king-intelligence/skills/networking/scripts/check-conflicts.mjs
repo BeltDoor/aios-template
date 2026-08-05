@@ -2,13 +2,14 @@
 // check-conflicts.mjs — filter candidate events against the user's REAL commitments
 // before any of them reach the approval page.
 //
-// Exists because a real run once suggested a networking lunch the same day as a
-// booked speaking commitment. The old inserter deduped against identical events
-// but never asked "is the user already busy then?".
+// Exists because an early run once suggested a networking event on the same day
+// as a booked speaking commitment. The old inserter deduped against identical
+// events but never asked "is the user already busy then?".
 //
-// The rule: a CONFIRMED commitment blocks the slot. Tentative holds and all-day /
-// background items do not. So a client call kills a suggestion; a purple
-// maybe-hold or an all-day banner event does not.
+// The rule: a CONFIRMED commitment gets flagged as a soft conflict, never removed
+// outright. Tentative holds and all-day / background items don't count as
+// commitments at all. So a real meeting flags a suggestion; a tentative maybe-hold
+// or an all-day banner event does not.
 //
 // Usage:
 //   node check-conflicts.mjs [candidatesPath] [--json] [--buffer N]
@@ -65,7 +66,7 @@ const toDate = (se) => {
 // Deliberately narrow. We only consider things the user has actually committed to:
 //   - it has a real start/end time (all-day banners are context, not commitments)
 //   - it is not a tentative hold (status tentative = a maybe, including our own)
-//   - they have not declined it
+//   - the user has not declined it
 //   - it is not marked free/transparent (those are background blocks)
 function isCommitment(ev) {
   if (!ev.start?.dateTime) return false;            // all-day or date-only
@@ -77,29 +78,29 @@ function isCommitment(ev) {
   return true;
 }
 
-// ---- NOTHING HARD-BLOCKS (learned the hard way, twice in one day) -----------
-// A first version blocked on any confirmed commitment. A second version blocked
-// on work commitments only and flagged personal ones. Both were wrong, and the
-// damage was silent: a confirmed recurring anchor never reached the approval
-// page because something else sat in that slot, and a chapter visit the user
-// had specifically asked for got killed by an unrelated recurring call. They
-// never saw either — the run just looked thin for no visible reason. Their
-// instruction: "don't let anything on my calendar actually block things. Have
-// the rule that everything is bendable."
+// ---- NOTHING HARD-BLOCKS BY DEFAULT ------------------------------------------
+// Two earlier versions of this rule got it wrong, both silently: one blocked on
+// any confirmed commitment and hid most of the real options; a second blocked
+// only on work commitments and still silently killed events the user genuinely
+// wanted, with no visible sign anything had been dropped. The instruction that
+// fixed it: don't let anything on the calendar actually block things — treat
+// everything as bendable.
 //
-// So this script no longer removes anything. It annotates. Every candidate
-// survives and carries its collisions to the page, where the user decides what
-// bends. The lesson worth keeping: a filter that silently deletes options is
-// worse than a page that shows a conflict the user can judge in two seconds.
+// So this script no longer removes anything by default. It annotates. Every
+// candidate survives and carries its collisions to the page, where the user
+// decides what bends. The lesson worth keeping: a filter that silently deletes
+// options is worse than a page that shows a conflict the user can judge in two
+// seconds.
 const HARD_BLOCK = false;
 
-// ...with exactly ONE exception, configurable per user: a single recurring
-// commitment (defaults to their own referral chapter, e.g. BNI) that never
-// bends. Set `NET_NEVER_BENDS` (comma-separated match terms) if the user's
-// one unmissable commitment is something else, or has more than one.
+// ...with an optional exception, configurable per user via NET_NEVER_BENDS: a
+// comma-separated list of title substrings that block outright rather than just
+// flagging — e.g. the user's own standing weekly commitment that never moves.
+// Defaults to 'bni' since a user's own referral-network chapter is a common
+// example, but this should be set from the user's own config, not assumed.
 //
-// Note this is matched on the CALENDAR event, not the candidate: any event on
-// the calendar whose title matches a never-bends term blocks that slot outright.
+// Note this is matched on the CALENDAR event, not the candidate: any event on the
+// user's calendar whose title matches blocks that slot outright.
 const NEVER_BENDS = (process.env.NET_NEVER_BENDS || 'bni')
   .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
 
@@ -152,7 +153,7 @@ function main() {
   for (const c of cands) {
     const cs = toDate(c.start), ce = toDate(c.end);
     if (!cs || !ce) { free.push(c); continue; }
-    // pad by travel buffer on both sides so we don't book the user back-to-back across town
+    // pad by travel buffer on both sides so we don't book him back-to-back across town
     const padStart = new Date(cs.getTime() - buffer * 60000);
     const padEnd = new Date(ce.getTime() + buffer * 60000);
     const hits = commitments.filter((k) => k.start < padEnd && k.end > padStart);
@@ -167,7 +168,7 @@ function main() {
         });
         continue;
       }
-      // Everything else: annotate, never remove. The user decides what bends.
+      // Everything else: annotate, never remove. He decides what bends.
       c.softConflict = hits.map((h) => `${h.summary} (${fmt(h.start)} to ${fmt(h.end)})`).join('; ');
     }
     free.push(c);

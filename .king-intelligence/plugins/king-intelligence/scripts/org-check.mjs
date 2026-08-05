@@ -48,6 +48,11 @@
 //   fresh   — (--health only) compares each required folder's last git commit date to
 //             the newest `## YYYY-MM-DD` heading in its CLAUDE.md; flags folders worked
 //             on ≥14 days after their doc was last updated.
+//   size    — (--health only) every CLAUDE.md over the 25KB budget, largest first. A
+//             CLAUDE.md loads whole into any session that works in its folder, so bytes
+//             there are context spent every time; reference material belongs in sibling
+//             files behind a pointer. Report-only — the fix is editorial (see the
+//             housekeeping skill's writing-for-agents lenses), never automatic.
 //
 // SAFE BY DESIGN: only ever CREATES a missing CLAUDE.md (never overwrites an existing
 // one) and only ever rewrites the text BETWEEN the AUTO-LAYOUT markers in folder-layout.md
@@ -480,6 +485,21 @@ function checkFreshness(nodes) {
   return stale.sort((a, b) => b.gapDays - a.gapDays);
 }
 
+/** (--health) Every CLAUDE.md past the size budget, largest first. Reuses the rot
+ *  walk (which already skips vendored/mirrored/archived trees), so any CLAUDE.md at
+ *  any depth is weighed — the worst offenders live below the required-folder level. */
+const SIZE_BUDGET = 25 * 1024;
+function checkSize() {
+  const over = [];
+  for (const rel of rotTargets()) {
+    if (path.basename(rel) !== 'CLAUDE.md') continue;
+    let bytes;
+    try { bytes = fs.statSync(path.join(REPO_ROOT, rel)).size; } catch { continue; }
+    if (bytes > SIZE_BUDGET) over.push({ rel, bytes });
+  }
+  return over.sort((a, b) => b.bytes - a.bytes);
+}
+
 function printRot({ deep, nodes }) {
   const broken = checkLinks();
   const { expired, upcoming } = checkExpiry();
@@ -499,6 +519,13 @@ function printRot({ deep, nodes }) {
       ? `  ✗ rot: ${stale.length} folder(s) worked on ≥14 days after their CLAUDE.md was last updated:`
       : '  ✓ rot: folder docs keep pace with folder activity');
     for (const s of stale.slice(0, 20)) console.log(`      ${s.rel}/ — last commit ${s.gitDate}, doc last dated ${s.docDate} (${s.gapDays}d behind)`);
+    const oversized = checkSize();
+    const budgetKB = Math.round(SIZE_BUDGET / 1024);
+    console.log(oversized.length
+      ? `  ✗ rot: ${oversized.length} CLAUDE.md over the ${budgetKB}KB size budget — largest first:`
+      : `  ✓ rot: every CLAUDE.md fits the ${budgetKB}KB size budget`);
+    for (const o of oversized.slice(0, 15)) console.log(`      ${o.rel} — ${Math.round(o.bytes / 1024)}KB`);
+    if (oversized.length > 15) console.log(`      …and ${oversized.length - 15} more`);
   }
   return { broken: broken.length, expired: expired.length };
 }

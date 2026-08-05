@@ -16,7 +16,7 @@ You already built the Phase 2 signal ledger and the Phase 3B summary. Mine THOSE
 4. **Project work (type 5)** — a build/struggle told as a "story without the scar."
 5. **A human / relatable moment** — the catch-all so there is ALWAYS something. Even a logistics-only check-in usually has one human beat (a shared frustration, a small win, a funny aside, something the owner said about their life). This is the "even if it's not business" lane.
 
-**Pick exactly ONE.** Score candidates on: transferability (does it teach a stranger something), user-centricity (is it THEIR lesson, not the client's content), anonymizability (does it survive name/number stripping and still land). Take the single highest. Do NOT present three angles here, the three-hook pick happens inside `/content-unit`.
+**Pick exactly ONE.** Score candidates on: transferability (does it teach a stranger something), the user's centricity (is it THEIR lesson, not the client's content), anonymizability (does it survive name/number stripping and still land). Take the single highest. Do NOT present three angles here, the three-hook pick happens inside `/content-unit`.
 
 **Gold vs human (sets the tone of the offer, not whether you offer):**
 - **Gold** = a type-4 reframe, or a resonance with a specific reaction, or a principle the user articulated. Lead with conviction.
@@ -60,7 +60,7 @@ Debrief is the only layer that knows who the client is, so strip identity HERE, 
 Invoke the `content-unit` skill with the anonymized angle + the supporting beats as the raw material. Notes:
 - **Voice:** pass NO voice-profile path. Its default already IS the user's profile (the `voiceGuidePath` from your settings). That's what we want.
 - **Anonymized flag:** prepend the material with: *"This input is anonymized by default. Keep it that way: no client name, company, or identifying numbers. If anything identifying slips in, generalize it."*
-- **Auto-pick the hook (do NOT surface content-unit's hook question).** In this debrief flow, tell content-unit to "just pick the strongest hook, don't ask" so its AskUserQuestion never fires. The browser preview is the review surface, not a hook gate — one less click; the user reviews the finished post in the preview.
+- **Auto-pick the hook (do NOT surface content-unit's hook question).** In this debrief flow, tell content-unit to "just pick the strongest hook, don't ask" so its AskUserQuestion never fires. The browser preview is the review surface, not a hook gate. (One less click; the user reviews the finished post in the preview.)
 - **Capture the output:** content-unit emits a `── CONTENT UNIT ──` block + a Hook/Retain/Reward breakdown. Capture ONLY the text inside the delimiters as the post body. **Never re-edit it after capture** (that bypasses the stop-slop gate it already passed).
 - **Format it airy for LinkedIn.** Put each sentence on its own line with a BLANK line between them (the LinkedIn-native whitespace look). Write the body to the temp `.txt` that way before previewing/publishing, so the posted caption carries the gaps. The card pull-quote auto-breaks its sentences too (render-card.mjs handles that).
 
@@ -69,15 +69,15 @@ Invoke the `content-unit` skill with the anonymized angle + the supporting beats
 ## Step 5 — Make the image (the swappable plug + rotating queue)
 
 1. **Pick the style:** `node scripts/pick-style.mjs` prints the next style in the rotation and advances the cursor. (Use `--peek` when re-rendering after a reject so you don't burn a rotation slot.)
-2. **Derive the card pull-quote** from the finished post: a SHORT punchy line (≤ ~12 words, usually the hook or its sharpest sentence) for the big headline, plus the 2-4 word phrase to highlight in gold. The card is a teaser, not the whole post.
+2. **Derive the card pull-quote** from the finished post: a SHORT punchy line (≤ ~12 words, usually the hook or its sharpest sentence) for the big headline, plus the 2-4 word phrase to highlight in the accent color. The card is a teaser, not the whole post.
 3. **Render:**
    ```
    node scripts/render-card.mjs --style <style> --quote "<short pull-quote>" \
-     --highlight "<phrase>" --out "<your temp dir>/li-preview/<slug>/card.png"
+     --highlight "<phrase>" --out "/tmp/li-preview/<slug>/card.png"
    ```
-   Prints the PNG path. Rendered locally via headless Chrome, using your brand colors and logo.
+   Prints the PNG path. On-brand colors, your real logo, your brand font — rendered locally via headless Chrome.
 
-**The seam:** `render-card.mjs` is the single integration point with any parallel image work. It renders templates from a local branded-styles library (configured via `LAB_DIR` at the top of the script). If you productionize a different renderer or new styles, repoint `LAB_DIR` (or the queue) and nothing else in Phase 6 changes. Add a style = drop a `<name>.tpl.html` (standard `{{TOKENS}}`) + append the name to `state/image-queue.json` "queue".
+**The seam:** `render-card.mjs` is the single integration point with any parallel image work. It renders templates from a branded-styles asset folder (configurable — see the script's `LAB_DIR`). When that work productionizes a renderer or new styles, repoint the folder (or the queue) and nothing else in Phase 6 changes. Add a style = drop a `<name>.tpl.html` (standard `{{TOKENS}}`) + append the name to `state/image-queue.json` "queue". Confirm with the user where any parallel image work lands before assuming the asset folder is still the source.
 
 ---
 
@@ -95,25 +95,25 @@ This builds a mock LinkedIn post (their avatar, name, the words, the card) and o
 
 ---
 
-## Step 7 — Publish to the user's PERSONAL LinkedIn, only on "post it"
+## Step 7 — Publish to their PERSONAL LinkedIn, only on "post it"
 
-**Primary path: the `socialPublishTool` from your settings** (e.g. the Blotato MCP — a chat-callable path that posts IMAGES to a personal LinkedIn). Their LinkedIn account = the `socialAccountId` from your settings.
-1. Upload the card PNG to get a public URL: `blotato_create_presigned_upload_url` → PUT the bytes → (or `blotato_create_source`) to obtain a hosted media URL.
-2. `blotato_create_post` to LinkedIn, **account = the `socialAccountId` from your settings, OMIT pageId** when `socialIsPersonalFeed` from your settings is true (omitting pageId = personal feed; a pageId would post a company page). Caption = the captured post body; media = the uploaded card URL.
-3. **Confirm it landed:** report the returned post id/URL. If the create call errors or media upload fails, fall back to Playwright.
+**Primary path: the `socialPublishTool` from your settings** (a social-posting MCP that can post IMAGES to a personal LinkedIn account). The user's LinkedIn account = the `socialAccountId` from your settings.
+1. Upload the card PNG to get a public URL via that tool's upload/source-creation call.
+2. Create the post to LinkedIn, **account = the `socialAccountId` from your settings, OMIT pageId** when `socialIsPersonalFeed` from your settings is true (omitting pageId = personal feed; a pageId would post a company page). Caption = the captured post body; media = the uploaded card URL.
+3. **Confirm it landed:** report the returned post id/URL. If the create call errors or media upload fails, fall back to browser automation.
 
-**Fallback path: Playwright** (reliable, handles anything the primary tool chokes on). Drive the user's logged-in LinkedIn via a persistent browser profile: open the feed, start a post, attach the local card PNG directly (no public URL needed), paste the caption, publish. (Recovery if the profile is wedged: kill playwright chrome procs + remove the lock file.)
+**Fallback path: browser automation** (reliable, handles anything the API chokes on, and is the path for multi-image carousels). Drive the user's logged-in LinkedIn via their persistent browser profile: open the feed, start a post, attach the local card PNG directly (no public URL needed), paste the caption, publish. (Recovery if the profile is wedged: kill the browser-automation processes + remove any lock file.)
 
 **Gate + caveats:**
 - Fire ONLY on an explicit "post it." Never auto-publish (matches debrief rule 5 — nothing outward without the user's trigger).
-- **No auto-comment fires on this path.** Keep any pricing auto-comment logic on its own direct-OAuth path if you have one; a Blotato/Playwright post goes out clean. That's intended for "here's what I learned" posts.
+- **No auto-comment fires on this path.** A pricing auto-comment, if your setup has one, lives only on a direct-OAuth content path; a fallback-tool or browser-automation post goes out clean. That's intended for "here's what I learned" posts.
 - **No API delete.** Once it's live there's no programmatic undo (manual removal in the LinkedIn app only). On the FIRST live post, say so plainly in the gate: "Once this fires it's live on your LinkedIn and there's no undo button on my end. Good to go?" The first real post IS the production test.
 
 ---
 
 ## Hard rules for Phase 6
-- One clean offer, never a nag. One angle. Stop after the offer if they skip.
+- One clean offer, never a nag. One angle. Stop after the offer if the user skips.
 - Anonymize by default. "name them" is the only override, and only from the user.
 - Never quote a client off low-confidence diarization. Downgrade to a lesson or human angle.
 - Capture content-unit's delimited block verbatim; never re-edit post-gate.
-- Never publish without an explicit "post it." Personal feed (the `socialAccountId` from your settings when `socialIsPersonalFeed` is true / a persistent logged-in browser profile), never a company page unless the user says so.
+- Never publish without an explicit "post it." Personal feed (the `socialAccountId` from your settings when `socialIsPersonalFeed` is true / the persistent browser profile), never a company page unless the user says so.

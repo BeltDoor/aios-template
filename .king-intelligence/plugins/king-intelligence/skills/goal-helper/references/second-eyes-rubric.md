@@ -1,11 +1,11 @@
 # Stage 3 rubric: the second set of eyes
 
-The single most important fix `/goal` is missing: the same AI does the work *and* decides it's done. That's grading your own homework, and it's where loops quietly fail. The fix is a separate Claude helper that judges the work against the done-checklist. The rule: it always runs on the strongest model available.
+The single most important fix `/goal` is missing: the same AI does the work *and* decides it's done. That's grading your own homework, and it's where loops quietly fail. The fix is a separate Claude helper that judges the work against the done-checklist. Rule of thumb: it always runs on the strongest model.
 
 ## How it runs
 
 - The judge is a **subagent** (spawned with the Agent tool), so the worker's context stays clean. Judgment work goes to a helper, not the main thread.
-- It **always uses your most capable model** (`model: opus` on the Agent call), so the verdict is as sharp as it can be.
+- It **always uses Opus 4.8** (`model: opus` on the Agent call). Free on the user's Claude subscription, no API key, no separate bill. It only draws on their usage window.
 - It stays in-house (Claude judging Claude). No work gets sent to an outside vendor in this version.
 - **Hard checks run first.** Only call the judge once the objective checks pass; don't spend a judge call on work that doesn't load or doesn't match the number.
 

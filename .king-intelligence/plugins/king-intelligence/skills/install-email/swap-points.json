@@ -1,0 +1,5 @@
+{
+  "skill": "install-email",
+  "description": "Guided one-run setup: interviews the user, builds their EMAIL-VOICE.md from hundreds of real sent emails, and wires the shipped email and debrief skills to their tools. Writes config only; never edits shipped skills.",
+  "swapPoints": []
+}

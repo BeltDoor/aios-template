@@ -14,9 +14,9 @@
 // quoting (inner " doubled to "").
 //
 // Per-user settings are read at runtime, NOT hardcoded:
-//   - selfEmail      : --self-email <addr>, or env NET_SELF_EMAIL. The user passes
-//                      their address from the `## networking` config block. If empty,
-//                      they are simply not added as a guest (no RSVP prompt) and the
+//   - selfEmail      : --self-email <addr>, or env NET_SELF_EMAIL. Pass the user's
+//                      own address (read from their config) so they get added as a
+//                      guest. If empty, no guest is added (no RSVP prompt) and the
 //                      event still lands as a hold.
 //   - calendar command : env NET_CAL_CMD (default 'gws.cmd'), so the inserter can point
 //                      at a different calendar CLI without editing this file.
@@ -62,7 +62,7 @@ for (let i = 0; i < argv.length; i++) {
 const candidatesPath = positionals[0] || path.join(SKILL_DIR, 'state', 'candidates.json');
 
 // The guest added on every event so Google Calendar shows the Yes/No/Maybe RSVP
-// buttons (responseStatus needsAction = the "empty", undecided state). Read at
+// buttons (responseStatus needsAction = the "empty" state the user wants). Read at
 // runtime from --self-email or NET_SELF_EMAIL (the SKILL.md passes selfEmail from
 // config); if empty, no guest is added and the hold still lands.
 const SELF_EMAIL = selfEmailArg || process.env.NET_SELF_EMAIL || '';
@@ -168,13 +168,13 @@ function insertEvent(ev) {
     end: ev.end,
     // Approved on the page = a real commitment, so it lands CONFIRMED, not tentative.
     // This matters beyond tidiness: check-conflicts.mjs only blocks on confirmed
-    // events, so next month's run sees these and refuses to double-book the user.
+    // events, so next month's run sees these and refuses to double-book him.
     status: 'confirmed',
     colorId: '3',
     // self-as-guest -> the Yes/No/Maybe RSVP prompt shows on the user's calendar (only if we have an email)
     ...(SELF_EMAIL ? { attendees: [{ email: SELF_EMAIL, responseStatus: 'needsAction' }] } : {}),
   };
-  // sendUpdates:none so adding himself as a guest never emails anyone
+  // sendUpdates:none so adding the user as a guest never emails anyone
   const params = JSON.stringify({ calendarId: 'primary', sendUpdates: 'none' });
   return gws(['calendar', 'events', 'insert', '--params', q(params), '--json', q(JSON.stringify(body)), '--format', 'json']);
 }

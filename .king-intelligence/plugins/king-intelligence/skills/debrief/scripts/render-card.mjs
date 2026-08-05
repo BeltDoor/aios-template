@@ -22,14 +22,14 @@ import { dirname } from 'path';
 import { pathToFileURL } from 'url';
 
 // --- config (the seam) -------------------------------------------------------
-// LAB_DIR points at your local branded-styles template library. Override with the
-// LAB_DIR env var if yours lives somewhere other than the plugin default below.
-const LAB_DIR  = process.env.LAB_DIR || new URL('../assets/branded-styles', import.meta.url).pathname;
-const CHROME   = process.env.CHROME_PATH
-  || (process.platform === 'win32' ? 'C:/Program Files/Google/Chrome/Application/chrome.exe'
-    : process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-    : '/usr/bin/google-chrome');
-const BRAND_ID = process.env.BRAND_ID || 'king';
+// Swappable seam: this renders from a branded-styles asset folder holding
+// brands.json + templates/ + assets/. Override with the KI_BRANDED_STYLES_DIR
+// env var, or default to an assets folder next to this skill. Populate that
+// folder with your own brand config before this script can render a card.
+const LAB_DIR  = process.env.KI_BRANDED_STYLES_DIR
+  || new URL('../assets/branded-styles', import.meta.url).pathname;
+const CHROME   = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const BRAND_ID = process.env.KI_BRAND_ID || 'default';
 const W = 1080, H = 1350; // 4:5 portrait, LinkedIn-friendly
 
 // --- args --------------------------------------------------------------------

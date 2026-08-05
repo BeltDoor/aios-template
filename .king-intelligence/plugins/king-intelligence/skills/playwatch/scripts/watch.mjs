@@ -174,7 +174,7 @@ async function prepareDriveVideo(apiKey, url) {
 }
 
 // Local video files (e.g. OBS recordings on disk): uploaded straight to the Gemini Files
-// API, skipping Drive entirely. Used for watching local test recordings on the Mac.
+// API, skipping Drive entirely. Added 06/19/26 for watching local test recordings on the Mac.
 const VIDEO_EXTS = {
   '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.m4v': 'video/x-m4v',
   '.mkv': 'video/x-matroska', '.webm': 'video/webm', '.avi': 'video/x-msvideo',

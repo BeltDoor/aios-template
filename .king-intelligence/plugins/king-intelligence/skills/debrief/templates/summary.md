@@ -71,6 +71,16 @@ Use this structure for all meeting summaries. Omit sections that don't apply (se
 
 ---
 
+## Top 3 Hours-Back Ideas (product setup / 1:1 sessions only)
+
+[Only when the Phase 2 product-engagement flag is set. Ranked ideas for the client's NEXT automations, each grounded in something actually said THIS meeting (pain points, signal types 4/5). Fewer than 3 real ones? List what exists and say so. Never pad with a generic idea.]
+
+1. **[The automation, plainly named]:** [the moment in the call it came from, one line] (should save ~[X] hrs/week)
+2. ...
+3. ...
+
+---
+
 ## Next Steps
 
 ### You
@@ -108,6 +118,7 @@ Include a section only when it applies. "Always" means always include it. "Somet
 | Notable Quotes | Always | Sometimes | Rarely | Sometimes | Always | Rarely | Sometimes |
 | Decisions Made | Sometimes | Always | Sometimes | Rarely | Always | Sometimes | Sometimes |
 | New Information | Always | Sometimes | Sometimes | Sometimes | Sometimes | Always | Sometimes |
+| Top 3 Hours-Back Ideas | Never | flag only | flag only | Never | Never | flag only | Never |
 | Next Steps | Always | Always | Always | Always | Always | Always | Always |
 | Risk Factors | Always | Rarely | Sometimes | Rarely | Always | Rarely | Sometimes |
 | Session Plan | Never | Always | Sometimes | Never | Never | Never | Never |

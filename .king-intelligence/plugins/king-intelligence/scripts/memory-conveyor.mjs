@@ -143,8 +143,12 @@ function classify(headline, raw) {
   // unambiguous dead-weight markers → archive
   if (/\bCORRECTION\b/.test(raw) || /\(PRUNED/i.test(raw) || /\(Collapsed/i.test(raw) ||
       /\bDEPRECATED\b/.test(raw) || /\btombstone\b/i.test(raw)) return 'EVICT';
-  // deliberate standing rules → pin (protected from age-out)
-  if (/HARD RULE|STANDING RULE|HARD FEEDBACK|HARD LINE|HARD GLOBAL|MANDATORY/.test(headline)) return 'PIN';
+  // REMOVED 8/3/26: a rule that auto-pinned any headline matching "HARD RULE|STANDING RULE|
+  // HARD FEEDBACK|...|MANDATORY". It force-promoted entries regardless of the literal [PIN] tag,
+  // which is how the index reached 72-of-72 pinned and froze (nothing left the conveyor was
+  // allowed to move; PINNED-exceed-budget error, 8/2/26). Pinning is now ALWAYS an explicit,
+  // human/session decision via the literal "[PIN]" tag — the four-gate test + 12,000-byte band
+  // ceiling live in references/operating/memory-pins.md.
   return 'FRESH';
 }
 

@@ -1,7 +1,7 @@
 ---
 name: playwatch
 description: >-
-  Actually watch a YouTube video, a Google Drive video, OR a local video file on disk end-to-end using Google Gemini's native video understanding API, NOT Playwright screenshots or transcript-only summaries. Use this skill whenever the user pastes a YouTube URL or a drive.google.com video URL with a question, points at a local video file path (e.g. an OBS recording under ~/OBS-Recordings), asks to "watch", "analyze", "summarize", or "review" a video, asks what something says/does/shows in a video, or wants shot-by-shot breakdown of visual style, transitions, motion, or on-screen text. Use proactively the moment a youtube.com, youtu.be, or drive.google.com video URL, or a local video file path, appears alongside any analytical question, even when the user does not explicitly say "watch". When the URL is LinkedIn, Vimeo, TikTok, X/Twitter, Loom, Instagram, or any other remote host, do NOT run this skill: hand off to the third-party /watch skill (claude-video plugin), which handles anything yt-dlp supports, with the caveat that it only sees still frames + a transcript, so it cannot judge motion smoothness, stutter, or audio quality.
+  Actually watch a YouTube video, a Google Drive video, OR a local video file on disk end-to-end using Google Gemini's native video understanding API, NOT Playwright screenshots or transcript-only summaries. Use this skill whenever the user pastes a YouTube URL or a drive.google.com video URL with a question, points at a local video file path (e.g. a screen recording saved on disk), asks to "watch", "analyze", "summarize", or "review" a video, asks what something says/does/shows in a video, or wants shot-by-shot breakdown of visual style, transitions, motion, or on-screen text. Use proactively the moment a youtube.com, youtu.be, or drive.google.com video URL, or a local video file path, appears alongside any analytical question, even when the user does not explicitly say "watch". When the URL is LinkedIn, Vimeo, TikTok, X/Twitter, Loom, Instagram, or any other remote host, do NOT run this skill: hand off to the third-party /watch skill (claude-video plugin), which handles anything yt-dlp supports, with the caveat that it only sees still frames + a transcript, so it cannot judge motion smoothness, stutter, or audio quality.
 ---
 
 # playwatch
@@ -12,13 +12,13 @@ This skill makes Claude pass a YouTube URL directly to Gemini's `generateContent
 
 ## Scope and hand-off
 
-Do NOT trigger on LinkedIn video URLs, Vimeo, TikTok, X/Twitter video, Loom, Instagram, or remote direct .mp4 links. Three supported inputs: YouTube (native URL ingest), Google Drive (download + Files-API upload), and a **local video file path** (uploaded straight to the Files API, no Drive round-trip). The script refuses with exit code 2 for anything else (Gemini's URL preview supports YouTube only, and Drive/local videos go through a Files-API upload path that does not generalize). For those unsupported remote hosts, route to the third-party **/watch** skill (claude-video plugin): it downloads via yt-dlp and feeds still frames + a transcript into the conversation. Good enough for "what does this say/show" questions; NOT good for motion, smoothness, stutter, or audio-quality judgment (it cannot see between frames or hear), and it spends Claude tokens per video, so playwatch stays the default for everything it supports. If /watch is unavailable, ask the user to re-upload to YouTube, share via Drive, or point at a local file.
+Do NOT trigger on LinkedIn video URLs, Vimeo, TikTok, X/Twitter video, Loom, Instagram, or remote direct .mp4 links. Three supported inputs: YouTube (native URL ingest), Google Drive (download + Files-API upload), and a **local video file path** (uploaded straight to the Files API, no Drive round-trip). The script refuses with exit code 2 for anything else (Gemini's URL preview supports YouTube only, and Drive/local videos go through a Files-API upload path that does not generalize). For those unsupported remote hosts, route to the third-party **/watch** skill (claude-video plugin, installed 7/5/26): it downloads via yt-dlp and feeds still frames + a transcript into the conversation. Good enough for "what does this say/show" questions; NOT good for motion, smoothness, stutter, or audio-quality judgment (it cannot see between frames or hear), and it spends Claude tokens per video, so playwatch stays the default for everything it supports. If /watch is unavailable, ask the user to re-upload to YouTube, share via Drive, or point at a local file.
 
 ### Drive-specific prerequisites
 
 The Drive path shells out to `gws` (Google Workspace CLI) to fetch metadata and download the file, then calls Gemini's Files API directly. Requirements:
 
-- `gws` must be authenticated for the account that owns the Drive file (your own Google Workspace account by default).
+- `gws` must be authenticated for the account that owns the Drive file (the account you've authenticated `gws` against by default).
 - The Drive file's mimeType must start with `video/`. Non-video files are refused.
 - The Drive file is downloaded to the OS temp dir, uploaded to Gemini (where it lives ~48h server-side), then the local copy is deleted. Drive sharing perms do not need to be loosened.
 
@@ -40,11 +40,11 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/playwatch/scripts/watch.mjs" \
 
 Quoting: if the question contains apostrophes, keep it inside double quotes (`--question "..."`) so bash doesn't treat the apostrophe as a quote close.
 
-`--url` accepts all three input types. Drive URLs trigger the download + upload steps automatically; a **local video file path** is uploaded straight to the Gemini Files API (no Drive round-trip — this is the path for watching OBS recordings on disk). Example, checking a local recording for playback smoothness:
+`--url` accepts all three input types. Drive URLs trigger the download + upload steps automatically; a **local video file path** is uploaded straight to the Gemini Files API (no Drive round-trip — this is the path for watching screen recordings saved on disk). Example, checking a local recording for playback smoothness:
 
 ```
 node "${CLAUDE_PLUGIN_ROOT}/skills/playwatch/scripts/watch.mjs" \
-  --url "~/OBS-Recordings/composite/session-recording.mp4" \
+  --url "/path/to/recordings/composite/composite-2026-06-19-09-54-00.mp4" \
   --question "Does this play back smoothly or is there stutter/lag?" --fps 5
 ```
 
@@ -72,7 +72,7 @@ Bump FPS to 10 only for fast action: sports, fight scenes, rapid demos, sleight 
 
 ## Free vs paid: the cost gate
 
-Two API keys exist as environment variables in your shell profile:
+Two API keys exist as environment variables in your shell environment (a User environment variable on Windows, set via `setx`):
 
 - `GEMINI_API_KEY` (free tier). Default. Works on Gemini 2.5 Pro, plenty for transcript-style summaries and most analytical questions.
 - `GEMINI_PAID_API_KEY` (paid tier). Required for `gemini-3.1-pro-preview`. Materially stronger at visual nuance (transitions, on-screen text, fine motion), but costs roughly $0.05-0.07 per 45-second deep-analysis call.
@@ -86,7 +86,7 @@ Use `--paid` ONLY when:
 
 Once the user authorizes paid for the current task, do not re-ask for follow-up calls in the same conversation.
 
-Both keys are already in the inherited bash env from `~/.zshrc`, no wrapper needed: just add `--paid` to the standard command.
+Both keys are already inherited from the shell environment, no wrapper needed: just add `--paid` to the standard command.
 
 ## What to do with the response
 
@@ -100,7 +100,7 @@ It also saves a full record to `${CLAUDE_PLUGIN_ROOT}/skills/playwatch/last-resu
 
 After the script returns, surface the response to the user. Keep your wrapper commentary tight: lead with the answer, then offer next steps (e.g., "want me to re-run at higher FPS for more visual detail", or "want me to escalate to paid Gemini 3 Pro for nuance").
 
-- No em-dashes anywhere in your wrapper text; use commas, periods, or colons (a hard style rule that applies to all output, not just emails).
+- No em-dashes anywhere in your wrapper text; use commas, periods, or colons (hard rule, applies to all output, not just emails).
 - If the model wrote a long structured analysis, surface it as is; do not pad.
 
 ## Failure modes

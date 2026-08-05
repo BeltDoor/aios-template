@@ -127,7 +127,7 @@ function apply(pluginRoot, projectDir, id) {
   const destScripts = path.join(projectDir, ".claude", "scripts");
   fs.mkdirSync(destScripts, { recursive: true });
   const copied = [];
-  for (const name of ["org-check.mjs", "memory-conveyor.mjs"]) {
+  for (const name of ["org-check.mjs", "memory-conveyor.mjs", "time-saved-sync.mjs"]) {
     const src = path.join(pluginRoot, "scripts", name);
     if (fs.existsSync(src)) { fs.copyFileSync(src, path.join(destScripts, name)); copied.push(name); }
   }

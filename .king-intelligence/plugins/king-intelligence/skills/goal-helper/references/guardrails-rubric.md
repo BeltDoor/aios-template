@@ -1,10 +1,10 @@
 # Stage 4 rubric: guardrails (so it can't run away)
 
-A loop with no stop-rule is the thing every warning is about: it burns time and money grinding on something it'll never finish. Every loop gets guardrails before it runs. None of these are optional.
+A loop with no stop-rule is the thing both sources warn about: it burns time and money grinding on something it'll never finish. Every loop gets guardrails before it runs. None of these are optional.
 
 ## The required guards
 
-- **Revise-limit per round.** How many times the worker may try to fix the same gate before it stops and surfaces. Default **3**. Past that, something deeper is wrong, so stop and surface it rather than polishing forever.
+- **Revise-limit per round.** How many times the worker may try to fix the same gate before it stops and surfaces. Default **3**. Past that, something deeper is wrong, so stop and tell the user rather than polishing forever.
 - **A turn / round cap.** The hard backstop that ends the run no matter what. This is what bakes into the `/goal` line as ", or stop after N turns." Default **20** for a step-away job; fewer for a small one.
 - **Stop-if-stuck.** If the same blocker shows up twice, or a round produces no real change, stop. Going in circles is not progress, and it's the most expensive way to discover the goal was wrong.
 - **A rough budget.** A sense of how long or how much effort is reasonable. If it blows past that, stop and report.

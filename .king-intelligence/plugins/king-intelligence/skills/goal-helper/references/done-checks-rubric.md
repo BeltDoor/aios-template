@@ -1,6 +1,6 @@
 # Stage 2 rubric: define "done" as checks (the heart)
 
-This is the stage that decides whether the loop works. The gap most people have is right here: they don't do a great job of defining the criteria for success. The principle behind every good loop is the same: the "is it good yet?" signal only works when it's **objective and comes from outside the worker.** So every part of the goal has to become a check, sorted into one of three buckets.
+This is the stage that decides whether the loop works. The gap most people hit is right here: not doing a great job defining the criteria for success. The loop only works when the "is it good yet?" signal is **objective and comes from outside the worker.** So every part of the goal has to become a check, sorted into one of three buckets.
 
 ## The three buckets
 
@@ -8,7 +8,7 @@ This is the stage that decides whether the loop works. The gap most people have 
 - The page loads and shows the new headline.
 - The number on the invoice matches the number in Stripe.
 - A search for the old phrasing comes back empty (proves it's all replaced).
-- Every card has a name field filled.
+- Every Trello card has a name field filled.
 
 **Judge**: a second AI scores the work against a written rubric. Use this for quality a hard check can't catch: is the copy on-voice, does the plan cover every part of the goal, does the clip actually feel tight. The rubric has to be specific enough that a *different* AI would score it the same way. (Setup is Stage 3.)
 
@@ -30,7 +30,7 @@ This is the stage that decides whether the loop works. The gap most people have 
 
 ## Worked example
 
-**Goal:** rewrite the homepage hero so it leads with the reader's benefit, live on the site.
+**Goal:** rewrite the homepage hero so it leads with the client's benefit, live on the site.
 
 **Done-checklist:**
 - *Hard check:* the live page shows the new headline (load it, confirm the text changed).

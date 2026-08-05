@@ -38,7 +38,9 @@ const repo = path.resolve(flag('--repo', process.cwd()))
 
 const STATE_PATH = path.join(repo, '.claude', 'time-saved', 'state.json')
 const TS_PATH = path.join(repo, 'TIME-SAVED.md')
-const SCHEMA_VERSION = 1
+// v2 adds per-skill counts (skills: [{slug, uses, minutes_saved}]) to the snapshot.
+// Counts only — no session summaries, no free text. The portal accepts v1 unchanged.
+const SCHEMA_VERSION = 2
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100
 
 // ---------- state load / seed ----------
@@ -77,9 +79,10 @@ function writeState(state) {
 
 // ---------- TIME-SAVED.md skills spine (same honesty rules as scoreboard.mjs) ----------
 function skillsFromLedger() {
-  if (!fs.existsSync(TS_PATH)) return { minutes: 0, tools: [] }
+  if (!fs.existsSync(TS_PATH)) return { minutes: 0, tools: [], rows: [] }
   let minutes = 0
   const tools = []
+  const rows = []
   for (const line of fs.readFileSync(TS_PATH, 'utf8').split('\n')) {
     const t = line.trim()
     if (!t.startsWith('|')) continue
@@ -90,9 +93,14 @@ function skillsFromLedger() {
     const manualMin = parseInt((cells[1].match(/-?\d+/) || [])[0], 10)
     const uses = parseInt((cells[2].match(/-?\d+/) || [])[0], 10) || 0
     const pending = /pending/i.test(cells[1]) || !(manualMin > 0) || uses <= 0
-    if (!pending) { minutes += manualMin * uses; tools.push(skill.replace(/^\//, '')) }
+    if (!pending) {
+      minutes += manualMin * uses
+      const name = skill.replace(/^\//, '')
+      tools.push(name)
+      rows.push({ slug: name, uses, minutesSaved: manualMin * uses })
+    }
   }
-  return { minutes, tools }
+  return { minutes, tools, rows }
 }
 
 // ---------- week math (DST-safe, anchored to a known Monday) ----------
@@ -159,6 +167,11 @@ function snapshotOf(state) {
     streak_weeks_current: state.sessions.streakWeeksCurrent,
     streak_weeks_best: state.sessions.streakWeeksBest,
     tools_adopted: state.toolsAdopted,
+    // wire v2: per-skill counts straight from the TIME-SAVED.md ledger (the same
+    // honest source the headline minutes come from). Counts only, no free text.
+    skills: skillsFromLedger().rows.map((r) => ({
+      slug: r.slug, uses: r.uses, minutes_saved: round2(r.minutesSaved),
+    })),
     last_active_at: state.sessions.lastEndedAt,
     milestones: state.milestones.map((m) => ({ key: m.key, label: m.label, achieved_at: m.achievedAt })),
     wins: state.wins.map((w) => ({ id: w.id, at: w.at, text: w.text, hours: round2((Number(w.minutes) || 0) / 60) })),
