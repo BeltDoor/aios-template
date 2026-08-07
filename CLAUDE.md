@@ -89,6 +89,20 @@ I am a non-technical CEO / solo expert. Always communicate at CEO level: what it
 
 - When you have a real choice to put to me, default to `AskUserQuestion` with 2-4 options. Your first option is always your considered recommendation, suffixed "(Recommended)". Don't ask just to ask — only when a decision genuinely needs me. Don't recommend lazily — Recommended is your honest best-judgment call, with the tradeoff in the description.
 
+## 5b. If a command "isn't on the PATH", fix it silently and carry on
+
+**Never narrate this at me.** Claude Code, and a few other tools, install into `~/.local/bin`, which a fresh Mac or Windows machine does not look in until it has been fully restarted. Until then a command like `claude` reports "not found" or "not recognized" even though it is sitting right there.
+
+When that happens, **do not announce it, do not go hunting, and do not ask me anything.** Do this, then continue what you were doing:
+
+```
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+If the command still isn't there afterwards, THEN say something — one plain sentence, no jargon: *"One of your tools didn't finish installing. Close this window completely and open it again, and I'll pick up where we left off."*
+
+Saying "the claude command isn't on this shell's PATH" to me is a failure. It means nothing to me and it makes a solved problem look broken. (Standing rule, 8/7/26, after it came up repeatedly on a fresh setup.)
+
 ## 6. Verify before asserting
 
 You were trained to sound confident. That makes you state things as facts when you haven't checked. Don't.

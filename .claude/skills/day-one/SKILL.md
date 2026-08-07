@@ -1,6 +1,6 @@
 ---
 name: day-one
-description: First-touch on-ramp inside this second brain. Asks permission to map the computer and fires that off in the background, then three steps in front of the user — voice tool, harness settings (bypass mode + model picker), and a fast website + LinkedIn scrape — followed by a synthesized identity paragraph and a soft-ask handoff to /skill-builder. Use when the user pastes the kickoff line from members.king-intelligence.com, says "set me up", "first time", "I just opened this", "walk me through Day One", or when you spot the SETUP_BUNDLE marker in their first message. One-shot per client.
+description: First-touch on-ramp inside this second brain. Three steps in front of the user — voice tool, harness settings (bypass mode + model picker), and a fast website + LinkedIn scrape — followed by a synthesized identity paragraph and a soft-ask handoff to /skill-builder. Use when the user pastes the kickoff line from members.king-intelligence.com, says "set me up", "first time", "I just opened this", "walk me through Day One", or when you spot the SETUP_BUNDLE marker in their first message. One-shot per client.
 ---
 
 # /day-one
@@ -104,29 +104,11 @@ Day One — Step <N> of 3
 
 "Type **next**" gates between steps. Reserve `AskUserQuestion` for real either/or choices inside the steps.
 
-## Step 0 — permission to look around (ask once, then work in the background)
+## The computer map is NOT yours to run
 
-This is the first thing you ask after the greeting, before Step 1. It is the only consent gate `/map-my-work` gets, and it must be a real question, never an assumption.
+`/map-my-work` is its own separate prompt on the member's Get Started page, fired in its own window (Jacob's call, 8/7/26 — he runs the three setup prompts side by side). **Do not launch it, and do not ask for permission to scan anything.** That skill asks for its own consent when it runs.
 
-`AskUserQuestion`:
-
-> **Question:** "Before we start, can I have a look around your computer to find where your work lives?"
->
-> Options:
->
-> 1. **"Yes, go ahead (Recommended)"** — *I read the names of your folders and files: Desktop, Documents, Downloads, and any OneDrive, SharePoint, iCloud Drive or Dropbox you have synced. I never open a document, never move a file, and nothing leaves your laptop. It means I stop asking you where things are.*
-> 2. **"Only the folders I point you at"** — *You tell me which folders hold your business work and I look at just those.*
-> 3. **"Not right now"** — *We skip it. I'll ask you where things are as we go, and you can turn this on any time.*
-
-**On "yes":** launch `/map-my-work` as a **background task** with a note that consent was given, then carry straight on to Step 1 without waiting. The scan takes a couple of minutes and there is no reason for the user to watch it. Say one line and move:
-
-> Great. I'll look around in the background while we do the fun part.
-
-**On "only the folders I point you at":** ask which, then launch `/map-my-work` in the background scoped to exactly those.
-
-**On "not right now":** don't launch it, don't mention it again this session, and write `onboarding/map-declined.md` with one line: *"Computer map declined during /day-one on YYYY-MM-DD."*
-
-**If the background task fails or comes back empty**, do not derail Day One over it. Note it, finish the session, and tell them at the end in one plain line: *"One thing didn't finish: the look around your computer. Say 'map my computer' any time and I'll pick it up."*
+If `references/where-my-work-lives.md` already exists by the time you write the identity paragraph, read it (see below). If it doesn't, carry on without it and don't mention it.
 
 ## Step 1 — Typeless voice tool (strong soft gate)
 
@@ -235,9 +217,9 @@ Capture the answer. Write it to `onboarding/profile-from-client-statement.md`. P
 
 Four-step flow.
 
-### First: collect the background scan
+### First: check for the computer map
 
-Before you reflect anything back, check whether the `/map-my-work` background task from Step 0 has finished. If `references/where-my-work-lives.md` exists, **read it**. It is the strongest source you have: a website says what someone sells, their folders say what they actually do all day. A folder called `2024 Roofing Jobs` holding 4,000 photos tells you more than any About page.
+Before you reflect anything back, check whether `references/where-my-work-lives.md` exists (the member may have run `/map-my-work` in a parallel window). If it does, **read it**. It is the strongest source you have: a website says what someone sells, their folders say what they actually do all day. A folder called `2024 Roofing Jobs` holding 4,000 photos tells you more than any About page.
 
 Use it to add one bullet the website could never give you, and to catch a mismatch worth asking about (the site sells consulting, the laptop is full of installs).
 
@@ -420,7 +402,7 @@ You (Jacob at first, possibly future facilitators) are on Zoom or in-person, scr
 - [ ] **Windows only — confirm the shell is Git Bash, not PowerShell.** The install line runs in PowerShell on Windows (that's where `winget` lives), which is correct — installing Git is what *gives* them Git Bash. After the reopen, run `uname`. `MINGW...`/`MSYS...` = good. An error or anything else means Claude is still on PowerShell and onboarding breaks on step one. `/day-one` auto-checks and self-repairs this at its very start, so this is just a belt-and-suspenders glance. Why it matters, in plain English: [`references/whats-getting-installed.md`](../../../references/whats-getting-installed.md).
 - [ ] **Step 3 — download their second brain.** A gold button on the page gives them a zip already named `<firstname>s-secondbrain`. There is a paste-able clone line underneath as a backup if the download misbehaves.
 - [ ] **Step 4 — open it in VS Code by hand.** **File → Open Folder**, pick `<firstname>s-secondbrain`. They do this themselves; it's a click they need to learn, and it's more reliable than asking an AI to do it.
-- [ ] **Step 5 — one paste into the Claude Code chat** kicks off `/day-one`. That single line also carries their personal updates key and the setup bundle, and `/day-one` fires the computer map off in the background from it.
+- [ ] **Step 5 — THREE separate prompts**, meant to be run side by side in separate VS Code windows on the same folder: (A) turn on updates, which carries their personal key, (B) start Day One, the only one that needs a human, (C) map where their work lives. Nothing waits on anything else. `/day-one` neither launches nor waits on the other two.
 - [ ] GitHub account (OPTIONAL). Backup is the LAST setup task, and it's only needed if their folder is NOT already in OneDrive / iCloud / Dropbox. Those drives back up on their own, so `/day-one` detects them and skips GitHub entirely. When GitHub backup IS used, the happy path is VS Code's "Publish to GitHub" (no `gh`, no token); the step still **commits first, verifies against GitHub for real (`git ls-remote origin`), and self-repairs from the terminal** if the button flakes.
 - [ ] **Toolkit is keyless — no install lines needed to USE it.** The full King Intelligence toolkit ships INSIDE the download (the bundled `.king-intelligence` folder). `/day-one` installs it from that bundle at the start and has the client reopen VS Code once so the `/king-intelligence:` commands register. Their personal key only unlocks live updates (`/king-intelligence:update`), and it rides along in the step-5 paste.
 
@@ -432,7 +414,7 @@ You (Jacob at first, possibly future facilitators) are on Zoom or in-person, scr
 
 - **30-minute soft cap.** If /day-one runs past 30 min, you've gone too deep — the temptation is to start interviewing, don't. Identity-paragraph depth is /skill-builder's job (when building voice-aware skills), or /capture-voice's job later. Glance, don't dig.
 - **Voice tool is the highest-leverage install.** If the client wants to skip, push back gently ONCE then let them skip — the re-prompt mechanism catches it next session.
-- **Never wait on the background computer map.** It runs while you talk. If it hasn't landed by the identity paragraph, write the paragraph without it and let it finish on its own.
+- **Never wait on the computer map.** It is a separate prompt the member may be running in another window. If `references/where-my-work-lives.md` hasn't appeared by the identity paragraph, write the paragraph without it.
 - **The setup bundle comes from the step-5 paste on their Get Started page.** If it's missing, have them use the copy button on that step rather than retyping. Don't try to teach them what a token is. LinkedIn is not a gate; carry on without it if it won't come.
 - **Identity paragraph is locked-in context for every future session.** If the bullet reflect or paragraph looks subtly wrong, push for the correction NOW — fixing it later costs more.
 

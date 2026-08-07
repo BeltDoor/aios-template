@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rate these — {{BUSINESS_NAME}}</title>
+
+<!--
+  RATING PAGE TEMPLATE — /king-intelligence:install-brand, step 3.
+
+  HOW TO FILL THIS IN
+  Replace {{BUSINESS_NAME}} and {{DATE}}. Then write one <article class="opt"> per
+  option. Everything else wires itself: the stars, the Love/Kill buttons, the notes box,
+  saving, and the paste-back digest are all attached by the script at the bottom.
+
+    <article class="opt" id="o1" data-title="Wordmark, tight tracking">
+      <div class="mock"> …any markup you like… </div>
+      <p class="note">One line saying where this came from.</p>
+    </article>
+
+  THREE RULES, AND THE FIRST ONE IS THE WHOLE POINT
+  1. Every option must be derived from the client's REAL material — their logo's actual
+     shape, a colour already on their site, type already in use. Never invent a direction
+     and never fill a gap with a guess. A gap is an open decision, recorded in the guide.
+  2. The chrome of this page stays neutral grey on purpose. A page with its own strong
+     look biases every rating on it.
+  3. `data-title` is what shows up in the digest, so make it specific enough to act on.
+     "Wordmark, tight tracking" is useful. "Option 3" is not.
+-->
+
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --line: #e0e0e0;
+    --paper: #ffffff;
+    --page: #f4f4f5;
+    --ok: #17643b;
+    --no: #a11b2b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    padding: 18px 24px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
+  }
+  header h1 { font-size: 19px; margin: 0; font-weight: 650; }
+  header .sub { color: var(--muted); font-size: 14px; margin: 0; }
+  .spacer { flex: 1 1 auto; }
+  .count { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
+  button {
+    font: inherit; cursor: pointer; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+    padding: 9px 14px;
+  }
+  button:hover { border-color: #b9b9b9; }
+  button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 24px 120px; }
+  .intro { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin-bottom: 28px; }
+  .intro p { margin: 0 0 8px; }
+  .intro p:last-child { margin-bottom: 0; }
+  .opt {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; margin-bottom: 22px;
+  }
+  .opt > h2 { font-size: 15px; margin: 0 0 14px; font-weight: 650; }
+  .opt > h2 .num { color: var(--muted); font-weight: 400; margin-right: 8px; }
+  .mock { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .note { color: var(--muted); font-size: 14px; margin: 12px 0 0; }
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .stars { display: flex; gap: 2px; }
+  .stars button { border: none; background: none; padding: 2px; font-size: 24px; line-height: 1; color: #d0d0d0; }
+  .stars button[aria-pressed="true"] { color: #e2a207; }
+  .verdict button[data-v="love"][aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .verdict button[data-v="kill"][aria-pressed="true"] { background: var(--no); border-color: var(--no); color: #fff; }
+  .verdict { display: flex; gap: 8px; }
+  textarea {
+    width: 100%; margin-top: 14px; min-height: 62px; resize: vertical;
+    font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+    background: #fcfcfc; color: var(--ink);
+  }
+  textarea::placeholder { color: #a3a3a3; }
+  dialog { border: 1px solid var(--line); border-radius: 12px; padding: 0; max-width: 720px; width: 92vw; }
+  dialog .body { padding: 20px 22px; }
+  dialog h3 { margin: 0 0 10px; font-size: 17px; }
+  dialog textarea { min-height: 320px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+  .row { display: flex; gap: 10px; justify-content: flex-end; padding: 0 22px 20px; }
+  @media (max-width: 620px) { .controls { gap: 10px; } header { padding: 14px 16px; } main { padding: 20px 14px 100px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Rate these — {{BUSINESS_NAME}}</h1>
+    <p class="sub">{{DATE}}</p>
+  </div>
+  <div class="spacer"></div>
+  <span class="count" id="count">0 of 0 rated</span>
+  <button id="copy" class="primary">Copy my ratings</button>
+</header>
+
+<main>
+  <div class="intro">
+    <p><strong>How this works.</strong> Every option below is built from something you already have, not invented. Give each one a star rating, mark the ones you love or want killed, and add a note wherever you have a reason.</p>
+    <p><strong>The notes matter more than the stars.</strong> "Too cold" or "that's the one my customers recognise" is what turns into a real rule. A killed option with a reason becomes something Claude is blocked from making ever again.</p>
+    <p>Your answers save in this browser as you go, so you can close the page and come back. When you're done, press <strong>Copy my ratings</strong> and paste the result back into the chat.</p>
+  </div>
+
+  <!-- ═══ OPTIONS START — one <article class="opt"> each ═══ -->
+
+  <article class="opt" id="o1" data-title="EXAMPLE — delete this block">
+    <div class="mock" style="padding:48px;text-align:center;background:#fafafa;">
+      <span style="font:600 34px/1 system-ui;letter-spacing:-.02em;">Your mockup goes here</span>
+    </div>
+    <p class="note">Say in one line where this came from, e.g. "your current logo, set in the font already on your site".</p>
+  </article>
+
+  <!-- ═══ OPTIONS END ═══ -->
+</main>
+
+<dialog id="out">
+  <div class="body">
+    <h3>Paste this back into the chat</h3>
+    <textarea id="digest" readonly></textarea>
+  </div>
+  <div class="row">
+    <button id="close">Close</button>
+    <button id="copy2" class="primary">Copy to clipboard</button>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  "use strict";
+
+  // Per-business key, so two brands rated on the same machine never collide.
+  var KEY = "brand-ratings:{{BUSINESS_SLUG}}";
+  var opts = Array.prototype.slice.call(document.querySelectorAll(".opt"));
+  var state = {};
+
+  try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { state = {}; }
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private mode: ratings still work in-page */ }
+    var done = opts.filter(function (o) { var s = state[o.id]; return s && (s.stars || s.verdict); }).length;
+    document.getElementById("count").textContent = done + " of " + opts.length + " rated";
+  }
+
+  opts.forEach(function (opt, i) {
+    var id = opt.id;
+    var title = opt.getAttribute("data-title") || id;
+    if (!state[id]) state[id] = { stars: 0, verdict: "", note: "" };
+
+    var head = document.createElement("h2");
+    head.innerHTML = '<span class="num">' + (i + 1) + "</span>";
+    head.appendChild(document.createTextNode(title));
+    opt.insertBefore(head, opt.firstChild);
+
+    var controls = document.createElement("div");
+    controls.className = "controls";
+
+    var stars = document.createElement("div");
+    stars.className = "stars";
+    stars.setAttribute("role", "group");
+    stars.setAttribute("aria-label", "Star rating for " + title);
+    var starBtns = [];
+    for (var n = 1; n <= 5; n++) {
+      (function (n) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.textContent = "★";
+        b.setAttribute("aria-label", n + " star" + (n > 1 ? "s" : ""));
+        b.addEventListener("click", function () {
+          // Clicking the current rating clears it, so a misclick is recoverable.
+          state[id].stars = state[id].stars === n ? 0 : n;
+          paintStars();
+          save();
+        });
+        starBtns.push(b);
+        stars.appendChild(b);
+      })(n);
+    }
+    function paintStars() {
+      starBtns.forEach(function (b, idx) {
+        b.setAttribute("aria-pressed", idx < state[id].stars ? "true" : "false");
+      });
+    }
+
+    var verdict = document.createElement("div");
+    verdict.className = "verdict";
+    var vBtns = {};
+    [["love", "Love it"], ["kill", "Kill it"]].forEach(function (pair) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.dataset.v = pair[0];
+      b.textContent = pair[1];
+      b.addEventListener("click", function () {
+        state[id].verdict = state[id].verdict === pair[0] ? "" : pair[0];
+        paintVerdict();
+        save();
+      });
+      vBtns[pair[0]] = b;
+      verdict.appendChild(b);
+    });
+    function paintVerdict() {
+      Object.keys(vBtns).forEach(function (k) {
+        vBtns[k].setAttribute("aria-pressed", state[id].verdict === k ? "true" : "false");
+      });
+    }
+
+    controls.appendChild(stars);
+    controls.appendChild(verdict);
+    opt.appendChild(controls);
+
+    var ta = document.createElement("textarea");
+    ta.placeholder = "Why? Even a few words here is worth more than the stars.";
+    ta.value = state[id].note || "";
+    ta.setAttribute("aria-label", "Notes on " + title);
+    ta.addEventListener("input", function () { state[id].note = ta.value; save(); });
+    opt.appendChild(ta);
+
+    paintStars();
+    paintVerdict();
+  });
+
+  function digest() {
+    var lines = ["BRAND RATINGS — {{BUSINESS_NAME}} — {{DATE}}", ""];
+    opts.forEach(function (opt, i) {
+      var s = state[opt.id] || {};
+      var title = opt.getAttribute("data-title") || opt.id;
+      var bits = [];
+      bits.push(s.stars ? s.stars + "/5" : "not rated");
+      if (s.verdict) bits.push(s.verdict.toUpperCase());
+      lines.push((i + 1) + ". " + title + " — " + bits.join(" · "));
+      if (s.note && s.note.trim()) lines.push("   note: " + s.note.trim());
+    });
+    var killed = opts.filter(function (o) { return (state[o.id] || {}).verdict === "kill"; });
+    lines.push("");
+    lines.push("KILLED (" + killed.length + "): " + (killed.map(function (o) {
+      return o.getAttribute("data-title") || o.id;
+    }).join("; ") || "none"));
+    return lines.join("\n");
+  }
+
+  var dlg = document.getElementById("out");
+  var box = document.getElementById("digest");
+
+  document.getElementById("copy").addEventListener("click", function () {
+    box.value = digest();
+    if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
+    box.select();
+  });
+  document.getElementById("copy2").addEventListener("click", function () {
+    box.select();
+    // Clipboard API needs a secure context; a file:// page is not one, so fall back.
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(box.value).catch(function () { document.execCommand("copy"); });
+    } else {
+      document.execCommand("copy");
+    }
+  });
+  document.getElementById("close").addEventListener("click", function () {
+    if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open");
+  });
+
+  save();
+})();
+</script>
+</body>
+</html>

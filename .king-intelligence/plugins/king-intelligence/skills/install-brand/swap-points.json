@@ -1,0 +1,5 @@
+{
+  "skill": "install-brand",
+  "description": "Guided one-run setup: captures the client's brand from their real material, runs one rating round of options derived only from that material, then writes their brand law, a lookable guide, a gate that stops visual work until the guide is seen, and a checker built from what they rejected. Writes config only; never edits shipped skills.",
+  "swapPoints": []
+}
