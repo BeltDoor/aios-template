@@ -6,18 +6,18 @@
 // batch so one run never double-adds the same event.
 //
 // IMPORTANT: this script is the LAST step, not the first. It must only ever be
-// handed events the user explicitly approved on the networking-approval.html page.
+// handed events you explicitly approved on the networking-approval.html page.
 // It does not decide anything; it writes what it is given. The pipeline is:
-//   research -> check-conflicts.mjs -> preview-events.mjs -> user approves -> this.
+//   research -> check-conflicts.mjs -> preview-events.mjs -> you approve -> this.
 //
 // Windows note: gws is a .cmd shim, so we MUST use shell:true + manual cmd.exe-safe
 // quoting (inner " doubled to "").
 //
 // Per-user settings are read at runtime, NOT hardcoded:
-//   - selfEmail      : --self-email <addr>, or env NET_SELF_EMAIL. Pass the user's
-//                      own address (read from their config) so they get added as a
-//                      guest. If empty, no guest is added (no RSVP prompt) and the
-//                      event still lands as a hold.
+//   - selfEmail      : --self-email <addr>, or env NET_SELF_EMAIL. Pass your own
+//                      address from the config. If empty,
+//                      you are simply not added as a guest (no RSVP prompt) and the event
+//                      still lands as a tentative hold.
 //   - calendar command : env NET_CAL_CMD (default 'gws.cmd'), so the inserter can point
 //                      at a different calendar CLI without editing this file.
 //
@@ -62,7 +62,7 @@ for (let i = 0; i < argv.length; i++) {
 const candidatesPath = positionals[0] || path.join(SKILL_DIR, 'state', 'candidates.json');
 
 // The guest added on every event so Google Calendar shows the Yes/No/Maybe RSVP
-// buttons (responseStatus needsAction = the "empty" state the user wants). Read at
+// buttons (responseStatus needsAction = the "empty" state you want). Read at
 // runtime from --self-email or NET_SELF_EMAIL (the SKILL.md passes selfEmail from
 // config); if empty, no guest is added and the hold still lands.
 const SELF_EMAIL = selfEmailArg || process.env.NET_SELF_EMAIL || '';
@@ -168,13 +168,13 @@ function insertEvent(ev) {
     end: ev.end,
     // Approved on the page = a real commitment, so it lands CONFIRMED, not tentative.
     // This matters beyond tidiness: check-conflicts.mjs only blocks on confirmed
-    // events, so next month's run sees these and refuses to double-book him.
+    // events, so next month's run sees these and refuses to double-book you.
     status: 'confirmed',
     colorId: '3',
-    // self-as-guest -> the Yes/No/Maybe RSVP prompt shows on the user's calendar (only if we have an email)
+    // self-as-guest -> the Yes/No/Maybe RSVP prompt shows on your calendar (only if we have an email)
     ...(SELF_EMAIL ? { attendees: [{ email: SELF_EMAIL, responseStatus: 'needsAction' }] } : {}),
   };
-  // sendUpdates:none so adding the user as a guest never emails anyone
+  // sendUpdates:none so adding yourself as a guest never emails anyone
   const params = JSON.stringify({ calendarId: 'primary', sendUpdates: 'none' });
   return gws(['calendar', 'events', 'insert', '--params', q(params), '--json', q(JSON.stringify(body)), '--format', 'json']);
 }

@@ -18,7 +18,7 @@ Anything either party said they would do. The classic action-verb layer (see [de
 - Capture the owner (the user or the other person) and any deadline.
 
 ### 2. Imminent meetings + how to handle them
-A future meeting was named, AND/OR someone coached the user on how to approach a person or meeting. This is the Sam-and-Riley pattern: Sam spent six minutes telling the user exactly how to sell to Riley on Thursday. That is gold, and a naive detector would log only "meeting Riley Thursday" and drop the entire playbook.
+A future meeting was named, AND/OR someone coached the user on how to approach a person or meeting. This is the classic meeting-prep pattern: a client spends six minutes telling the user exactly how to sell to a third party on Thursday. That is gold and the old skill would have logged "meeting Thursday" and dropped the entire playbook.
 - Capture: who, when, and **every piece of how-to-handle guidance** (what to say, what they care about, how to price, what to avoid).
 - Almost always becomes a **Lane-3 loaded prompt** (meeting prep is standalone work, not "needed for the email"). Flag urgency by date.
 
@@ -29,7 +29,7 @@ A future meeting was named, AND/OR someone coached the user on how to approach a
 - If a warm intro was offered, that may also be a Lane-2 (draft the intro ask) or Lane-3 item.
 
 ### 4. Offer / strategy / business-model ideas
-The other person, often a sharp operator, hands the user an idea to improve their own offer, pricing, packaging, or positioning. These are never phrased as action items, so verb-detection misses them entirely. Sam redesigned the onboarding sequence ("connect the stack first, then deploy, then automate") and the pricing model ("sell 6/8/12-week plans, not hourly") in passing.
+The other person, often a sharp operator, hands the user an idea to improve their own offer, pricing, packaging, or positioning. These are never phrased as action items, so verb-detection misses them entirely. A client might redesign the onboarding sequence ("connect the stack first, then deploy, then automate") or the pricing model ("sell multi-week plans, not hourly") in passing.
 - Capture the idea verbatim-ish and what it would change.
 - Usually lands in the summary + memory + possibly a `decisions/log.md` candidate or a Lane-3 "rework the offer" prompt. Don't let these evaporate.
 
@@ -51,14 +51,14 @@ Something either party said they'd bring, learn, or report back. "I'll bring bac
 
 ## Plus: relationship & working-style intel (always)
 
-Not a "signal" to action, but capture it: retention risk, how they like to work, personal details, buying temperature, what's driving them. Feeds the summary's relationship section + memory. (A client saying "I'm out of time and can't hire" is often the whole reason they buy.)
+Not a "signal" to action, but capture it: retention risk, how they like to work, personal details, buying temperature, what's driving them. Feeds the summary's relationship section + memory. ("I'm out of time and can't hire" is often the whole reason a client buys — capture the real reason when it's said out loud.)
 
 ---
 
 ## How to run the scan
 
 1. Read the full transcript once with these seven buckets in mind. For a meeting transcript, do this on the relabeled output of the `/speaker-id` pass (SKILL.md Phase 2) so you're scanning real names, not scrambled labels; treat any `⟦?⟧`-flagged line as low-confidence for cross-client writes (type 3).
-   - **Infer dropped short answers from the other speaker's next line before flagging "unconfirmed."** Otter routinely drops one-word replies (machine, email, tool, city, budget). If the reply is missing, the answer is almost always embedded in the responder's follow-up: "okay, so for Mac, you press FN" means the client said Mac; "great, since you use Pipedrive" means they confirmed Pipedrive. Read the dialogue logic, not just the labeled lines. Only mark "unconfirmed"/"[not mentioned]" after that inference genuinely fails. (A real miss: flagging "Mac vs Windows unconfirmed" when the user's own next line already confirmed Mac.)
+   - **Infer dropped short answers from the other speaker's next line before flagging "unconfirmed."** Otter routinely drops one-word replies (machine, email, tool, city, budget). If the reply is missing, the answer is almost always embedded in the responder's follow-up: "okay, so for Mac, you press FN" means the client said Mac; "great, since you use Pipedrive" means they confirmed Pipedrive. Read the dialogue logic, not just the labeled lines. Only mark "unconfirmed"/"[not mentioned]" after that inference genuinely fails.
 2. Build the signal ledger: one line per signal, tagged `[type N]`, with owner/date/amount where relevant and a confidence flag if the source line is garbled.
 3. Don't pad and don't force-fit. A short meeting yields a short ledger. But a rich 2-3 hour session should yield many signals across most of the seven types — if you only found tasks, you ran a verb scan and missed the point. Re-read for types 2, 3, 4 specifically; those are the ones that get dropped.
 4. Hand the ledger to Phase 3 (summary) and Phase 5 (triage).

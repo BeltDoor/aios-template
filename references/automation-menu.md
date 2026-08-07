@@ -1,6 +1,6 @@
 # Automation Menu
 
-A starting list of things your Snowball can do for you, grouped by where they live in your business. Read this with Claude when you don't know what to automate next. Pick one. Claude (via `/skill-builder`) will build it.
+A starting list of things your second brain can do for you, grouped by where they live in your business. Read this with Claude when you don't know what to automate next. Pick one. Claude (via `/skill-builder`) will build it.
 
 These are starting points, not a checklist. Every example below is a real, finishable skill — not a category, not a feature. If your version of the work is a little different, that's fine — Claude shapes the skill around how YOU actually do it.
 
@@ -88,4 +88,4 @@ These are starting points, not a checklist. Every example below is a real, finis
 
 When you don't know what to build next, open this file and read it with Claude. Pick one example that would actually save you time this week — not the most exciting one, the most repetitive one. Then say: "Let's build this." Claude will route you into `/skill-builder` and you'll have it working in one session.
 
-The menu grows over time. As you build new skills, your Snowball gets better at suggesting the next one. If something belongs here that isn't, tell Claude — it can add the row.
+The menu grows over time. As you build new skills, your second brain gets better at suggesting the next one. If something belongs here that isn't, tell Claude — it can add the row.

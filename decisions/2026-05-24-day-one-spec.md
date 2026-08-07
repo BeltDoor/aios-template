@@ -7,7 +7,7 @@ Locked via `/grill-me` session on 2026-05-24. This is the design contract for th
 
 ## 1. Purpose (one line)
 
-`/day-one` is the first-touch on-ramp inside the client's Snowball. It is **three steps** — voice tool, harness settings (bypass + model), and a fast business scrape — followed by a synthesized identity paragraph and a soft-ask handoff to `/skill-builder`. It is the on-ramp, not the work.
+`/day-one` is the first-touch on-ramp inside the client's second brain. It is **three steps** — voice tool, harness settings (bypass + model), and a fast business scrape — followed by a synthesized identity paragraph and a soft-ask handoff to `/skill-builder`. It is the on-ramp, not the work.
 
 ---
 
@@ -22,7 +22,7 @@ Locked via `/grill-me` session on 2026-05-24. This is the design contract for th
 1. VS Code installed.
 2. Claude Code extension installed; signed into Claude account.
 3. GitHub account exists; signed into VS Code's GitHub integration (so `git push` works without re-auth later).
-4. Visit `github.com/BeltDoor/aios-template` → click **Use this template** → **Create a new private repository** named `snowball-<clientname>` (do NOT initialize with README).
+4. Visit `github.com/BeltDoor/aios-template` → click **Use this template** → **Create a new private repository** named `second brain-<clientname>` (do NOT initialize with README).
 5. Clone the client's NEW private repo locally (NOT `BeltDoor/aios-template` directly). This means `origin` is already correctly pointed at the client's own repo from minute one — no remote swap needed in /day-one.
 6. Open the cloned folder in VS Code.
 7. Visit `king-intelligence.com/levelup` → enter passcode → **copy the entire kickoff bundle** (one paste-block that includes the kickoff prompt line AND the Apify token line — see § 2.6).
@@ -41,9 +41,9 @@ Remember which. A few branches fork on it (notably env-var setting commands if t
 
 ### 2.3 Greeting (warm but tight, no theatrics)
 
-After the silent OS detect, open with this — Snowball-branded, one thought per line, no progress bars:
+After the silent OS detect, open with this — on-brand, one thought per line, no progress bars:
 
-> Hey. Welcome to your Snowball.
+> Hey. Welcome to your second brain.
 >
 > You just did the hard part — getting all this onto your computer.
 >
@@ -53,7 +53,7 @@ After the silent OS detect, open with this — Snowball-branded, one thought per
 >
 > Three things: get your voice tool working, show you two settings that make this easy to drive, then take a quick look at your business so I know who I'm working with.
 >
-> Once that's done — your Snowball is ready to start building real tools for you.
+> Once that's done — your second brain is ready to start building real tools for you.
 >
 > ---
 >
@@ -86,7 +86,7 @@ That's it. No `▰▰▰▱▱` bars, no "journey" line showing future modules. 
 
 1. Show ONE callout in plain language: *"Quick heads-up — you'll get a worse experience here without it. Talking is 4x faster and lets you give me the long answers I'm going to ask for. I highly recommend doing this now. But if you want to defer — totally fine, I'll remind you next session."*
 2. `AskUserQuestion` ONE more time: "Try Typeless now" / "No, defer it (Recommended if you really want to skip)."
-3. If they still defer: write `snowball/onboarding/voice-unconfigured.md` with a single-line note like *"Voice tool skipped during /day-one on 2026-XX-XX. /begin-session should re-prompt."* `/begin-session` (per S5 spec, when locked) reads this on session open and re-prompts ONCE per session until either the file is deleted (voice is set up) OR the client explicitly says "stop reminding me" (then `/begin-session` rewrites the file to `voice-declined-permanently.md`).
+3. If they still defer: write `onboarding/voice-unconfigured.md` with a single-line note like *"Voice tool skipped during /day-one on 2026-XX-XX. /begin-session should re-prompt."* `/begin-session` (per S5 spec, when locked) reads this on session open and re-prompts ONCE per session until either the file is deleted (voice is set up) OR the client explicitly says "stop reminding me" (then `/begin-session` rewrites the file to `voice-declined-permanently.md`).
 4. Proceed to Step 2.
 
 **No hard gate.** A new client who hits a Typeless install wall and is told "we can't proceed" closes the window. That's the worst possible Day-1 failure mode. The re-prompt mechanism catches the lost conversion later.
@@ -136,13 +136,13 @@ The Apify token is **invisible to the client**. They never see the word "Apify,"
 
    ```
    Read .claude/skills/day-one/SKILL.md and follow it to walk me through Day One.
-   <!-- SNOWBALL_BUNDLE v1
+   <!-- SETUP_BUNDLE v1
    APIFY_TOKEN=apify_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
    -->
    ```
 
 2. Client pastes the entire bundle into Claude Code chat. `/day-one` starts.
-3. On first message, `/day-one` parses the bundle for the `SNOWBALL_BUNDLE` block and captures the token into **session memory only** (not committed, not `setx`'d, not written to `.env`). The skill keeps the value in working memory for the duration of the session.
+3. On first message, `/day-one` parses the bundle for the `SETUP_BUNDLE` block and captures the token into **session memory only** (not committed, not `setx`'d, not written to `.env`). The skill keeps the value in working memory for the duration of the session.
 4. Step 3's LinkedIn scrape uses the token **inline in the curl command**, never via `$APIFY_AIOS_API_KEY` env var.
 5. At session end, the token vanishes with Claude Code's memory. Future sessions don't need it — `/day-one` is one-shot per client; no future skill needs Apify (LinkedIn scraping is a one-time identity capture).
 
@@ -165,7 +165,7 @@ The Apify token is **invisible to the client**. They never see the word "Apify,"
 
 1. Primary: Firecrawl `/scrape` via the existing MCP tool (uses `FIRECRAWL_AIOS_API_KEY` env var — already captured at user scope per Decision 8). Extract: title, description, main copy, services, target audience, voice notes, any visible brand colors.
 2. Fallback (silent): if Firecrawl returns empty content, HTTP error, or `FIRECRAWL_AIOS_API_KEY` is missing — use `WebFetch`. Same extraction, narrower data quality.
-3. Output: `snowball/onboarding/profile-from-website.md` — frontmatter-tagged with which path was used (`source: firecrawl` or `source: webfetch-fallback`).
+3. Output: `onboarding/profile-from-website.md` — frontmatter-tagged with which path was used (`source: firecrawl` or `source: webfetch-fallback`).
 
 **LinkedIn scrape (Apify):**
 
@@ -180,13 +180,13 @@ The Apify token is **invisible to the client**. They never see the word "Apify,"
    ```
 
 4. Parse the returned JSON array of profile objects. Pull: `headline`, `about`/`summary`, `experience`, `education`, `skills`, `location`.
-5. Output: `snowball/onboarding/profile-from-linkedin.md` — parsed JSON rendered as markdown.
+5. Output: `onboarding/profile-from-linkedin.md` — parsed JSON rendered as markdown.
 
-**If neither link works** (no website, no LinkedIn): say *"No problem — we'll get it straight from you. Tell me in your own words: what do you do, who do you serve, and how long have you been doing it?"* Capture the answer, write it to `snowball/onboarding/profile-from-client-statement.md`, proceed to § 2.7 with that as the only source.
+**If neither link works** (no website, no LinkedIn): say *"No problem — we'll get it straight from you. Tell me in your own words: what do you do, who do you serve, and how long have you been doing it?"* Capture the answer, write it to `onboarding/profile-from-client-statement.md`, proceed to § 2.7 with that as the only source.
 
 ### 2.7 Identity paragraph synthesis (CLAUDE.md § 1)
 
-After scrape lands, fill `snowball/CLAUDE.md` § 1 Identity (currently empty). Four-step flow:
+After scrape lands, fill `CLAUDE.md` § 1 Identity (currently empty). Four-step flow:
 
 **Step A — Bullet reflect.** Reflect what the scrape captured back to the client as 4-5 short bullets. Plain language, no jargon:
 
@@ -229,7 +229,7 @@ Format: just the paragraph as `## 1. Identity` body content. No subheadings insi
 1. **"Sounds right (Recommended)"** — write it to disk, done.
 2. **"Tweak it"** → *"What needs to change?"* — capture, rewrite, re-confirm. One revision pass, then accept.
 
-Write the final paragraph to `snowball/CLAUDE.md` § 1 Identity (replacing the empty stub). Do **not** touch any other section of CLAUDE.md.
+Write the final paragraph to `CLAUDE.md` § 1 Identity (replacing the empty stub). Do **not** touch any other section of CLAUDE.md.
 
 ### 2.8 Handoff to /skill-builder (soft ask: build now or break)
 
@@ -238,7 +238,7 @@ After identity paragraph lands, `/day-one`'s last action is `AskUserQuestion`:
 1. **"Build your first skill now (Recommended)"** — `/day-one` invokes `/skill-builder` via the Skill tool in the same session. Continuity preserved.
 2. **"Take a break — I'll be here when you come back."** — `/day-one` ends with the paste-line shown explicitly:
 
-   > Nice work today. Your Snowball is ready.
+   > Nice work today. Your second brain is ready.
    >
    > When you want to build your first skill, paste this line in and hit enter:
    >
@@ -256,7 +256,7 @@ After identity paragraph lands, `/day-one`'s last action is `AskUserQuestion`:
 
 ### 2.9 Self-ping at end (TIME-SAVED tracking)
 
-After the handoff branch resolves (whichever way client picked), the absolute last action `/day-one` takes is incrementing its row in `snowball/TIME-SAVED.md`:
+After the handoff branch resolves (whichever way client picked), the absolute last action `/day-one` takes is incrementing its row in `TIME-SAVED.md`:
 
 - Skill: `/day-one`
 - Manual time per use: **90 min** (the rough cost of doing this kickoff by hand without an AIOS — install voice tool, configure Claude Code, manually research own business notes, write identity paragraph).
@@ -265,7 +265,7 @@ After the handoff branch resolves (whichever way client picked), the absolute la
 - Update "Last used" to today's date.
 - Add row if `/day-one` doesn't have one yet.
 
-Use the same self-ping template `/skill-builder` bakes into generated skills (see `snowball/.claude/skills/skill-builder/SKILL.md` § AIOS append templates → Self-ping block).
+Use the same self-ping template `/skill-builder` bakes into generated skills (see `.claude/skills/skill-builder/SKILL.md` § AIOS append templates → Self-ping block).
 
 ### 2.10 Output file structure (deliverables at session end)
 
@@ -273,12 +273,12 @@ After `/day-one` completes, these files exist (and get committed by `/end-sessio
 
 | Path | Content | Purpose |
 |---|---|---|
-| `snowball/CLAUDE.md` § 1 | 1-paragraph identity (synthesized) | Always-loaded context for every future session |
-| `snowball/onboarding/profile-from-website.md` | Firecrawl/WebFetch output, frontmatter tags which path | Raw scrape archive for `/skill-builder` to mine later |
-| `snowball/onboarding/profile-from-linkedin.md` | Parsed Apify JSON rendered as markdown | Same, for LinkedIn data |
-| `snowball/onboarding/profile-from-client-statement.md` | Only if neither URL was provided — client's spoken self-description | Same, fallback path |
-| `snowball/onboarding/voice-unconfigured.md` | Only if voice tool was skipped — flag file | `/begin-session` reads → re-prompts |
-| `snowball/TIME-SAVED.md` (modified) | `/day-one` row added with manual_time=90, uses=1, saved=90 | Cumulative time-saved tracker |
+| `CLAUDE.md` § 1 | 1-paragraph identity (synthesized) | Always-loaded context for every future session |
+| `onboarding/profile-from-website.md` | Firecrawl/WebFetch output, frontmatter tags which path | Raw scrape archive for `/skill-builder` to mine later |
+| `onboarding/profile-from-linkedin.md` | Parsed Apify JSON rendered as markdown | Same, for LinkedIn data |
+| `onboarding/profile-from-client-statement.md` | Only if neither URL was provided — client's spoken self-description | Same, fallback path |
+| `onboarding/voice-unconfigured.md` | Only if voice tool was skipped — flag file | `/begin-session` reads → re-prompts |
+| `TIME-SAVED.md` (modified) | `/day-one` row added with manual_time=90, uses=1, saved=90 | Cumulative time-saved tracker |
 
 `about-me.md` and `about-business.md` from v1 are **NOT** recreated. CLAUDE.md § 1 (identity) + raw scrape archive in `/onboarding/` covers what they did.
 
@@ -290,7 +290,7 @@ The CONNECTIONS.md § 2 "Recommended for solo experts" table (per F7) is visible
 
 ### 2.12 Banned-words list, voice rules, AskUserQuestion default — NOT restated
 
-Per Decision 11 / Concern 4 (resolved as "trust the pattern"): `/day-one` does NOT restate CEO voice rules, banned words, AskUserQuestion-with-Recommended default, or verify-before-asserting. Those live in `snowball/CLAUDE.md` and auto-load as project instructions for every session. Restating bloats the skill past its target length.
+Per Decision 11 / Concern 4 (resolved as "trust the pattern"): `/day-one` does NOT restate CEO voice rules, banned words, AskUserQuestion-with-Recommended default, or verify-before-asserting. Those live in `CLAUDE.md` and auto-load as project instructions for every session. Restating bloats the skill past its target length.
 
 Length cap: same as `/skill-builder` generated skills — **soft 100 lines** for `/day-one` SKILL.md. If pushing 150+, push detail into `.claude/skills/day-one/references/*.md`.
 
@@ -302,11 +302,11 @@ The guide (Jacob at first, possibly future facilitators) sees this section in th
 
 ### Pre-flight checklist (done by guide before /day-one starts)
 
-- [ ] Client has Mac or Windows laptop. **Chromebook = hard no.** ChromeOS (stock OR Crostini) can't reliably run npm / git CLI / browser-helper flows the Snowball assumes. Don't onboard Chromebook clients — escalate to "buy a real laptop first" before Day 1. *(Source: early onboarding feedback.)*
+- [ ] Client has Mac or Windows laptop. **Chromebook = hard no.** ChromeOS (stock OR Crostini) can't reliably run npm / git CLI / browser-helper flows the second brain assumes. Don't onboard Chromebook clients — escalate to "buy a real laptop first" before Day 1. *(Source: early onboarding feedback.)*
 - [ ] VS Code installed.
 - [ ] Claude Code extension installed; client signed into Claude account.
 - [ ] GitHub account exists; client signed into VS Code's GitHub integration.
-- [ ] `github.com/BeltDoor/aios-template` → click **Use this template** → **Create a new private repository** named `snowball-<clientname>` (DO NOT initialize with README).
+- [ ] `github.com/BeltDoor/aios-template` → click **Use this template** → **Create a new private repository** named `second brain-<clientname>` (DO NOT initialize with README).
 - [ ] Client clones the NEW private repo locally (NOT `BeltDoor/aios-template` directly).
 - [ ] Folder opened in VS Code; Claude Code chat panel visible.
 - [ ] `king-intelligence.com/levelup` → enter passcode → **copy the entire kickoff bundle** (kickoff prompt + Apify token line — D4 ships this as a single paste block).
@@ -369,15 +369,15 @@ Two scope changes locked in this grill that need REBUILD-PROMPT.md updates in a 
 
 Per Decision 23 (Verify before asserting), the S4 executing session must verify these in-session before claiming /day-one is built:
 
-1. `snowball/onboarding/` directory exists (created by F18 migration).
-2. `snowball/CLAUDE.md` § 1 Identity section is still empty (so /day-one fills it).
-3. `snowball/TIME-SAVED.md` exists with table header in place (F9 done).
-4. `snowball/SKILLS.md` has the `/day-one` row in `[not yet built]` state (F8 set this up).
+1. `onboarding/` directory exists (created by F18 migration).
+2. `CLAUDE.md` § 1 Identity section is still empty (so /day-one fills it).
+3. `TIME-SAVED.md` exists with table header in place (F9 done).
+4. `SKILLS.md` has the `/day-one` row in `[not yet built]` state (F8 set this up).
 5. Firecrawl MCP is connected and `FIRECRAWL_AIOS_API_KEY` env var is set (`claude mcp list` + PowerShell env var check).
 6. D4 (/levelup page) **bundle format is locked** before S4 runs — /day-one's parser logic depends on the exact comment-marker shape D4 ships. If D4 hasn't built yet, S4 should either (a) lock the bundle format in this spec by amending § 2.6, or (b) wait for D4.
 
 Item 6 is a real ordering hazard. The original Phase 5 plan has D4 AFTER all S3/S4 work. With this spec, /day-one's parser depends on D4's exact paste-block format. Options:
-- **Lock the bundle format in this spec now** (§ 2.6 already proposes a concrete `<!-- SNOWBALL_BUNDLE v1 ... -->` shape). S4 implements against the locked shape; D4 must honor it.
+- **Lock the bundle format in this spec now** (§ 2.6 already proposes a concrete `<!-- SETUP_BUNDLE v1 ... -->` shape). S4 implements against the locked shape; D4 must honor it.
 - **Defer the parser logic to a /day-one v1.0.1** that lands after D4. S4 ships /day-one without the parser; the build flow assumes the token is already in `$APIFY_AIOS_API_KEY` (fallback to old flow), and the parser is patched in post-D4.
 
 **Recommendation (locked):** option 1 — lock the bundle format here. The concrete shape in § 2.6 IS the contract. D4 implements it. S4 implements the parser. No deferral.

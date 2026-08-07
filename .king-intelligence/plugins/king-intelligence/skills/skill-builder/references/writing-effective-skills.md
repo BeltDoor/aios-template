@@ -1,6 +1,6 @@
 # Writing effective skills — reference
 
-> Source: David Ondrej's [effective-agent-skills skill](https://github.com/davidondrej/skills) (MIT license, Copyright (c) 2026 David Ondrej). Condensed into a reference for `/skill-builder` and `/improve-skill`. Its skill-authoring guidance overlaps with Pocock's `writing-great-skills` (the primary rubric `/improve-skill` judges against); the piece worth keeping distinct is the **security checklist for auditing downloaded/third-party skills** in §5, which matches the lesson that downloaded skills arrive broken or incomplete.
+> Source: David Ondrej's [effective-agent-skills skill](https://github.com/davidondrej/skills) (MIT license, Copyright (c) 2026 David Ondrej). Condensed into a reference for `/skill-builder` and `/improve-skill`. Its skill-authoring guidance overlaps with Pocock's `writing-great-skills` (the primary rubric `/improve-skill` judges against); the piece worth keeping distinct is the **security checklist for auditing downloaded/third-party skills** in §5, which matches the real-world lesson that downloaded skills arrive broken or incomplete.
 
 Read this when building, editing, or auditing a skill. It's a checklist, not a tutorial.
 
@@ -51,11 +51,11 @@ Skills can execute arbitrary code and steer agent behavior; a malicious or broke
 - [ ] **Audit `scripts/`** for outbound network calls, file access outside the expected scope, or command execution you didn't expect.
 - [ ] **Check references for prompt injection** ("ignore previous instructions…", hidden steering).
 - [ ] **Verify the name isn't typosquatting** a popular skill.
-- [ ] **Confirm it's actually complete** — a downloaded skill can arrive missing files it depends on (one real case: a downloaded research skill shipped without its report template). Check SKILL.md's referenced files and dependencies actually exist; build any missing piece before calling it ready.
+- [ ] **Confirm it's actually complete** — a downloaded skill can arrive missing files it depends on (one real example shipped without its report template). Check SKILL.md's referenced files and dependencies actually exist; build any missing piece before calling it ready.
 - [ ] **Watch for stub/placeholder files** — e.g. an empty SKILL.md, or a file with its own unresolved `TODO`. Don't ship a half-finished skill.
 - [ ] **Pin to a specific version/commit**, not "latest".
 
-For skills adapted into this repo from a third party, also: strip the author's name/paths/tools, add the MIT credit line, and never publish a borrowed skill verbatim; ship your own adaptation instead.
+For skills adapted into this repo from a third party, also: strip the author's name/paths/tools, add the MIT credit line, and never mirror a borrowed skill straight into a client-publish allowlist; ship your own adaptation instead.
 
 ## 6. Ship checklist
 

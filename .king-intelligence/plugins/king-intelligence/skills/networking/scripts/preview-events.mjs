@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // preview-events.mjs — render the branded /networking approval page and (optionally)
-// open it in the native browser. NOTHING reaches the calendar until the user checks
-// boxes here and pastes the reply back. King Intelligence black + gold.
+// open it in the native browser. NOTHING reaches the calendar until you check
+// boxes here and paste the reply back. King Intelligence black + gold.
 //
 // Contract:
 //   node preview-events.mjs --data <abs.json> [--open]
@@ -13,20 +13,20 @@
 //     "window": "23 Jul - 21 Aug 2026",
 //     "capacity": 5,
 //     "events": [
-//       { "n": 1, "title": "Riverside BNI chapter — visitor day", "when": "Wed 8/12 - 7:30-9:00 AM",
+//       { "n": 1, "title": "Riverside BNI visitor day", "when": "Wed 8/12 - 7:30-9:00 AM",
 //         "cost": "Free for visitors", "drive": "20 min", "category": "referral",
 //         "why": "Same mechanic that already works for you, aimed at a room you have not drained.",
 //         "source": "https://...", "recommended": true }
 //     ],
 //     "chasing": [
-//       { "title": "Riverside Chamber morning mixer (September)", "cadence": "monthly, not yet posted",
-//         "contact": "Riley at the chamber (events desk)" }
+//       { "title": "Chamber Morning Buzz (September)", "cadence": "monthly Friday, not yet posted",
+//         "contact": "Sam Riley, chamber contact email" }
 //     ]
 //   }
 //
 // `recommended: true` puts the event ABOVE the cut line (the realistic plan at
-// the user's stated pace, e.g. ~2 events/week including BNI). Everything else
-// still renders, below the line, so nothing is ever silently truncated.
+// your stated ~2 events/week including your own anchor room). Everything else still renders,
+// below the line, so nothing is ever silently truncated.
 //
 // Self-contained page: no server, no external calls beyond a font CDN.
 
@@ -59,7 +59,7 @@ const events = Array.isArray(data.events) ? data.events : [];
 const chasing = Array.isArray(data.chasing) ? data.chasing : [];
 // Radar = AI + annual/marquee events beyond the calendar horizon (radarDays, 120).
 // Same shape as an event, plus an optional `deadline` string. These ARE addable —
-// that is the whole point, since marquee events can sell out weeks ahead.
+// that is the whole point, since the marquee ones sell out.
 const radar = Array.isArray(data.radar) ? data.radar : [];
 if (!events.length) { console.error('no events in --data'); process.exit(2); }
 
@@ -123,8 +123,8 @@ const radarCards = radar.map((s) => card(s, ++idx)).join('');
 const radarBlock = radar.length ? `
   <h2 class="sect">On the radar</h2>
   <p class="sectnote">Past the ${esc(windowLabel)} window, but worth knowing about now because these
-    are the rooms that fill up — marquee events like this can sell out weeks ahead. Add any of them
-    and it goes straight on the calendar the same as anything above.</p>
+    are the rooms that fill up. Marquee events like this can sell out. Add any of them and it goes
+    straight on the calendar the same as anything above.</p>
   ${radarCards}` : '';
 
 const cutLine = below.length ? `

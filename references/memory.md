@@ -4,9 +4,9 @@ How Claude remembers you across sessions, what to save, and what NOT to save.
 
 ## What memory is
 
-Memory is a small set of notes Claude writes about *you* — your role, your preferences, what's going on in your work, where things live — that persist across every conversation. The notes live **outside** this Snowball folder, on your laptop, and are keyed to this folder. So every time you open a new chat here, Claude already knows you.
+Memory is a small set of notes Claude writes about *you* — your role, your preferences, what's going on in your work, where things live — that persist across every conversation. The notes live **outside** this second brain folder, on your laptop, and are keyed to this folder. So every time you open a new chat here, Claude already knows you.
 
-This is different from the Snowball folder itself. The folder is the long-term record of your work — your clients, your projects, your skills. Memory is the short, fast-recall layer Claude uses to stay coherent without re-asking you the same questions.
+This is different from the second brain folder itself. The folder is the long-term record of your work — your clients, your projects, your skills. Memory is the short, fast-recall layer Claude uses to stay coherent without re-asking you the same questions.
 
 You don't manage this directly. Claude does — by reading the memory at the start of each session and writing or updating notes as it learns. Your job is to correct Claude when a note is wrong, and to say "remember this" or "forget that" when you want it explicit.
 
@@ -100,6 +100,6 @@ If you want to see everything Claude has saved, say "show me my memory." Claude 
 
 Over time, your memory file collects a lot of small notes. Some of them overlap. Some of them are no longer relevant. Some of them could be combined into one cleaner note.
 
-A future skill called `/dream` will reorganize accumulated memory — merging duplicates, retiring stale notes, surfacing patterns. It's not built yet. The current Snowball uses lighter tools (`/king-intelligence:end-session` already has a one-step memory-prune confirmation that catches stale notes one at a time).
+A future skill called `/dream` will reorganize accumulated memory — merging duplicates, retiring stale notes, surfacing patterns. It's not built yet. The current second brain uses lighter tools (`/king-intelligence:end-session` already has a one-step memory-prune confirmation that catches stale notes one at a time).
 
 Until `/dream` exists, the system works the way it works above: small notes, written as Claude learns, pruned by `/king-intelligence:end-session` when something goes stale.

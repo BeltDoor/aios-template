@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // render-card.mjs — the image PLUG for /debrief's Phase 6 LinkedIn-post step.
 //
-// SWAPPABLE SEAM: today this renders an on-brand card via the branded-styles lab
-// (local headless Chrome). When the parallel image work productionizes a renderer,
+// SWAPPABLE SEAM: today this renders an on-brand card via a local branded-styles
+// folder (local headless Chrome). When you move to a different renderer,
 // repoint LAB_DIR (or the render call) and NOTHING else in /debrief changes.
 //
 // Contract:
@@ -12,9 +12,10 @@
 //   --theme picks one of the on-brand color schemes in state/image-queue.json
 //   (midnight / gold / bone). Omit it to use the brand default colors.
 //
-// Styles are <name>.tpl.html files in the lab's templates/ dir, filled with the
-// King Intelligence brand (brands.json id "king"). Add a style by dropping a new
-// template (same {{TOKENS}}) and appending its name to state/image-queue.json.
+// Styles are <name>.tpl.html files in the lab's templates/ dir, filled with your
+// own brand (brands.json — set BRAND_ID to match the entry you add). Add a style
+// by dropping a new template (same {{TOKENS}}) and appending its name to
+// state/image-queue.json.
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { execFileSync } from 'child_process';
@@ -22,14 +23,13 @@ import { dirname } from 'path';
 import { pathToFileURL } from 'url';
 
 // --- config (the seam) -------------------------------------------------------
-// Swappable seam: this renders from a branded-styles asset folder holding
-// brands.json + templates/ + assets/. Override with the KI_BRANDED_STYLES_DIR
-// env var, or default to an assets folder next to this skill. Populate that
-// folder with your own brand config before this script can render a card.
-const LAB_DIR  = process.env.KI_BRANDED_STYLES_DIR
-  || new URL('../assets/branded-styles', import.meta.url).pathname;
+// Brand assets (brands.json, templates/, assets/) live under a local styles folder
+// that YOU populate — this ships with no assets baked in. Default: a folder inside
+// this skill; override with the DEBRIEF_BRAND_LAB_DIR env var to point somewhere else.
+const LAB_DIR  = process.env.DEBRIEF_BRAND_LAB_DIR
+  || `${process.env.CLAUDE_PLUGIN_ROOT || '.'}/skills/debrief/assets/branded-styles`;
 const CHROME   = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const BRAND_ID = process.env.KI_BRAND_ID || 'default';
+const BRAND_ID = process.env.DEBRIEF_BRAND_ID || 'default';
 const W = 1080, H = 1350; // 4:5 portrait, LinkedIn-friendly
 
 // --- args --------------------------------------------------------------------

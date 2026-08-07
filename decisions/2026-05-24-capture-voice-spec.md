@@ -210,7 +210,7 @@ P5 produces `.claude/skills/capture-voice/SKILL.md` (held LOCAL — excluded fro
 14. **Self-ping EXEMPTION** (§ 2.12) — NO self-ping block in SKILL.md. NO TIME-SAVED row written. Comment in SKILL.md notes the exemption + cross-references Decision 27 (when formalized).
 15. **End-to-end test of P5.** Jacob runs `/capture-voice` against his own Gmail (which has the 300+ sent emails to test thresholds). Confirms: (a) 5 diverse exemplars surface and his confirm-or-swap works, (b) 5-8 anti-patterns surface with em-dash ban auto-detected, (c) signature phrases include "man", "honestly", "here's the deal" (or whatever Jacob's tics are in his Gmail), (d) test draft generates and Jacob rates ≥4, (e) commit lands cleanly, (f) re-invocation correctly detects the existing profile and offers the refresh/show/cancel gate.
 
-When all 15 criteria pass, P5's status flips to `done` in REBUILD-PLAN.md. P5's deliverable file lives at `king-intelligence/ai-operating-system/snowball/.claude/skills/capture-voice/SKILL.md`, held LOCAL — explicitly excluded from D2's push manifest. D5 publishes it as the first post-v1.0 commit on `BeltDoor/aios-template main`.
+When all 15 criteria pass, P5's status flips to `done` in REBUILD-PLAN.md. P5's deliverable file lives at `king-intelligence/ai-operating-system/secondbrain-template/.claude/skills/capture-voice/SKILL.md`, held LOCAL — explicitly excluded from D2's push manifest. D5 publishes it as the first post-v1.0 commit on `BeltDoor/aios-template main`.
 
 ---
 
@@ -222,10 +222,10 @@ When all 15 criteria pass, P5's status flips to `done` in REBUILD-PLAN.md. P5's 
 - Decision 21 — Voice profile lazy + opt-in via /capture-voice. This spec implements that decision.
 - Decision 22 — AskUserQuestion-with-Recommended default. Used in: post-install run-now gate (§ 2.11), iterate-cap ship/scrap/hand (§ 2.7), detect-existing refresh/show/cancel (§ 2.8). NOT used for the two confirm gates (exemplar + anti-pattern) because those need swap-out flexibility AskUserQuestion's 4-option cap can't handle — freeform-reply pattern there.
 - Decision 23 — Verify-before-asserting. Used in: workflow step 2 (verify Connector via `claude mcp list`, not assumption), workflow step 11 (commit success verified before declaring done), iterate loop (test draft is real-data verification of profile quality).
-- Decision 25 — Folder organization. This spec lives at `snowball/decisions/`; voice-profile.md lives at `snowball/onboarding/`; SKILL.md lives at `snowball/.claude/skills/capture-voice/`. All paths in §§ 2-4 are relative to snowball root.
+- Decision 25 — Folder organization. This spec lives at `decisions/`; voice-profile.md lives at `onboarding/`; SKILL.md lives at `.claude/skills/capture-voice/`. All paths in §§ 2-4 are relative to the folder root.
 - Decision 26 — Timestamps on accumulating business files. voice-profile.md has `created:` (original date) and `updated:` (re-run date) at top per § 2.5 (1).
 - Resolved Concern 3 — Phase ordering. /capture-voice built locally in P5 (Phase 4 Polish), held out of D2's push manifest, published as first post-v1.0 commit in D5 (Phase 5 Distribution). This spec respects that ordering — § 6 acceptance criterion 15 explicitly mentions D2 exclusion.
-- `/skill-builder` spec (`snowball/decisions/2026-05-24-skill-builder-spec.md`) — § 2.7 references this spec's install trigger phrase verbatim. /capture-voice satisfies /skill-builder's voice-profile hard gate.
+- `/skill-builder` spec (`decisions/2026-05-24-skill-builder-spec.md`) — § 2.7 references this spec's install trigger phrase verbatim. /capture-voice satisfies /skill-builder's voice-profile hard gate.
 
 ## Research foundations
 

@@ -26,11 +26,11 @@ Use this structure for all saved transcripts. The header provides context plus a
 
 The relabeling itself is done by the `/speaker-id` skill (Otter/Granola/Zoom mislabel speakers constantly). These rules govern the saved format.
 
-1. Normalize all of the user's own lines to their first name, e.g. **Sam:** (not their full name, not "Speaker 1").
+1. Normalize the user's own lines to **[Your Name]:** (not their full display name, not "Speaker 1").
 2. Normalize every other speaker to their real name **[First Name Last Name]:** (not "Speaker 2", not the source's mislabel). Relabel the WHOLE transcript — no bare "Speaker N" tag survives.
-3. **Flag the genuinely unattributable.** If `/speaker-id` truly couldn't resolve a line, it carries a `⟦?⟧` prefix on the best guess, e.g. `**⟦?⟧ Riley Chen:**` (or `**⟦?⟧ Speaker:**` if even the guess is a coin flip). Keep the flag; never silently swap in a confident name. `⟦?⟧` is the one greppable marker for "low-confidence attribution" — a `⟦?⟧` line must never be quoted in a post (content-post.md) or written into another client's file (lane-model.md).
+3. **Flag the genuinely unattributable.** If `/speaker-id` truly couldn't resolve a line, it carries a `⟦?⟧` prefix on the best guess, e.g. `**⟦?⟧ Sam Riley:**` (or `**⟦?⟧ Speaker:**` if even the guess is a coin flip). Keep the flag; never silently swap in a confident name. `⟦?⟧` is the one greppable marker for "low-confidence attribution" — a `⟦?⟧` line must never be quoted in a post (content-post.md) or written into another client's file (lane-model.md).
 4. **Isolate bleed-in.** Phone audio, side talk, or someone walking in is labeled `**[Side conversation]:**` or `**[Background]:**`, never a participant.
-5. If timestamps exist in the original (e.g., `Sam Doe  0:12`), preserve them as `**Sam** (0:12):`.
+5. If timestamps exist in the original (e.g., `Sam Riley  0:12`), preserve them as `**[Your Name]** (0:12):`.
 6. If no timestamps exist, just use `**[Name]:**` followed by their text.
 7. Keep paragraph breaks from the original as-is.
 8. Do NOT fix grammar, remove filler words, or clean up speech. Relabeling changes the speaker tag ONLY, never the words. This is a raw transcript.

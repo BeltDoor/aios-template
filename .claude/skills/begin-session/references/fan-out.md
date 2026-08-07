@@ -2,9 +2,9 @@
 
 What `/begin-session` reads, per mode. All sources dispatched as parallel subagents in ONE message. 60-second budget per source.
 
-## Client mode (`snowball/clients/<x>/`)
+## Client mode (`clients/<x>/`)
 
-- **Folder:** read `snowball/clients/<x>/CLAUDE.md` verbatim.
+- **Folder:** read `clients/<x>/CLAUDE.md` verbatim.
 - **Recent files:** top 3 by modification time in the folder.
 - **Auto-memory:** grep for the topic name (first + last name tokens if person-shaped, full phrase otherwise).
 - **Gmail** (if wired): threads from last 90 days where the contact's email or name appears in subject/from/to. Return top 5–10 sorted by recency: subject, last date, last sender, 1-line snippet.
@@ -12,12 +12,12 @@ What `/begin-session` reads, per mode. All sources dispatched as parallel subage
 - **HubSpot** (if wired): contact ID, associated deals (dealstage, dealname, amount, close date), most recent 5 engagements (type, date, summary).
 - **Otter** (if wired): staged transcripts where attendee or title matches the topic. Capture title + date + Otter URL.
 
-## Project mode (`snowball/projects/<x>/`)
+## Project mode (`projects/<x>/`)
 
-- **Folder:** read `snowball/projects/<x>/CLAUDE.md` verbatim.
+- **Folder:** read `projects/<x>/CLAUDE.md` verbatim.
 - **Recent files:** top 3 by modification time in the folder.
 - **Auto-memory:** grep for the project name.
-- **Git history:** `git log -10 --pretty=format:'%h %ad %s' --date=short -- snowball/projects/<x>/` (last 10 commits scoped to folder).
+- **Git history:** `git log -10 --pretty=format:'%h %ad %s' --date=short -- projects/<x>/` (last 10 commits scoped to folder).
 - **Otter** (if wired): staged transcripts where title or attendees match the project name.
 - **Notion** (if wired): page search for the project name.
 - **Drive** (if wired): file search for the project name.

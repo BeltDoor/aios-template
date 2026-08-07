@@ -118,7 +118,7 @@ The canonical failure: someone asks "do you have a few hours coming up?" and the
 The phrase grep above catches words. This catches structures. Two parts, both required:
 
 1. Scan the draft for AI-slop structural tells: binary contrasts ("not X, it's Y"), negative listing, false agency ("the decision emerges"), passive voice that hides the actor, narrator-from-a-distance, vague declaratives ("the stakes are high"), crutch adverbs (genuinely/fundamentally/crucially), and throat-clearing openers ("here's the thing," "the truth is"). If the draft leans on any of these, rewrite it directly.
-2. **Invoke the `stop-slop` skill on the rewritten draft via the Skill tool, every draft, every time.** It ships in this same plugin, so it is always available. The inline scan above is the fast filter; the skill run is the gate: no email reaches the user without it. Your own voice guide wins wherever it conflicts with stop-slop's rules.
+2. **Invoke the `stop-slop` skill on the rewritten draft via the Skill tool, every draft, every time.** It ships in this same plugin, so it is always available. The inline scan above is the fast filter; the skill run is the gate: no email reaches the user without it. Your own voice guide wins wherever it conflicts with stop-slop's rules. Only if the Skill tool is genuinely unavailable in the calling context, apply the banned-phrase and structural-tell lists above exhaustively by hand, and note in the emit that the stop-slop skill did not run.
 
 ---
 
@@ -134,7 +134,7 @@ Subject: [subject line]
 ────────────────────────────
 ```
 
-**If and only if a draft is wanted inside an actual email tool**, and `emailTool` is configured, follow the matching draft-creation procedure this plugin ships (for Gmail via the shared recipe at `${CLAUDE_PLUGIN_ROOT}/skills/debrief/references/gmail-draft.md`). If no such procedure applies, hand over the clean text above to paste in manually.
+**If and only if a draft is wanted inside an actual email tool**, and `emailTool` is configured, follow the matching draft-creation procedure this plugin ships (for Gmail via the shared recipe at `${CLAUDE_PLUGIN_ROOT}/skills/debrief/references/gmail-draft.md`). If no such procedure applies, hand over the clean text above to paste in manually. If an automated safety check in this environment fires on the draft, that means Phase 4 missed something — fix the draft, don't bypass the check.
 
 **Never send.** Only drafts. Review in your email tool before hitting send.
 

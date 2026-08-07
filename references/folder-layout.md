@@ -1,6 +1,6 @@
 # Folder Layout
 
-What every folder and root file in your Snowball is for. Short on purpose — this is reference, not a tutorial.
+What every folder and root file in your second brain is for. Short on purpose — this is reference, not a tutorial.
 
 Read this when you (or Claude) need to know where something belongs.
 
@@ -18,15 +18,17 @@ One subfolder per active project — the work you're running that isn't tied to 
 
 ### `onboarding/`
 
-Files `/day-one` creates when you first set up your Snowball: your scraped profile from your website, your LinkedIn profile, the personalized identity paragraph that ends up in `CLAUDE.md`, and — if you opt in later — your voice profile. You won't write here by hand.
+Files `/day-one` creates when you first set up your second brain: your scraped profile from your website, your LinkedIn profile, the personalized identity paragraph that ends up in `CLAUDE.md`, and — if you opt in later — your voice profile. You won't write here by hand.
 
 ### `decisions/`
 
-An append-only log of decisions you've made about how this Snowball should work. `/skill-builder` writes here when you make a non-obvious choice (a routing rule, a tradeoff, a "we tried X instead of Y because…"). Old entries stay put. Date-stamped.
+An append-only log of decisions you've made about how this second brain should work. `/skill-builder` writes here when you make a non-obvious choice (a routing rule, a tradeoff, a "we tried X instead of Y because…"). Old entries stay put. Date-stamped.
 
 ### `references/`
 
-Meta-docs about how your Snowball works. This file lives here. So do [`memory.md`](memory.md), [`api-keys.md`](api-keys.md), [`security.md`](security.md), [`git-and-backup.md`](git-and-backup.md), [`automation-menu.md`](automation-menu.md), and one file per tool you connect (`hubspot-api.md`, `stripe-api.md`, etc., added as you connect them).
+Meta-docs about how your second brain works. This file lives here. So do [`memory.md`](memory.md), [`api-keys.md`](api-keys.md), [`security.md`](security.md), [`git-and-backup.md`](git-and-backup.md), [`automation-menu.md`](automation-menu.md), and one file per tool you connect (`hubspot-api.md`, `stripe-api.md`, etc., added as you connect them).
+
+`where-my-work-lives.md` also lands here once `/map-my-work` has run: the map of where your real business files sit across your laptop and your cloud drives. This file describes the folders inside your second brain; that one describes everything outside it.
 
 [`king-intelligence-config.md`](king-intelligence-config.md) also lives here: a plain settings file where the config-driven skills (debrief, end-session, networking) read your tools, your city, your CRM. It ships with safe defaults; fill in the blanks when you're ready.
 

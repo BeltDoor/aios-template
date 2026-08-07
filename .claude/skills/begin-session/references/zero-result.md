@@ -8,7 +8,7 @@ Then `AskUserQuestion` with three options:
 
 ### 1. "Yes, first time — create a folder for them" (Recommended)
 
-Scaffold `snowball/clients/<slug>/` (kebab-case from topic) containing:
+Scaffold `clients/<slug>/` (kebab-case from topic) containing:
 
 - `.gitkeep` (so empty folder commits)
 - `CLAUDE.md` with this stub:

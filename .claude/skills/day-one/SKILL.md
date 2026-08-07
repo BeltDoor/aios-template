@@ -1,11 +1,11 @@
 ---
 name: day-one
-description: First-touch on-ramp inside this Snowball. Three steps — voice tool, harness settings (bypass mode + model picker), and a fast website + LinkedIn scrape — followed by a synthesized identity paragraph and a soft-ask handoff to /skill-builder. Use when the user pastes the kickoff bundle from king-intelligence.com/levelup, says "set me up", "first time", "I just opened this", "walk me through Day One", or when you spot the SNOWBALL_BUNDLE marker in their first message. One-shot per client.
+description: First-touch on-ramp inside this second brain. Asks permission to map the computer and fires that off in the background, then three steps in front of the user — voice tool, harness settings (bypass mode + model picker), and a fast website + LinkedIn scrape — followed by a synthesized identity paragraph and a soft-ask handoff to /skill-builder. Use when the user pastes the kickoff line from members.king-intelligence.com, says "set me up", "first time", "I just opened this", "walk me through Day One", or when you spot the SETUP_BUNDLE marker in their first message. One-shot per client.
 ---
 
 # /day-one
 
-The first-touch on-ramp inside this Snowball. Three steps, identity paragraph, soft handoff. I am the on-ramp, not the work.
+The first-touch on-ramp inside this second brain. Three steps, identity paragraph, soft handoff. I am the on-ramp, not the work.
 
 > Guided session: this skill assumes Jacob (or a future facilitator) is screen-sharing with the client on Zoom or in-person. See § Notes for whoever is guiding this session at the bottom.
 
@@ -21,7 +21,7 @@ Don't make the user tell you their OS; just know. But don't paper over a PowerSh
 
 ### If you're on PowerShell, not Git Bash (Windows only)
 
-Say it plainly, no jargon: *"One quick setup thing before we start. Your computer's using its built-in command line, but your Snowball needs a slightly different one that comes free with Git. Let me get that sorted, then we're off."*
+Say it plainly, no jargon: *"One quick setup thing before we start. Your computer's using its built-in command line, but your second brain needs a slightly different one that comes free with Git. Let me get that sorted, then we're off."*
 
 1. **Make sure Git is installed** (it brings Git Bash with it). In the VS Code terminal: `winget install --id Git.Git -e --source winget` (winget ships with Win10 1809+/Win11).
 2. **Close and reopen VS Code completely.** This is what lets your AI pick up Git Bash. Nine times out of ten this alone fixes it.
@@ -35,7 +35,7 @@ The plain-English "what even is Git Bash" explainer for the user lives in [`/ref
 The full King Intelligence toolkit ships INSIDE this clone (the bundled `.king-intelligence` folder). No key is needed to use it — the key only turns on live updates later. Your job here is to make sure it's switched on. Still before saying anything, run `claude plugin list` in Bash:
 
 - **The output includes `king-intelligence`** → already installed. Say one line so the check is visible (you're usually on a screen-share): *"Your King Intelligence toolkit is confirmed and ready."* Then proceed.
-- **It's missing** → install it from the bundle that came with the clone. Confirm you're in the snowball folder (`pwd`), confirm the bundle is there (`ls .king-intelligence/.claude-plugin/marketplace.json`), then run:
+- **It's missing** → install it from the bundle that came with the clone. Confirm you're in the second brain folder (`pwd`), confirm the bundle is there (`ls .king-intelligence/.claude-plugin/marketplace.json`), then run:
 
   ```
   claude plugin marketplace add "$(pwd)/.king-intelligence"
@@ -48,7 +48,7 @@ The full King Intelligence toolkit ships INSIDE this clone (the bundled `.king-i
 
   After they reopen, re-run `claude plugin list` and confirm `king-intelligence` shows before moving on. The typeable `/king-intelligence:` commands appear after that reopen.
 
-  **If the bundle folder isn't there** (rare — an old clone): fall back to *"Part of your toolkit didn't come through. Re-clone from king-intelligence.com/levelup, or text Jacob."* Don't continue until `claude plugin list` shows `king-intelligence`.
+  **If the bundle folder isn't there** (rare — an old clone): fall back to *"Part of your toolkit didn't come through. Download it again from your Get Started page, or text Jacob."* Don't continue until `claude plugin list` shows `king-intelligence`.
 
 ### Also switch on the document tools (best-effort, don't block on it)
 
@@ -61,26 +61,26 @@ claude plugin install document-skills@anthropic-agent-skills
 
 They also load on the next reopen, alongside the toolkit above.
 
-## Capture the Apify token from the paste-bundle
+## Capture the setup bundle from the paste
 
-The user's first message should contain a bundle pasted from `king-intelligence.com/levelup`:
+The user's first message should be the kickoff line copied from their Get Started page at `members.king-intelligence.com`:
 
 ```
 Read .claude/skills/day-one/SKILL.md and follow it to walk me through Day One.
-<!-- SNOWBALL_BUNDLE v1
+<!-- SETUP_BUNDLE v1
 APIFY_TOKEN=apify_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 -->
 ```
 
-Parse the `APIFY_TOKEN=` line from inside the `SNOWBALL_BUNDLE v1` HTML-comment block. Hold the value in working memory for this session only. Do **not** `setx` it, do **not** write it to `.env`, do **not** commit it. The token vanishes when this session ends — that's intentional.
+Parse the `APIFY_TOKEN=` line from inside the `SETUP_BUNDLE v1` HTML-comment block. Hold the value in working memory for this session only. Do **not** `setx` it, do **not** write it to `.env`, do **not** commit it. The token vanishes when this session ends — that's intentional.
 
-**If the bundle is missing the token line** (the user pasted the kickoff prompt by hand, or only pasted the prompt): *"Looks like the LinkedIn-scrape token didn't come through. Quick fix — go to king-intelligence.com/levelup, enter the passcode, and paste me the whole bundle this time."* Wait for the re-paste. Don't try to teach what the token is — that's exactly the surface I'm hiding.
+**If the bundle is missing the token line** (they typed the prompt by hand instead of copying it): *"Looks like the LinkedIn-scrape part didn't come through. Quick fix — go back to your Get Started page and use the copy button on the last step, then paste the whole thing here."* Wait for the re-paste. Don't try to teach what a token is — that's exactly the surface I'm hiding. If they can't get it, carry on without LinkedIn; it is not a gate.
 
 ## Greeting
 
-After the silent OS detect, the silent toolkit check, and the bundle parse, open with this — Snowball-branded, one thought per line, no progress bars:
+After the silent OS detect, the silent toolkit check, and the bundle parse, open with this — on-brand, one thought per line, no progress bars:
 
-> Hey. Welcome to your Snowball.
+> Hey. Welcome to your second brain.
 >
 > You just did the hard part — getting all this onto your computer.
 >
@@ -90,7 +90,7 @@ After the silent OS detect, the silent toolkit check, and the bundle parse, open
 >
 > Three quick things: get your voice tool working, two settings that make me easy to drive, and a fast look at your business so I know who I'm working with. Then I'll make sure your work is safely backed up.
 >
-> Once that's done, your Snowball is ready to start building real tools for you.
+> Once that's done, your second brain is ready to start building real tools for you.
 >
 > ---
 >
@@ -103,6 +103,30 @@ Day One — Step <N> of 3
 ```
 
 "Type **next**" gates between steps. Reserve `AskUserQuestion` for real either/or choices inside the steps.
+
+## Step 0 — permission to look around (ask once, then work in the background)
+
+This is the first thing you ask after the greeting, before Step 1. It is the only consent gate `/map-my-work` gets, and it must be a real question, never an assumption.
+
+`AskUserQuestion`:
+
+> **Question:** "Before we start, can I have a look around your computer to find where your work lives?"
+>
+> Options:
+>
+> 1. **"Yes, go ahead (Recommended)"** — *I read the names of your folders and files: Desktop, Documents, Downloads, and any OneDrive, SharePoint, iCloud Drive or Dropbox you have synced. I never open a document, never move a file, and nothing leaves your laptop. It means I stop asking you where things are.*
+> 2. **"Only the folders I point you at"** — *You tell me which folders hold your business work and I look at just those.*
+> 3. **"Not right now"** — *We skip it. I'll ask you where things are as we go, and you can turn this on any time.*
+
+**On "yes":** launch `/map-my-work` as a **background task** with a note that consent was given, then carry straight on to Step 1 without waiting. The scan takes a couple of minutes and there is no reason for the user to watch it. Say one line and move:
+
+> Great. I'll look around in the background while we do the fun part.
+
+**On "only the folders I point you at":** ask which, then launch `/map-my-work` in the background scoped to exactly those.
+
+**On "not right now":** don't launch it, don't mention it again this session, and write `onboarding/map-declined.md` with one line: *"Computer map declined during /day-one on YYYY-MM-DD."*
+
+**If the background task fails or comes back empty**, do not derail Day One over it. Note it, finish the session, and tell them at the end in one plain line: *"One thing didn't finish: the look around your computer. Say 'map my computer' any time and I'll pick it up."*
 
 ## Step 1 — Typeless voice tool (strong soft gate)
 
@@ -121,7 +145,7 @@ Recommend Typeless with affiliate link: `https://www.typeless.com/?via=jacob-kin
 
 1. Plain-English cost warning: *"Quick heads-up — you'll get a worse experience here without it. Talking is 4x faster and lets you give me the long answers I'm going to ask for. I highly recommend doing this now. But if you want to defer — totally fine, I'll remind you next session."*
 2. `AskUserQuestion` ONE more time: **"Try Typeless now"** / **"No, defer it (Recommended if you really want to skip)"**.
-3. If they still defer: write `snowball/onboarding/voice-unconfigured.md` containing a single line: *"Voice tool skipped during /day-one on YYYY-MM-DD. /begin-session should re-prompt."* (Substitute today's date.) Proceed to Step 2.
+3. If they still defer: write `onboarding/voice-unconfigured.md` containing a single line: *"Voice tool skipped during /day-one on YYYY-MM-DD. /begin-session should re-prompt."* (Substitute today's date.) Proceed to Step 2.
 
 No hard gate. A client who hits an install wall and is told "we can't proceed" closes the window. The re-prompt mechanism catches the lost conversion next session.
 
@@ -174,7 +198,7 @@ Wait for any kind of confirm ("done" / "picked it" / "ok"). Don't gate too hard 
 1. **Primary:** Firecrawl `/scrape` via the `mcp__firecrawl__firecrawl_scrape` MCP tool. Uses `FIRECRAWL_AIOS_API_KEY` (already captured at user scope).
 2. **Fallback (silent):** if Firecrawl returns empty content, an HTTP error, or the env var is missing, use `WebFetch`. Same extraction targets, narrower data quality. Don't tell the user the fallback fired — silent.
 3. **Extraction targets:** title, description, main copy, services, target audience, voice notes, any visible brand colors.
-4. **Output:** `snowball/onboarding/profile-from-website.md`. Frontmatter-tag which path was used:
+4. **Output:** `onboarding/profile-from-website.md`. Frontmatter-tag which path was used:
 
    ```yaml
    ---
@@ -197,7 +221,7 @@ Wait for any kind of confirm ("done" / "picked it" / "ok"). Don't gate too hard 
    ```
 
 4. **Parse** the returned JSON array of profile objects. Pull `headline`, `about` / `summary`, `experience`, `education`, `skills`, `location`.
-5. **Output:** `snowball/onboarding/profile-from-linkedin.md` — parsed JSON rendered as markdown.
+5. **Output:** `onboarding/profile-from-linkedin.md` — parsed JSON rendered as markdown.
 
 ### Neither link works
 
@@ -205,15 +229,23 @@ If the client has no website AND no LinkedIn:
 
 > No problem — we'll get it straight from you. Tell me in your own words: what do you do, who do you serve, and how long have you been doing it?
 
-Capture the answer. Write it to `snowball/onboarding/profile-from-client-statement.md`. Proceed to identity synthesis with that as the only source.
+Capture the answer. Write it to `onboarding/profile-from-client-statement.md`. Proceed to identity synthesis with that as the only source.
 
-## Identity paragraph synthesis (fills snowball/CLAUDE.md § 1)
+## Identity paragraph synthesis (fills CLAUDE.md § 1)
 
 Four-step flow.
 
+### First: collect the background scan
+
+Before you reflect anything back, check whether the `/map-my-work` background task from Step 0 has finished. If `references/where-my-work-lives.md` exists, **read it**. It is the strongest source you have: a website says what someone sells, their folders say what they actually do all day. A folder called `2024 Roofing Jobs` holding 4,000 photos tells you more than any About page.
+
+Use it to add one bullet the website could never give you, and to catch a mismatch worth asking about (the site sells consulting, the laptop is full of installs).
+
+If the scan hasn't finished yet, don't wait for it and don't mention it. Carry on with the website and LinkedIn alone.
+
 ### A — Bullet reflect
 
-Reflect what the scrape captured back as 4-5 short bullets. Plain language, no jargon:
+Reflect what you found back as 4-5 short bullets. Plain language, no jargon:
 
 > Here's what I picked up:
 >
@@ -221,6 +253,7 @@ Reflect what the scrape captured back as 4-5 short bullets. Plain language, no j
 > - **What you sell:** [services / products in plain English]
 > - **Who you serve:** [target customer segment]
 > - **How you sound:** [voice notes from website / LinkedIn — tone, signature phrases if any]
+> - **What you actually spend your time on:** [from the computer map, if it landed — the folders that are alive]
 > - **Where you're based:** [city / region from LinkedIn]
 >
 > Close to right?
@@ -243,7 +276,7 @@ Capture the answer. This is the most common scrape miss in 30 seconds.
 
 Write a single paragraph (5-7 sentences) covering: name + primary role, business + what it sells, who they serve, voice notes (1 sentence on tone), multi-role flag if applicable, location if relevant. CEO-level voice — no jargon. This becomes the always-loaded identity context for every future session.
 
-Format: just the paragraph as the body content under `## 1. Identity` in `snowball/CLAUDE.md`. No subheadings inside that section.
+Format: just the paragraph as the body content under `## 1. Identity` in `CLAUDE.md`. No subheadings inside that section.
 
 ### D — Show-write confirm
 
@@ -260,21 +293,22 @@ Display the written paragraph back:
 1. **"Sounds right" (Recommended)** — write to disk, done.
 2. **"Tweak it"** — *"What needs to change?"* — capture, rewrite, re-confirm. One revision pass, then accept.
 
-Write the final paragraph to `snowball/CLAUDE.md` § 1 Identity, replacing the empty stub. Do **not** touch any other section of CLAUDE.md.
+Write the final paragraph to `CLAUDE.md` § 1 Identity, replacing the empty stub. Do **not** touch any other section of CLAUDE.md.
 
 ## Backup — keep the work safe (the last setup task)
 
-By now they've seen what the Snowball can do. The last setup task is making sure the work can't be lost. Always make a local save first, then handle the off-machine backup, and skip GitHub entirely if the cloud already has it.
+By now they've seen what the second brain can do. The last setup task is making sure the work can't be lost. Always make a local save first, then handle the off-machine backup, and skip GitHub entirely if the cloud already has it.
 
 **1. Always make the first local save (you drive this in Bash).**
-Confirm you're in the snowball folder first (`pwd`, never run this anywhere else), then:
+Confirm you're in the second brain folder first (`pwd`, never run this anywhere else), then:
 ```
-rm -rf .git
 git init -b main
 git add -A
-git commit -m "Snowball initial setup"
+git commit -m "second brain initial setup"
 ```
-`rm -rf .git` severs the tie to `BeltDoor/aios-template`; the init + commit guarantee a first save exists. Confirm with `git log --oneline -1`.
+The folder arrives as a downloaded zip with no history of its own, so there is nothing to sever first and **you must never run `rm -rf .git` here** — on a re-run, or on a member who set up a backup already, that would delete every save they have. `git init` on a folder that is already a repo is a harmless no-op. Confirm the save landed with `git log --oneline -1`.
+
+If `git init` errors with "command not found", Git didn't install during setup. Send them back to the **Install your tools** step on their Get Started page rather than trying to fix it here.
 
 **2. Is the folder already in a cloud-synced home? Check before asking for anything.**
 Read the path from `pwd`:
@@ -284,7 +318,7 @@ Read the path from `pwd`:
 
 If any match, the off-machine backup is already handled. Say so plainly, and you're done with backup:
 
-> Good news: your Snowball lives in [OneDrive / iCloud / Dropbox], so every change backs up to the cloud automatically. Nothing to set up, your work is safe. (I also save a version locally every time we wrap up.)
+> Good news: your second brain lives in [OneDrive / iCloud / Dropbox], so every change backs up to the cloud automatically. Nothing to set up, your work is safe. (I also save a version locally every time we wrap up.)
 
 Then go to the handoff. Do NOT run the GitHub step.
 
@@ -297,14 +331,14 @@ Then go to the handoff. Do NOT run the GitHub step.
 **If they choose backup**, turn the local save into their OWN private, backed-up GitHub repo, and prove it's real before you move on. The button has silently half-failed on past setups (origin left pointing at the template, or a publish that made no commit), so verify against GitHub for real and repair it yourself if the verify fails. Never trust the button, trust the check.
 
 **3a. Create the private repo (the client's one click).**
-> Click the **Source Control** icon on the left bar (the branch icon). Click **Publish to GitHub**. If it asks you to sign in to GitHub, do it (a browser opens, approve it). Choose **"Publish to GitHub private repository"** and name it **snowball**.
+> Click the **Source Control** icon on the left bar (the branch icon). Click **Publish to GitHub**. If it asks you to sign in to GitHub, do it (a browser opens, approve it). Choose **"Publish to GitHub private repository"** and name it **secondbrain**.
 
 Stress **private**: their real business data lives here. No GitHub account yet? The sign-in screen has a free "Create an account" link.
 
 **3b. VERIFY FOR REAL, do not trust the button (you drive this in Bash).**
 Wait for them to confirm they clicked through, then check against GitHub itself, not just a local string:
 ```
-git remote -v          # origin MUST show github.com/<their-account>/snowball, NOT BeltDoor
+git remote -v          # origin MUST show github.com/<their-account>/secondbrain, NOT BeltDoor
 git ls-remote origin   # actually contacts GitHub: success proves the repo exists, is reachable, and auth works
 git log --oneline -1   # the commit exists (guaranteed by step 1)
 ```
@@ -314,11 +348,11 @@ The load-bearing check is **`git ls-remote origin`**: a clean local `git remote 
 Do NOT just re-loop the button. Repair from the terminal:
 - **Fast path if `gh` is installed + authed** (`gh auth status` succeeds):
   ```
-  git remote remove origin 2>/dev/null; gh repo create snowball --private --source=. --remote=origin --push
+  git remote remove origin 2>/dev/null; gh repo create secondbrain --private --source=. --remote=origin --push
   ```
   (Don't install `gh` just for this; a stock Mac has no Homebrew, so it isn't guaranteed. If it's not there, use the next path.)
 - **No-install path (works everywhere):** guide a 30-second manual repo create:
-  > Go to **github.com/new**, name it **snowball**, set it to **Private**, click **Create repository**, then paste me the URL it shows you.
+  > Go to **github.com/new**, name it **secondbrain**, set it to **Private**, click **Create repository**, then paste me the URL it shows you.
 
   When they paste the URL:
   ```
@@ -331,12 +365,12 @@ Do NOT just re-loop the button. Repair from the terminal:
 
 Re-run the 3b checks after any repair. Loop 3c until `git ls-remote origin` succeeds. On success:
 
-> Done: your Snowball is backed up to your own private GitHub, and I confirmed it's live, not just set up. Every time we wrap up I save and back it up automatically; you won't have to think about it.
+> Done: your second brain is backed up to your own private GitHub, and I confirmed it's live, not just set up. Every time we wrap up I save and back it up automatically; you won't have to think about it.
 
 **Skip path** (they chose "Skip for now"): one plain-English heads-up, then move on. Don't gate Day One on it:
 
 1. *"No problem. Heads-up: without a cloud backup, your work only lives on this laptop. If it's lost or the laptop dies, the work goes with it. I'll remind you next session, and you can turn it on any time."*
-2. Write `snowball/onboarding/backup-unconfigured.md` containing one line: *"Backup skipped during /day-one on YYYY-MM-DD. /begin-session should re-prompt."* (Substitute today's date.) Then go to the handoff.
+2. Write `onboarding/backup-unconfigured.md` containing one line: *"Backup skipped during /day-one on YYYY-MM-DD. /begin-session should re-prompt."* (Substitute today's date.) Then go to the handoff.
 
 ## Handoff to /skill-builder (soft ask)
 
@@ -351,7 +385,7 @@ Then `AskUserQuestion`:
 1. **"Build your first skill now" (Recommended)** — invoke `/skill-builder` via the Skill tool in the same session. Continuity preserved.
 2. **"Take a break — I'll be here when you come back."** — show the paste-line explicitly and stop:
 
-   > Nice work today. Your Snowball is ready.
+   > Nice work today. Your second brain is ready.
    >
    > When you want to build your first skill, paste this line in and hit enter:
    >
@@ -377,15 +411,18 @@ You (Jacob at first, possibly future facilitators) are on Zoom or in-person, scr
 
 ### Pre-flight checklist (before /day-one starts)
 
-- [ ] Client has Mac or Windows laptop. **Chromebook = hard no.** ChromeOS (stock OR Crostini) can't reliably run npm / git CLI / browser-helper flows the Snowball assumes. Escalate to "buy a real laptop first" before Day 1.
-- [ ] VS Code installed.
-- [ ] Claude Code extension installed; client signed into Claude account.
-- [ ] **Git installed** — the one unavoidable install (the Snowball *is* a git repo; without it Step 1's clone fails, like it did on an early setup call). Windows: paste `winget install --id Git.Git -e --source winget` into the VS Code terminal (winget ships with Win10 1809+/Win11). Mac: run `xcode-select --install` and click Install. Then **close and reopen VS Code** so it detects Git. Verify with `git --version`.
-- [ ] **Windows only — confirm the shell is Git Bash, not PowerShell.** After the Git install + VS Code reopen, run `uname`. `MINGW...`/`MSYS...` = good (the AI is on Git Bash, the command line the whole Snowball is written in). An error or anything else = it's on PowerShell, and onboarding breaks on step one. `/day-one` auto-checks and self-repairs this at its very start, so this is just a belt-and-suspenders glance. Why it matters, in plain English: [`references/whats-getting-installed.md`](../../../references/whats-getting-installed.md).
-- [ ] **Node.js installed** — a small engine a few skills run on. Windows: `winget install --id OpenJS.NodeJS.LTS -e --source winget`. Mac: download the **LTS** installer from [nodejs.org](https://nodejs.org) and double-click it (no Homebrew needed — see the explainer). Close and reopen VS Code after; verify with `node --version`.
-- [ ] GitHub account (OPTIONAL now). Backup is the LAST setup task, and it's only needed if the client's snowball folder is NOT already in OneDrive / iCloud / Dropbox. Those drives back up on their own, so `/day-one` detects them and skips GitHub entirely. When GitHub backup IS used, the happy path is VS Code's "Publish to GitHub" (no `gh`, no token); the step still **commits first, verifies against GitHub for real (`git ls-remote origin`), and self-repairs from the terminal** if the button flakes. A client whose folder already syncs to the cloud needs no GitHub account at all.
-- [ ] `king-intelligence.com/levelup` → enter passcode → run **Step 1** (clones the starter Snowball into Downloads) → choose **File → Open Folder** and pick the `snowball` folder → paste the **Step 2** kickoff bundle into Claude Code chat. `/day-one` starts with the three quick steps; backup is now its LAST step (smart: skipped when the folder already lives in OneDrive / iCloud / Dropbox, otherwise GitHub backup is offered as an optional, skippable step).
-- [ ] **Toolkit is keyless now — no install lines, no email key needed.** The full King Intelligence toolkit ships INSIDE the clone (the bundled `.king-intelligence` folder). `/day-one` installs it from that bundle at the start and has the client reopen VS Code once so the `/king-intelligence:` commands register. The per-client key is no longer part of setup; it only unlocks live updates (`/king-intelligence:update`) later, and gets sent by email when the client signs on. So the kickoff page is now two steps (clone → Day One), not three.
+**Everything below happens on the member's own Get Started page at `members.king-intelligence.com` before /day-one starts. Rebuilt 8/7/26: five steps, one tool install, one paste.**
+
+- [ ] Client has Mac or Windows laptop. **Chromebook = hard no.** ChromeOS (stock OR Crostini) can't reliably run npm / git CLI / browser-helper flows the second brain assumes. Escalate to "buy a real laptop first" before Day 1.
+- [ ] **Step 1 — VS Code installed** (a normal app download, the only thing they install by hand).
+- [ ] **Step 2 — one paste installs the rest.** In VS Code: **Terminal → New Terminal**, then paste the line off their Get Started page. It installs Git, Node.js and Claude Code, and adds the Claude Code extension (`anthropic.claude-code`). Mac uses Apple's own developer tools and the official Node installer, **no Homebrew**. Windows uses `winget`. Then **close and reopen VS Code completely** so it detects all three. Verify: `git --version`, `node --version`, `claude --version`.
+- [ ] Client signed into their Claude account in the extension.
+- [ ] **Windows only — confirm the shell is Git Bash, not PowerShell.** The install line runs in PowerShell on Windows (that's where `winget` lives), which is correct — installing Git is what *gives* them Git Bash. After the reopen, run `uname`. `MINGW...`/`MSYS...` = good. An error or anything else means Claude is still on PowerShell and onboarding breaks on step one. `/day-one` auto-checks and self-repairs this at its very start, so this is just a belt-and-suspenders glance. Why it matters, in plain English: [`references/whats-getting-installed.md`](../../../references/whats-getting-installed.md).
+- [ ] **Step 3 — download their second brain.** A gold button on the page gives them a zip already named `<firstname>s-secondbrain`. There is a paste-able clone line underneath as a backup if the download misbehaves.
+- [ ] **Step 4 — open it in VS Code by hand.** **File → Open Folder**, pick `<firstname>s-secondbrain`. They do this themselves; it's a click they need to learn, and it's more reliable than asking an AI to do it.
+- [ ] **Step 5 — one paste into the Claude Code chat** kicks off `/day-one`. That single line also carries their personal updates key and the setup bundle, and `/day-one` fires the computer map off in the background from it.
+- [ ] GitHub account (OPTIONAL). Backup is the LAST setup task, and it's only needed if their folder is NOT already in OneDrive / iCloud / Dropbox. Those drives back up on their own, so `/day-one` detects them and skips GitHub entirely. When GitHub backup IS used, the happy path is VS Code's "Publish to GitHub" (no `gh`, no token); the step still **commits first, verifies against GitHub for real (`git ls-remote origin`), and self-repairs from the terminal** if the button flakes.
+- [ ] **Toolkit is keyless — no install lines needed to USE it.** The full King Intelligence toolkit ships INSIDE the download (the bundled `.king-intelligence` folder). `/day-one` installs it from that bundle at the start and has the client reopen VS Code once so the `/king-intelligence:` commands register. Their personal key only unlocks live updates (`/king-intelligence:update`), and it rides along in the step-5 paste.
 
 **If the client asks what any of these installs are, don't improvise jargon.** The plain-English, no-background answers for every tool above (VS Code, Git, GitHub, Node.js, Git Bash vs PowerShell, and why we skip Homebrew on Mac) live in [`references/whats-getting-installed.md`](../../../references/whats-getting-installed.md). Read it to them.
 
@@ -395,7 +432,8 @@ You (Jacob at first, possibly future facilitators) are on Zoom or in-person, scr
 
 - **30-minute soft cap.** If /day-one runs past 30 min, you've gone too deep — the temptation is to start interviewing, don't. Identity-paragraph depth is /skill-builder's job (when building voice-aware skills), or /capture-voice's job later. Glance, don't dig.
 - **Voice tool is the highest-leverage install.** If the client wants to skip, push back gently ONCE then let them skip — the re-prompt mechanism catches it next session.
-- **Apify token comes from /levelup paste.** If the bundle is missing, send them back to /levelup. Don't try to teach them what a token is.
+- **Never wait on the background computer map.** It runs while you talk. If it hasn't landed by the identity paragraph, write the paragraph without it and let it finish on its own.
+- **The setup bundle comes from the step-5 paste on their Get Started page.** If it's missing, have them use the copy button on that step rather than retyping. Don't try to teach them what a token is. LinkedIn is not a gate; carry on without it if it won't come.
 - **Identity paragraph is locked-in context for every future session.** If the bullet reflect or paragraph looks subtly wrong, push for the correction NOW — fixing it later costs more.
 
 ### Guided-vs-autonomous flag
@@ -407,7 +445,7 @@ You (Jacob at first, possibly future facilitators) are on Zoom or in-person, scr
 Before you finish, increment my row in [`TIME-SAVED.md`](../../../TIME-SAVED.md):
 
 - Skill: `/day-one`
-- Manual time per use: 90 min (the rough cost of doing this kickoff by hand without a Snowball — installing a voice tool, configuring Claude Code, manually researching my own business notes, writing the identity paragraph)
+- Manual time per use: 90 min (the rough cost of doing this kickoff by hand without a second brain — installing a voice tool, configuring Claude Code, manually researching my own business notes, writing the identity paragraph)
 - Increment "Total uses" by 1
 - Recompute "Total saved (cumulative)" as `Total uses × 90 min`
 - Update "Last used" to today's date

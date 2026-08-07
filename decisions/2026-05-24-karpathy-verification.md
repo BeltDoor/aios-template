@@ -5,19 +5,19 @@ depends_on: F6
 verdict: verified, no changes
 ---
 
-# Karpathy adapter verification — `snowball/CLAUDE.md` § 3
+# Karpathy adapter verification — `CLAUDE.md` § 3
 
-**Goal of this pass:** confirm the four behavioral sub-sections inside `snowball/CLAUDE.md § 3 "How to work with me — behavioral rules"` are faithful, complete, CEO-translated adaptations of the four sections in REBUILD-PROMPT.md Appendix A (verbatim Karpathy source).
+**Goal of this pass:** confirm the four behavioral sub-sections inside `CLAUDE.md § 3 "How to work with me — behavioral rules"` are faithful, complete, CEO-translated adaptations of the four sections in REBUILD-PROMPT.md Appendix A (verbatim Karpathy source).
 
 **Method:** read both files in this session; walked section-by-section through Karpathy's four sub-sections + the translation table; flagged any phrasing not yet translated, any bullet missing, and any unjustified structural deviation.
 
-**Result:** verified. No edits to `snowball/CLAUDE.md`.
+**Result:** verified. No edits to `CLAUDE.md`.
 
 ---
 
 ## Translation table — applied / not applied
 
-| Karpathy phrasing | AIOS translation | Status in `snowball/CLAUDE.md` |
+| Karpathy phrasing | AIOS translation | Status in `CLAUDE.md` |
 |---|---|---|
 | "Think Before Coding" | "Think Before Acting" | ✅ applied (§ 3 first sub-heading) |
 | "Don't write 200 lines if 50 will do" | "Don't take 10 actions if 2 will do" | ✅ applied (§ 3 Simplicity First, 5th bullet: "If you took 10 actions and 2 would have worked, redo it.") |
@@ -32,9 +32,9 @@ All eight translation-table items present and correctly applied.
 
 ---
 
-## Section completeness — Karpathy source vs `snowball/CLAUDE.md § 3`
+## Section completeness — Karpathy source vs `CLAUDE.md § 3`
 
-| Karpathy § | `snowball/CLAUDE.md` § | Tagline | Bullet count (Karpathy vs Snowball) | Notes |
+| Karpathy § | `CLAUDE.md` § | Tagline | Bullet count (Karpathy vs second brain) | Notes |
 |---|---|---|---|---|
 | 1 Think Before Coding | 3.1 Think Before Acting | ✅ verbatim | 4 → 5 (extra = Decision 23C cross-reference to § 6) | Faithful + intentional cross-reference bullet per F6 success check |
 | 2 Simplicity First | 3.2 Simplicity First | ✅ translated cleanly | 5 → 5 | All bullets present; CEO substitutions applied |
@@ -47,7 +47,7 @@ All eight translation-table items present and correctly applied.
 
 F6 success check requires: § 3 "Think Before Acting" has a cross-reference bullet pointing at § 6 "Verify before asserting" per Decision 23C.
 
-✅ Present at `snowball/CLAUDE.md:26`:
+✅ Present at `CLAUDE.md:26`:
 > "Before asserting any factual claim about my files, tools, skills, connectors, env vars, or external data, verify in this session via a tool call. If you didn't verify, lead with 'I haven't verified this, but…' or ask me to confirm. See § 6 Verify before asserting below."
 
 Cross-reference correct. Anchored in the behavioral spine as Decision 23C mandates.
@@ -64,7 +64,7 @@ Cross-reference correct. Anchored in the behavioral spine as Decision 23C mandat
 > - Remove imports/variables/functions that YOUR changes made unused.
 > - Don't remove pre-existing dead code unless asked.
 
-`snowball/CLAUDE.md § 3.3` keeps the four "When editing something that already exists:" bullets and folds the two orphan-handling rules into a single 5th bullet:
+`CLAUDE.md § 3.3` keeps the four "When editing something that already exists:" bullets and folds the two orphan-handling rules into a single 5th bullet:
 
 > "Remove anything YOUR changes made unused. Don't remove pre-existing dead weight unless I ask."
 
@@ -76,7 +76,7 @@ Both content points preserved. The translation-table note "applies identically �
 
 Karpathy: `**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.`
 
-`snowball/CLAUDE.md § 3` intro: `These four rules bias toward caution over speed. Trivial requests are exempt — use judgment.`
+`CLAUDE.md § 3` intro: `These four rules bias toward caution over speed. Trivial requests are exempt — use judgment.`
 
 The "**Tradeoff:**" label is dropped; substance preserved. "Trivial requests are exempt — use judgment" is slightly stronger than "For trivial tasks, use judgment." Accepted as an intentional softening for the CEO audience that doesn't lose the guard rail.
 
@@ -84,6 +84,6 @@ The "**Tradeoff:**" label is dropped; substance preserved. "Trivial requests are
 
 ## Final verdict
 
-`snowball/CLAUDE.md § 3` is a complete, faithful, correctly-translated adaptation of Karpathy's four behavioral sections per Appendix A and the translation table. The only structural deviation (orphans-block compression in Surgical Changes) is intentional and consistent with the CEO-audience tightening Decision 15 calls for.
+`CLAUDE.md § 3` is a complete, faithful, correctly-translated adaptation of Karpathy's four behavioral sections per Appendix A and the translation table. The only structural deviation (orphans-block compression in Surgical Changes) is intentional and consistent with the CEO-audience tightening Decision 15 calls for.
 
 **No edits applied.** P3 closes as `done`.

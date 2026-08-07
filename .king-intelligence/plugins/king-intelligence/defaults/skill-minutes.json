@@ -1,0 +1,18 @@
+{
+  "_note": "Per-skill baseline minutes credited per run by skill-count.mjs (Rail B). Every figure is the DEFENSIBLE FLOOR: the competent-peer-by-hand estimate with the x0.2 calibration applied, rounded DOWN to the nearest 5 minutes. A skill not listed here counts uses but adds 0 minutes until King Intelligence sets a baseline — the client's Claude never invents one. Meta/build/setup skills (skill-builder, goal-helper, grill-me, brainstorming, checkpoint, handoff, wayfinder, caveman, install-*, codex-ready, safety-net, time-back-scoreboard, example-adapt-demo, taste-visual-design) are deliberately absent.",
+  "ask-king": 5,
+  "ask-your-business-anything": 10,
+  "content-unit": 10,
+  "debrief": 10,
+  "email": 5,
+  "end-session": 5,
+  "imessage": 5,
+  "networking": 25,
+  "playwatch": 5,
+  "speaker-id": 5,
+  "stop-slop": 5,
+  "taste-frontend": 30,
+  "taste-redesign": 30,
+  "teach": 5,
+  "your-voice-your-approval": 5
+}

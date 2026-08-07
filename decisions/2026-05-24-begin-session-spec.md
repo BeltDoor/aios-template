@@ -26,7 +26,7 @@ Reasoning: those jobs are session-open-ritual concerns, not topic-loader concern
 `/begin-session` fires two ways:
 
 1. **Explicit invocation:** client types `/begin-session <topic>` (or `/begin-session` bare — see § 2.6).
-2. **Judgment-based auto-fire** via `snowball/CLAUDE.md` contract. Verbatim addition to CLAUDE.md (this is a § 4 deviation — F6 needs a content edit):
+2. **Judgment-based auto-fire** via `CLAUDE.md` contract. Verbatim addition to CLAUDE.md (this is a § 4 deviation — F6 needs a content edit):
 
    > **Topic-loading.** When the user's first message engages deeply with a specific topic by name (a client, project, or initiative — the focus of their work this session), run `/begin-session` on that topic BEFORE doing anything else. When the message is a quick task or question that doesn't need background context, just do the work. Use judgment.
 
@@ -38,12 +38,12 @@ The intent is the "smart EA" pattern. A good executive assistant reads the room 
 
 When a topic is provided, Claude tries each source in order and stops at the first confident match:
 
-1. **Folder name match.** Glob for matches under `snowball/clients/` and `snowball/projects/`:
-   - Exact kebab-case match (`atlas-brewery` → `snowball/clients/atlas-brewery/`)
+1. **Folder name match.** Glob for matches under `clients/` and `projects/`:
+   - Exact kebab-case match (`atlas-brewery` → `clients/atlas-brewery/`)
    - Substring match on the folder slug (`atlas` → same)
-   - Multi-token match (e.g., `Atlas Q4 Pricing` splits to `[atlas, q4, pricing]` → could hit both `snowball/clients/atlas-brewery/` AND `snowball/projects/q4-pricing/`)
+   - Multi-token match (e.g., `Atlas Q4 Pricing` splits to `[atlas, q4, pricing]` → could hit both `clients/atlas-brewery/` AND `projects/q4-pricing/`)
 
-2. **Auto-memory scan.** If folder match returns zero, search the user's Anthropic auto-memory for the topic phrase. (Auto-memory location: outside the snowball folder, project-keyed by Anthropic harness. Claude has read access at runtime.) If any memory entries match, surface their content as the briefing's primary signal.
+2. **Auto-memory scan.** If folder match returns zero, search the user's Anthropic auto-memory for the topic phrase. (Auto-memory location: outside the second brain folder, project-keyed by Anthropic harness. Claude has read access at runtime.) If any memory entries match, surface their content as the briefing's primary signal.
 
 3. **Connector fallback.** If memory also returns zero, query whichever connectors are wired per `CONNECTIONS.md` (HubSpot search by company/contact name, Gmail search by phrase, Notion search by phrase, etc.) — bounded to results matching the topic phrase.
 
@@ -57,7 +57,7 @@ When all three resolution tiers return nothing, Claude responds:
 
 Then `AskUserQuestion` with three options:
 
-1. **(Recommended) "Yes, first time — create a folder for them"** → Claude scaffolds `snowball/clients/<slug>/` (kebab-case from topic) containing:
+1. **(Recommended) "Yes, first time — create a folder for them"** → Claude scaffolds `clients/<slug>/` (kebab-case from topic) containing:
    - `.gitkeep` (so empty folder commits)
    - `CLAUDE.md` with this stub content:
      ```
@@ -78,14 +78,14 @@ Then `AskUserQuestion` with three options:
 
 3. **"I meant a different topic"** → re-prompt: "What topic should I load instead?"
 
-**Why "clients/" by default for the create-folder branch:** topic-shaped names in Snowball usually refer to people or companies, which are client-mode. If the client clarifies it's actually a project ("this is a project, not a client"), `/skill-builder` can move the folder later. v1.0 doesn't ask which folder — picks `clients/` and moves on.
+**Why "clients/" by default for the create-folder branch:** topic-shaped names in second brain usually refer to people or companies, which are client-mode. If the client clarifies it's actually a project ("this is a project, not a client"), `/skill-builder` can move the folder later. v1.0 doesn't ask which folder — picks `clients/` and moves on.
 
 ### 2.5 Source fan-out by folder location
 
 After a folder is matched (or scaffolded), Claude detects the mode and fans out accordingly. Modes are determined by folder location, NOT by topic-string heuristics.
 
-**Client mode** — topic resolved to `snowball/clients/<x>/`:
-- Read `snowball/clients/<x>/CLAUDE.md` verbatim
+**Client mode** — topic resolved to `clients/<x>/`:
+- Read `clients/<x>/CLAUDE.md` verbatim
 - Scan recent files in the folder (top 3 by modification time)
 - Grep auto-memory for the topic name (first + last name tokens if person-shaped, full phrase otherwise)
 - Query wired connectors per `CONNECTIONS.md`:
@@ -94,17 +94,17 @@ After a folder is matched (or scaffolded), Claude detects the mode and fans out 
   - **HubSpot** (if wired): contact ID, associated deals (dealstage, dealname, amount, close date), most recent 5 engagements (type, date, summary).
   - **Otter** (if wired): staged transcripts where attendee or title matches the topic. Capture title + date + Otter URL.
 
-**Project mode** — topic resolved to `snowball/projects/<x>/`:
-- Read `snowball/projects/<x>/CLAUDE.md` verbatim
+**Project mode** — topic resolved to `projects/<x>/`:
+- Read `projects/<x>/CLAUDE.md` verbatim
 - Scan recent files in the folder (top 3 by modification time)
 - Grep auto-memory for the project name
-- `git log -10 --pretty=format:'%h %ad %s' --date=short -- snowball/projects/<x>/` (last 10 commits scoped to folder)
+- `git log -10 --pretty=format:'%h %ad %s' --date=short -- projects/<x>/` (last 10 commits scoped to folder)
 - Query wired connectors per `CONNECTIONS.md`:
   - **Otter** (if wired): staged transcripts where title or attendees match the project name
   - **Notion** (if wired): page search for the project name
   - **Drive** (if wired): file search for the project name
 
-**Hybrid mode** — topic resolved to BOTH `snowball/clients/<x>/` AND `snowball/projects/<y>/` (rare, only when multi-token match hits both, or when client AND project folder share the slug). Fan out is the UNION of client-mode + project-mode sources, PLUS one extra step:
+**Hybrid mode** — topic resolved to BOTH `clients/<x>/` AND `projects/<y>/` (rare, only when multi-token match hits both, or when client AND project folder share the slug). Fan out is the UNION of client-mode + project-mode sources, PLUS one extra step:
 
 - **Intersection scan:** grep both folders' CLAUDE.md for cross-references (the other party's name). Surface 3-5 most relevant cross-mentions with context in the briefing's intro paragraph.
 
@@ -122,10 +122,10 @@ When the client types `/begin-session` with no argument, Claude responds:
 
 `AskUserQuestion` with up to 4 options:
 
-1-3. The 3 most-recently-touched folders under `snowball/clients/` + `snowball/projects/` (sorted by `git log -1 --format=%cd -- <path>`). Option 1 is "(Recommended)" — the single most-recently-touched.
+1-3. The 3 most-recently-touched folders under `clients/` + `projects/` (sorted by `git log -1 --format=%cd -- <path>`). Option 1 is "(Recommended)" — the single most-recently-touched.
 4. **"Type a different topic"** → re-prompt for the topic name, then run resolution per § 2.3.
 
-If `snowball/clients/` and `snowball/projects/` are both empty (fresh post-/day-one client), skip the menu and just say:
+If `clients/` and `projects/` are both empty (fresh post-/day-one client), skip the menu and just say:
 
 > No topics yet — type the name of a client, project, or initiative you're working on, and I'll get oriented.
 
@@ -229,13 +229,13 @@ After the briefing, Claude MAY append ONE single-line referral to another skill 
 | No data found in a section | Omit that section entirely (anti-fabrication) |
 | Subagent exceeds 60s | Kill, proceed with partial data, note timeout in output |
 | Connector not wired per CONNECTIONS.md | Skip silently in fan-out; one soft upgrade-mention at end if obviously useful (§ 2.5) |
-| `snowball/clients/` + `snowball/projects/` both empty (fresh post-/day-one client, bare invocation) | Plain prompt, no menu: *"No topics yet — type the name of..."* (§ 2.6) |
+| `clients/` + `projects/` both empty (fresh post-/day-one client, bare invocation) | Plain prompt, no menu: *"No topics yet — type the name of..."* (§ 2.6) |
 | Topic is the whole AIOS (`/begin-session everything`) | Refuse: *"Too broad — give me a specific client, project, or initiative."* |
-| `CLAUDE.md`, `SKILLS.md`, or `CONNECTIONS.md` missing at session start | Should be impossible post-/day-one (F6/F8/F7 ensure existence). If missing, surface error: *"Something's missing from your Snowball setup — run `/day-one` again or check with the person who set this up."* |
+| `CLAUDE.md`, `SKILLS.md`, or `CONNECTIONS.md` missing at session start | Should be impossible post-/day-one (F6/F8/F7 ensure existence). If missing, surface error: *"Something's missing from your second brain setup — run `/day-one` again or check with the person who set this up."* |
 
 ### 2.10 Self-ping at end (TIME-SAVED tracking)
 
-After the briefing (and optional referral) lands, the absolute last action `/begin-session` takes is incrementing its row in `snowball/TIME-SAVED.md`:
+After the briefing (and optional referral) lands, the absolute last action `/begin-session` takes is incrementing its row in `TIME-SAVED.md`:
 
 - Skill: `/begin-session`
 - Manual time per use: **15 min** (replaces ~5 min Gmail scan + ~3 min calendar scroll + ~5 min CRM check + ~2 min memory rummaging — conservative; under-claims rather than over-claims)
@@ -244,7 +244,7 @@ After the briefing (and optional referral) lands, the absolute last action `/beg
 - Update "Last used" to today's date
 - Add row if `/begin-session` doesn't have one yet
 
-Use the same self-ping template `/skill-builder` bakes into generated skills (see `snowball/.claude/skills/skill-builder/SKILL.md` § AIOS append templates → Self-ping block).
+Use the same self-ping template `/skill-builder` bakes into generated skills (see `.claude/skills/skill-builder/SKILL.md` § AIOS append templates → Self-ping block).
 
 **Suppress self-ping when:** briefing aborted before completing (e.g., client cancelled out of the zero-result AskUserQuestion). Only count completed briefings.
 
@@ -252,7 +252,7 @@ Use the same self-ping template `/skill-builder` bakes into generated skills (se
 
 ## 3. SKILL.md frontmatter contract
 
-S6 (build) must emit `snowball/.claude/skills/begin-session/SKILL.md` with this frontmatter:
+S6 (build) must emit `.claude/skills/begin-session/SKILL.md` with this frontmatter:
 
 ```yaml
 ---
@@ -275,7 +275,7 @@ disable-model-invocation: true
 
 `disable-model-invocation: true` is critical — prevents the harness from auto-firing on conversational mentions. The judgment-based trigger from § 2.2 fires via CLAUDE.md instructions Claude reads, NOT via harness auto-invocation. This avoids false-positive fires.
 
-**Soft length cap on SKILL.md body:** 100 lines (same as `/day-one`). If pushing 150+, push detail into `snowball/.claude/skills/begin-session/references/*.md` files.
+**Soft length cap on SKILL.md body:** 100 lines (same as `/day-one`). If pushing 150+, push detail into `.claude/skills/begin-session/references/*.md` files.
 
 ---
 
@@ -303,23 +303,23 @@ Five scope changes locked in this grill that need formal capture via `ADD-ITEM-P
 
 **Resolution:** the Day-2 cadence open-by-design item now has NO v1.0 in-product implementation. Falls entirely to V4 in the v1.1 backlog. Coverage Check in REBUILD-PLAN.md should be updated to reflect this (currently maps the item to S5/S6 + V4 — should be V4 only).
 
-### 4.3 `snowball/CLAUDE.md` needs a new "Topic-loading" paragraph (judgment-based trigger contract)
+### 4.3 `CLAUDE.md` needs a new "Topic-loading" paragraph (judgment-based trigger contract)
 
 **F6 spec** (already executed and marked `done`) does not include the topic-loading judgment-based trigger contract from § 2.2 of this spec.
 
-**REBUILD-PLAN.md update needed:** add a new F-item OR re-execute F6 to insert the topic-loading paragraph verbatim into `snowball/CLAUDE.md` § 4 "Before any work" (or a new § 4a, executor's call):
+**REBUILD-PLAN.md update needed:** add a new F-item OR re-execute F6 to insert the topic-loading paragraph verbatim into `CLAUDE.md` § 4 "Before any work" (or a new § 4a, executor's call):
 
 > **Topic-loading.** When the user's first message engages deeply with a specific topic by name (a client, project, or initiative — the focus of their work this session), run `/begin-session` on that topic BEFORE doing anything else. When the message is a quick task or question that doesn't need background context, just do the work. Use judgment.
 
-### 4.4 `snowball/CLAUDE.md` needs a "Voice-tool re-prompt" paragraph (relocated from /begin-session)
+### 4.4 `CLAUDE.md` needs a "Voice-tool re-prompt" paragraph (relocated from /begin-session)
 
-**`/day-one` spec § 2.4** (already locked) says: if client skips voice tool, `snowball/onboarding/voice-unconfigured.md` is created; "/begin-session reads this on session open and re-prompts ONCE per session until either the file is deleted OR the client says 'stop reminding me' (then file rewrites to voice-declined-permanently.md)."
+**`/day-one` spec § 2.4** (already locked) says: if client skips voice tool, `onboarding/voice-unconfigured.md` is created; "/begin-session reads this on session open and re-prompts ONCE per session until either the file is deleted OR the client says 'stop reminding me' (then file rewrites to voice-declined-permanently.md)."
 
-**This grill locked:** that re-prompt mechanism cannot live in `/begin-session` anymore (topic-loader doesn't fire reliably on session-open). Relocated to `snowball/CLAUDE.md` § 4 "Before any work" contract.
+**This grill locked:** that re-prompt mechanism cannot live in `/begin-session` anymore (topic-loader doesn't fire reliably on session-open). Relocated to `CLAUDE.md` § 4 "Before any work" contract.
 
 **REBUILD-PLAN.md update needed:** the same F6 re-execution from § 4.3 adds this paragraph verbatim:
 
-> **Voice-tool re-prompt.** If `snowball/onboarding/voice-unconfigured.md` exists, mention voice tool ONCE in your first response of the session ("Quick reminder — you skipped the voice tool during Day 1. Want to set it up now? It's a big quality-of-life upgrade."), then never again that session. If `snowball/onboarding/voice-declined-permanently.md` exists, never mention voice tool at all. If client says "stop reminding me," rename `voice-unconfigured.md` → `voice-declined-permanently.md`.
+> **Voice-tool re-prompt.** If `onboarding/voice-unconfigured.md` exists, mention voice tool ONCE in your first response of the session ("Quick reminder — you skipped the voice tool during Day 1. Want to set it up now? It's a big quality-of-life upgrade."), then never again that session. If `onboarding/voice-declined-permanently.md` exists, never mention voice tool at all. If client says "stop reminding me," rename `voice-unconfigured.md` → `voice-declined-permanently.md`.
 
 The `/day-one` spec § 2.4 should be updated to point at this CLAUDE.md mechanism instead of `/begin-session`.
 
@@ -350,13 +350,13 @@ The `/day-one` spec § 2.4 should be updated to point at this CLAUDE.md mechanis
 
 Per Decision 23 (Verify before asserting), the S6 executing session must verify these in-session before claiming /begin-session is built:
 
-1. `snowball/.claude/skills/grill-me/` exists (M1 done — required for /begin-session to recommend other skills that compose with /grill-me later).
-2. `snowball/CLAUDE.md` exists and § 4 "Before any work" section is present (F6 done). If F4.3 and F4.4 deviations from this spec have NOT yet been applied (paragraphs for topic-loading trigger + voice re-prompt), surface this in the build session — the skill works without them but the judgment-based trigger won't fire silently from CLAUDE.md until they're added.
-3. `snowball/SKILLS.md` exists with the `/begin-session` row in `[not yet built]` state (F8 set this up).
-4. `snowball/CONNECTIONS.md` exists with the § 1 "Connected" table (F7 done — even if empty Day-1, the section structure must exist).
-5. `snowball/TIME-SAVED.md` exists with the table header (F9 done).
-6. `snowball/clients/` and `snowball/projects/` folders exist (F3 done at AIOS root, F18 relocated to snowball/).
-7. End-to-end test: invoke `/begin-session <real-topic>` (Jacob picks a real test topic from his own AIOS dev clone — e.g., scaffold a `snowball/clients/test-atlas-brewery/` with a CLAUDE.md, then run /begin-session test-atlas-brewery). Verify:
+1. `.claude/skills/grill-me/` exists (M1 done — required for /begin-session to recommend other skills that compose with /grill-me later).
+2. `CLAUDE.md` exists and § 4 "Before any work" section is present (F6 done). If F4.3 and F4.4 deviations from this spec have NOT yet been applied (paragraphs for topic-loading trigger + voice re-prompt), surface this in the build session — the skill works without them but the judgment-based trigger won't fire silently from CLAUDE.md until they're added.
+3. `SKILLS.md` exists with the `/begin-session` row in `[not yet built]` state (F8 set this up).
+4. `CONNECTIONS.md` exists with the § 1 "Connected" table (F7 done — even if empty Day-1, the section structure must exist).
+5. `TIME-SAVED.md` exists with the table header (F9 done).
+6. `clients/` and `projects/` folders exist (F3 done at AIOS root, F18 relocated to second brain/).
+7. End-to-end test: invoke `/begin-session <real-topic>` (Jacob picks a real test topic from his own AIOS dev clone — e.g., scaffold a `clients/test-atlas-brewery/` with a CLAUDE.md, then run /begin-session test-atlas-brewery). Verify:
    - Folder match resolves correctly
    - Client-mode template fires (since topic was under clients/)
    - Anti-fabrication holds (empty sections omitted)

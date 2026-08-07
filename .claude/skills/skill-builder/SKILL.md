@@ -1,11 +1,11 @@
 ---
 name: skill-builder
-description: Compositional engine for growing new skills inside this Snowball. Routes me to `/king-intelligence:grill-me` or `/king-intelligence:brainstorming`, captures how long the task takes me by hand, blocks on missing connections or missing voice profile, generates the SKILL.md, tests it once with real data, then ships an atomic commit. Use when the user says "build me a skill", "automate this", "I keep doing X by hand", "I want a skill for Y", "what should I automate next", or pastes a recurring task with any "turn this into a skill" framing.
+description: Compositional engine for growing new skills inside this second brain. Routes me to `/king-intelligence:grill-me` or `/king-intelligence:brainstorming`, captures how long the task takes me by hand, blocks on missing connections or missing voice profile, generates the SKILL.md, tests it once with real data, then ships an atomic commit. Use when the user says "build me a skill", "automate this", "I keep doing X by hand", "I want a skill for Y", "what should I automate next", or pastes a recurring task with any "turn this into a skill" framing.
 ---
 
 # /skill-builder
 
-The compositional engine that grows new skills inside this Snowball. I route you to the right thinking partner (`/king-intelligence:grill-me` if there's a plan, `/king-intelligence:brainstorming` if there isn't), lock the spec, enforce prerequisites, generate the SKILL.md, test it once, and commit.
+The compositional engine that grows new skills inside this second brain. I route you to the right thinking partner (`/king-intelligence:grill-me` if there's a plan, `/king-intelligence:brainstorming` if there isn't), lock the spec, enforce prerequisites, generate the SKILL.md, test it once, and commit.
 
 ## What this skill is for
 

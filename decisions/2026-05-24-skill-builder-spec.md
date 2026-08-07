@@ -7,7 +7,7 @@ Locked via `/grill-me` session on 2026-05-24. This is the design contract for th
 
 ## 1. Purpose (one line)
 
-`/skill-builder` is the compositional engine that grows new skills inside this Snowball. It routes the user to `/grill-me` or `/brainstorm`, captures a manual-time baseline, enforces connector + voice prerequisites, generates a SKILL.md using a Pocock-style chassis, tests it once with real data, and ships an atomic commit.
+`/skill-builder` is the compositional engine that grows new skills inside this second brain. It routes the user to `/grill-me` or `/brainstorm`, captures a manual-time baseline, enforces connector + voice prerequisites, generates a SKILL.md using a Pocock-style chassis, tests it once with real data, and ships an atomic commit.
 
 ---
 
@@ -249,6 +249,6 @@ When all 13 criteria pass, S2's status flips to `done` in REBUILD-PLAN.md.
 - Decision 21 — Voice profile lazy + opt-in via `/capture-voice` (encoded in § 2.7)
 - Decision 22 — AskUserQuestion-with-Recommended default (encoded throughout §§ 2.4-2.11)
 - Decision 23 — Verify-before-asserting (encoded in § 2.6 via `claude mcp list` verify, § 2.9 via real-record signoff)
-- Decision 25 — Folder organization (this spec lives at `snowball/decisions/`; paths in §§ 2.6-2.13 are relative to snowball root)
+- Decision 25 — Folder organization (this spec lives at `decisions/`; paths in §§ 2.6-2.13 are relative to the folder root)
 - Pocock `write-a-skill` SKILL.md — the chassis spine
 - Anthropic `skill-creator` SKILL.md — three patterns layered on (description format, progressive disclosure, "explain the why")

@@ -18,9 +18,9 @@ Client-facing onboarding installs **only Git**, and the private backup repo is c
 
 Locked flow:
 1. **Pre-flight:** install Git (Windows `winget install --id Git.Git -e --source winget`; Mac `xcode-select --install`), restart VS Code, verify `git --version`.
-2. **Step 1 (levelup):** `git clone … "$HOME/Downloads/snowball"` (lands in Downloads — not OneDrive-synced).
-3. **Step 2 (levelup):** paste the kickoff bundle (Apify token embedded in a `SNOWBALL_BUNDLE` HTML comment — see [`2026-05-28`-era levelup edit]). `/day-one` starts.
-4. **`/day-one` first action — "turn on the backup":** Claude detaches the cloned template (`rm -rf .git`), then guides the client to click **Source Control → Publish to GitHub → "Publish to GitHub private repository"** (named `snowball`), and verifies `git remote -v` points at the client's account, not `BeltDoor`.
+2. **Step 1 (levelup):** `git clone … "$HOME/Downloads/second brain"` (lands in Downloads — not OneDrive-synced).
+3. **Step 2 (levelup):** paste the kickoff bundle (Apify token embedded in a `SETUP_BUNDLE` HTML comment — see [`2026-05-28`-era levelup edit]). `/day-one` starts.
+4. **`/day-one` first action — "turn on the backup":** Claude detaches the cloned template (`rm -rf .git`), then guides the client to click **Source Control → Publish to GitHub → "Publish to GitHub private repository"** (named `secondbrain`), and verifies `git remote -v` points at the client's account, not `BeltDoor`.
 5. Ongoing: `/end-session` commits + pushes; the push runs unattended from VS Code's integrated terminal because VS Code injects its GitHub sign-in into its own terminal (`git.terminalAuthentication`, default on).
 
 Decisions locked with Jacob via AskUserQuestion (5/28): GitHub is the backup · clone into Downloads · client owns the repo under their own account · force-private · Git is the one required install.
@@ -48,4 +48,4 @@ A research workflow verified each load-bearing fact against official docs:
 2. **Verify for real.** The check is now `git ls-remote origin` (a live call to GitHub that proves the repo exists + is reachable + auth works), not just `git remote -v`. Don't declare "backed up" until it succeeds and origin is the client's own account (kills the "silently broken" half).
 3. **Self-repair from the terminal.** If verify fails, Claude repairs it itself instead of re-looping the button: `gh repo create … --push` if gh happens to be present + authed, else guide a 30-second manual repo create at github.com/new and run `git remote add origin <url> && git push -u origin main` (push auths through VS Code's GitHub sign-in). Loop until `git ls-remote origin` succeeds; never proceed on an unverified backup.
 
-Files touched 6/3: `.claude/skills/day-one/SKILL.md` (backup step + pre-flight note + decision pointer), `snowball/CLAUDE.md` § 4 health check (now uses `git ls-remote`), `references/git-and-backup.md` (client-facing § one-time setup). Republished to `BeltDoor/aios-template`.
+Files touched 6/3: `.claude/skills/day-one/SKILL.md` (backup step + pre-flight note + decision pointer), `CLAUDE.md` § 4 health check (now uses `git ls-remote`), `references/git-and-backup.md` (client-facing § one-time setup). Republished to `BeltDoor/aios-template`.

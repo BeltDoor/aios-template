@@ -1,10 +1,10 @@
 # Security
 
-How your Snowball stays safe. Plain rules, not paranoia.
+How your second brain stays safe. Plain rules, not paranoia.
 
 ## What this is
 
-Your Snowball folder holds real business data — customer names, deal notes, draft emails, identity work. That's the point. This file is the short list of things to never do with it, and what's already taken care of so you don't have to think about them.
+Your second brain folder holds real business data — customer names, deal notes, draft emails, identity work. That's the point. This file is the short list of things to never do with it, and what's already taken care of so you don't have to think about them.
 
 ## Secrets — API keys, passwords, tokens
 
@@ -36,15 +36,15 @@ This isn't because chat is insecure — it's because the more sensitive a detail
 
 If you ever paste something and immediately regret it, just say "scrub that" — I'll note what to leave out of any memory or follow-up draft.
 
-## The kickoff page passcode (king-intelligence.com/levelup)
+## Your setup line is personal — don't share it
 
-The page Jacob points you at to clone your Snowball is **passcode-gated** — you type a short code, and the kickoff content reveals. That gate is **friction, not real security**. Anyone with the page source can pull the code out of it.
+The line you copy off your Get Started page at members.king-intelligence.com is **yours**. It carries the key that keeps your toolkit current, so treat it the way you'd treat a password.
 
 What that means in practice:
 
-- **Don't share the kickoff URL widely** (don't post it on social, don't include it in a public deck). Treat it like a Calendly link to your home address — semi-private.
-- **Don't paste the passcode in public.** Email, text, Signal — fine. Public Slack, public Discord, a tweet — not fine.
-- A real security upgrade (Cloudflare Access, real per-person login) is on the roadmap once the client list grows. Until then, the passcode keeps casual scrapers out — nothing more.
+- **Don't post it anywhere public** — not on social, not in a deck, not in a public Slack or Discord. Email, text and Signal are fine.
+- **If it ever gets out**, sign in to the members site, open **Your System**, and hit **Regenerate**. That kills the old one instantly and gives you a fresh one. No harm done.
+- The page itself sits behind your own login, so nobody can reach your line without being you.
 
 ## If something feels wrong
 
@@ -54,4 +54,4 @@ Better to flag a false alarm than miss a real one:
 - A push went somewhere it shouldn't → say "we may have pushed a secret" and I'll walk the diff with you.
 - A chat went somewhere it shouldn't → say "scrub that from memory" and I'll fix it.
 
-The Snowball is yours. Keeping it tight is a five-minute habit, not a project.
+The second brain is yours. Keeping it tight is a five-minute habit, not a project.

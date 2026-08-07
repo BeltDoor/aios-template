@@ -1,6 +1,6 @@
 ---
 name: begin-session
-description: Topic-loader for this Snowball. When the user runs `/begin-session <topic>` or deeply engages a specific client, project, or initiative by name in their first message of the session, this skill resolves the topic to a folder under `snowball/clients/` or `snowball/projects/`, fans out in parallel across that folder plus auto-memory plus wired connectors (Gmail, Calendar, HubSpot, Otter, Notion, Drive — whichever appear in CONNECTIONS.md), and synthesizes a tight chat-only briefing of where things stand. Briefings stay under ~25 lines (client mode) or ~20 lines (project mode); empty sections get omitted entirely (no `[not found]` filler). Bare `/begin-session` surfaces a recent-folders menu. Zero-result topics offer to scaffold a fresh `clients/<slug>/` folder. Use when the user types `/begin-session`, says "load up Atlas Brewery for me", "get me up to speed on Q4 Pricing", "where are we with <client>", or opens with deep engagement on a named topic. Do NOT use for quick tasks or general questions — those don't need background context.
+description: Topic-loader for this second brain. When the user runs `/begin-session <topic>` or deeply engages a specific client, project, or initiative by name in their first message of the session, this skill resolves the topic to a folder under `clients/` or `projects/`, fans out in parallel across that folder plus auto-memory plus wired connectors (Gmail, Calendar, HubSpot, Otter, Notion, Drive — whichever appear in CONNECTIONS.md), and synthesizes a tight chat-only briefing of where things stand. Briefings stay under ~25 lines (client mode) or ~20 lines (project mode); empty sections get omitted entirely (no `[not found]` filler). Bare `/begin-session` surfaces a recent-folders menu. Zero-result topics offer to scaffold a fresh `clients/<slug>/` folder. Use when the user types `/begin-session`, says "load up Atlas Brewery for me", "get me up to speed on Q4 Pricing", "where are we with <client>", or opens with deep engagement on a named topic. Do NOT use for quick tasks or general questions — those don't need background context.
 argument-hint: "<topic>"
 allowed-tools:
   - Read
@@ -35,8 +35,8 @@ One pass, in order.
 
 Three tiers — stop at the first confident match.
 
-1. **Folder match.** Glob under `snowball/clients/*` and `snowball/projects/*`:
-   - Exact kebab-case match (`atlas-brewery` → `snowball/clients/atlas-brewery/`)
+1. **Folder match.** Glob under `clients/*` and `projects/*`:
+   - Exact kebab-case match (`atlas-brewery` → `clients/atlas-brewery/`)
    - Substring on slug (`atlas` → same)
    - Multi-token split (`Atlas Q4 Pricing` → `[atlas, q4, pricing]`; may hit a client AND a project — see hybrid mode in [`references/fan-out.md`](references/fan-out.md))
 2. **Auto-memory scan.** If folder match is zero, search the user's auto-memory for the topic phrase. Surface matches as the briefing's primary signal.
@@ -48,8 +48,8 @@ Three tiers — stop at the first confident match.
 
 ### 2. Detect mode (folder location is the only signal)
 
-- Topic resolved to `snowball/clients/<x>/` → **client mode**
-- Topic resolved to `snowball/projects/<x>/` → **project mode**
+- Topic resolved to `clients/<x>/` → **client mode**
+- Topic resolved to `projects/<x>/` → **project mode**
 - Resolved to BOTH (multi-token match or shared slug) → **hybrid mode**
 
 Do NOT infer mode from the topic-string shape ("Bob Smith" looks personal; "Q4 Pricing" looks project-y). Folder location is the only signal — `/skill-builder` can move folders later if the client wants a different home.
@@ -94,11 +94,11 @@ When the user types `/begin-session` with no argument:
 
 `AskUserQuestion` with up to 4 options:
 
-1. The single most-recently-touched folder under `snowball/clients/` + `snowball/projects/` — labeled **(Recommended)**.
+1. The single most-recently-touched folder under `clients/` + `projects/` — labeled **(Recommended)**.
 2-3. The next two most-recently-touched folders.
 4. **"Type a different topic"** → re-prompt for the topic name, then run resolution per § 1.
 
-If `snowball/clients/` and `snowball/projects/` are both empty (fresh post-`/day-one` client), skip the menu:
+If `clients/` and `projects/` are both empty (fresh post-`/day-one` client), skip the menu:
 
 > No topics yet — type the name of a client, project, or initiative you're working on, and I'll get oriented.
 
@@ -106,7 +106,7 @@ If `snowball/clients/` and `snowball/projects/` are both empty (fresh post-`/day
 
 - **Too broad** (`/begin-session everything`): *"Too broad — give me a specific client, project, or initiative."*
 - **Multi-topic** (`/begin-session Atlas, Bob's BBQ`): *"One topic at a time — which one first?"*
-- **Missing setup files** (`CLAUDE.md` / `SKILLS.md` / `CONNECTIONS.md` not at `snowball/` root): *"Something's missing from your Snowball setup — run `/day-one` again or check with whoever set this up."*
+- **Missing setup files** (`CLAUDE.md` / `SKILLS.md` / `CONNECTIONS.md` not at `second brain/` root): *"Something's missing from your second brain setup — run `/day-one` again or check with whoever set this up."*
 
 ## Out of scope (parked, not v1.0)
 

@@ -1,15 +1,13 @@
 # Networking anchors + filter rules
 
-Source of truth for the `/networking` skill's recurring-series and filter-rule layer. This file is meant to be filled in and maintained by the user for their own market — the skill reads it every run, so keeping it accurate is what stops the next run from repeating a mistake.
-
-When a cadence here drifts from reality, fix it here — the skill reads this file every run.
+Source of truth for the `/networking` skill's Layer 1 (your own recurring rooms). This file starts as a template — replace the example rows below with your own real recurring events the first time you run the skill, then keep it current. When a cadence drifts from reality, fix it here — the skill reads this file every run.
 
 ## Filter rules (apply to everything, both layers)
 
-- **Radius:** pull from the user's config (`radius` from `homeZip`). Update the examples below once real local distances are known.
-- **Metro carve-out:** if a nearby larger metro only makes sense to include for AI-focused events, apply the `metroCarveOut` rule from config rather than hardcoding a city name here.
-- **ICP balance:** decide the buyer-vs-peer mix that fits the user (e.g. "roughly half buyer rooms — chamber / small-business / benefits, half peer/referral rooms — AI community, founders, consultants") and record the chosen split here once it's set.
-- **Out of scope, never add:** one-on-one coffees (referral/Calendly driven), and speaking bookings (a separate pipeline) — unless the user says otherwise.
+- **Radius:** set your own drive-time cutoff from `homeZip` in the config (a typical default is ~30 minutes). Decide case by case whether a slightly-further town is worth including.
+- **Further-metro carve-out:** if a nearby larger metro is out of your normal radius, allow it in only when the event is explicitly on-topic for you (e.g. AI-focused, or your specific niche).
+- **ICP balance:** decide your own mix — e.g. roughly half buyer rooms (chamber / small-business / your ICP's trade group), half peer/referral rooms (community, founders, consultants).
+- **Out of scope, never add:** one-on-one coffees (referral/Calendly driven), and speaking bookings (separate pipeline).
 - **Cost:** paid events are fine — include them, just put the price in the description. Do not filter by price alone.
 
 ## Cadence notation
@@ -18,21 +16,34 @@ When a cadence here drifts from reality, fix it here — the skill reads this fi
 
 ## Core anchors — auto-add every run when they fall in the window
 
-Fill this table with the user's own standing recurring rooms: their own chapter/group memberships and any series they already attend regularly. Leave rows empty (or delete the examples) until real ones are known — never invent a local venue to fill space.
+Replace this example table with your own standing rooms. The row for your own recurring chapter/group should say **DO NOT ADD** so the skill knows to skip it (you're already going).
 
 | Series | Cadence | Time | Venue | Cost | Room type | Verify against |
 |---|---|---|---|---|---|---|
-| *(example)* the user's own referral chapter | Weekly, e.g. Thu | e.g. 7:15–9:30 AM | *(the user's real venue)* | member | referral | **DO NOT ADD — already a recurring event on the user's calendar.** Listed so the skill knows to skip it. |
-| *(example)* a known monthly breakfast series | 1st Tue | e.g. 8:00–9:30 AM | *(the user's real venue)* | e.g. $20 | buyer/general | *(link to the series' own listing page)* |
+| **[Your own referral chapter]** | Weekly [day] | [time] | [venue] | member | referral | **DO NOT ADD — already a recurring event on your calendar.** Listed so the skill knows to skip it. |
+| **[Example] Breakfast Series** | 1st Tue | 8:00–9:30 AM | [venue] | $20 | buyer/general | [event page link] |
+| **[Example] Happy Hour** | 2nd Wed | 4:00–6:00 PM | [venue] | Free (cash bar) | buyer/general | [event page link] — often unposted more than a month out; project + confirm with the organizer |
+| **[Example] AI Breakfast** | 3rd Tue | 8:30–10:00 AM | [venue] | Free (pay food) | peer/AI | [event page link] — search current month |
+| **[Example] AI Meetup** | 2nd Fri | 6:00 PM | [venue] | Free | peer/AI | [Meetup link] |
+| **[Example] Chamber Morning Buzz** | Monthly, ~3rd Fri | 7:30–9:00 AM | [chamber HQ] | TBD | buyer/general | [chamber calendar link] — confirm exact date; high-signal room |
+| **[Example] Chamber Small Business Lunch & Learn** | Monthly | 11:30 AM–1:00 PM | [chamber HQ] | TBD | buyer/small-biz | [chamber calendar link] |
 
 ## Secondary anchors — include when they fit the window / focus arg (not every run)
 
-Same idea, lower priority. Add the user's known secondary rooms here as they're discovered, with a note on why they matter or clash with something else.
-
 | Series | Cadence | Venue | Cost | Room type | Notes |
 |---|---|---|---|---|---|
-| *(example)* a chamber after-hours mixer | ~Monthly | *(the user's real venue)* | TBD | buyer/general | walk-up friendly |
+| **[Example] Breakfast, second venue** | 3rd Tue | [venue] | $25 | buyer/general | Clashes with another example above (both 3rd Tue AM); pick one, flag the conflict |
+| **[Example] Chamber After-Hours Networking** | ~Monthly | [chamber area] | TBD | buyer/general | walk-up friendly |
+| **[Example] Chamber Resource Roundtable** | ~Monthly | [chamber HQ] | TBD | buyer/small-biz | |
+| **[Example] Roundtable Series** | Monthly | [venue] | ~$30 | mixed/visibility | big rooms, strong speakers — also a speaking target |
+| **[Example] Walk-up Connect** | 1st Fri | [venue] | Free, no RSVP | general | walk-up friendly |
+| **[Example] AI/Startup Workshop** | ~Bi-monthly | [venue] | $5 / free for members | peer/AI | topics rotate; on-topic ones are top-fit |
+| **[Example] Trade Association Educational** | Monthly | [venue] | TBD | **your ICP's trade group** | your target market — weight up when it's a direct match |
+| **[Example] Neighboring-town Chamber** | varies | [venue] | varies | buyer/local | warm relationship, if you have one |
+| **[Example] Regional Networking** | Monthly (in-person + virtual) | rotates | Free | general | low-friction, free |
 
 ## Known traps
 
-Keep a running list of anything discovered that would otherwise repeat a mistake: two series that clash on the same recurring slot, months where a listing goes unposted and the date has to be projected, chambers with no machine-readable calendar (note them so the skill doesn't pretend it has coverage there, and instead flags them on the chase list as "call to confirm").
+- **Same-slot clash:** two good rooms can land on the same morning. Surface it as a conflict, do not silently add both.
+- **Far-out drift:** dates more than a month or two out are often unposted for recurring series. Project from the cadence, tag `(date projected — confirm)`, and note the confirm contact in the receipt.
+- **Phone-only rooms** (small chambers, some local groups) have no machine-readable calendar — the skill can't auto-pull them. Note them in the receipt as "call to confirm" rather than pretending coverage.

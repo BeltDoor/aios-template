@@ -1,29 +1,25 @@
 # AIOS append templates
 
-Exact paste text for the two AIOS-specific blocks `/skill-builder` bakes into a generated skill (§ 8 of SKILL.md). Substitute `<skill-name>` and `<manual_time_minutes>` from the spec and the manual-time baseline.
+Exact paste text for the AIOS-specific blocks `/skill-builder` bakes into a generated skill (§ 8 of SKILL.md).
 
-## Self-ping block (time-saver skills only)
+## Time-saved row seeding (time-saver skills only)
 
-Paste at the bottom of the generated SKILL.md. Skip entirely for exempt skills (deep-dives, setup, one-shot, build/meta tools).
+**Self-ping footers are retired.** Counting is deterministic now: the King Intelligence plugin's PostToolUse hook (`scripts/skill-count.mjs`) increments the skill's TIME-SAVED.md row on every Skill-tool invocation. Never add a "Self-ping" block or FIRST-USE stub to a generated skill; a prose footer would double-count against the hook.
+
+What to do instead for a time-saver skill:
+
+1. Seed its row in `TIME-SAVED.md` directly:
 
 ```markdown
-## Self-ping (do this at the end of every invocation)
-
-Before you finish, increment my row in [`TIME-SAVED.md`](../../../TIME-SAVED.md):
-
-- Skill: `/<skill-name>`
-- Manual time per use: <manual_time_minutes> min
-- Increment "Total uses" by 1
-- Recompute "Total saved (cumulative)" as `Total uses × <manual_time_minutes> min`
-- Update "Last used" to today's date
-
-If `/<skill-name>` doesn't have a row yet, add one with the same fields.
+| `/<skill-name>` | <manual_time_minutes> min | 0 | 0 min | never |
 ```
+
+2. If the skill will ship to clients through the plugin, add `"<skill-name>": <floor_minutes>` to the marketplace repo's `plugins/king-intelligence/defaults/skill-minutes.json` at publish time, where `<floor_minutes>` is the competent-peer estimate with the x0.2 calibration, rounded DOWN to the nearest 5. A skill absent from that table counts uses at 0 minutes for clients, which is the honest default.
 
 ## Voice-read line (draft-related skills only)
 
 Paste at the top of the generated SKILL.md body (right under the H1 and any 1-line purpose). "Draft-related" = the skill produces text the user sends or posts as themselves (email, social, SMS, scripts, customer copy), not internal summaries.
 
 ```markdown
-> Before drafting, read [`voice-profile/VOICE-PROFILE.md`](../../../voice-profile/VOICE-PROFILE.md) and [`EMAIL-VOICE.md`](../../../voice-profile/EMAIL-VOICE.md). The output must match the voice captured there.
+> Before drafting, read `voice-profile/VOICE-PROFILE.md` and `EMAIL-VOICE.md` (or wherever your repo keeps its voice profile). The output must match the voice captured there.
 ```

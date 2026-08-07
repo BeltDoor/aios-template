@@ -1,12 +1,12 @@
 # The lane model — triage + dispatch
 
-After the signal ledger exists (Phase 2 detection) and the files are written (Phase 3-4), every actionable signal gets sorted into one of three lanes and dispatched. This is the same detection + triage logic a standalone "handle this" flow would use — the brain lives here.
+After the signal ledger exists (Phase 2 detection) and the files are written (Phase 3-4), every actionable signal gets sorted into one of three lanes and dispatched. This replaces the old hand-off to `/handle-it`. The brain lives here now.
 
 ## The razor (the one rule that drives everything)
 
 **Is this needed for the follow-up email — or, when there's no email, for what the user owes this person right now?**
 
-- **YES → build it INLINE.** Research, branded PDFs, a quoted fact, a price, an attachment. Inline is the default and heavy inline work is fine (a well-researched deliverable plus a couple of PDFs baked into the email is the model). "Needed" is **strict**: the email is wrong or incomplete without it. A mere *promise* of future work in the email ("I'll build your X next") is NOT needed — that's Lane 3.
+- **YES → build it INLINE.** Research, branded PDFs, a quoted fact, a price, an attachment. Inline is the default and heavy inline work is fine (deep research + supporting PDFs baked straight into the email is the model). "Needed" is **strict**: the email is wrong or incomplete without it. A mere *promise* of future work in the email ("I'll build your X next") is NOT needed — that's Lane 3.
 - **NO → it's standalone work → Lane 3 loaded prompt.** Meeting prep for a different person, a new skill build, a separate project.
 - **On the genuine fence → ask once** ("I can build X inline and attach it, or hand you a prompt — which?"). Only when truly ambiguous; don't gate routine debriefs.
 
@@ -19,7 +19,7 @@ Trivial mechanical updates are their own thing (Lane 1) regardless of the razor.
 Mechanical, safe, reversible work. Just do it, no gate. Then list what you touched so the user can catch errors.
 
 - Update the client's `CLAUDE.md`, the `clients/CLAUDE.md` rollup, auto-memory, knowledge graph.
-- Log the meeting as a dated touch on the person's card (`<crmApi> touch <card-id> "<note>" debrief` — see SKILL.md Phase 4E for the full CRM procedure).
+- Log the meeting as a dated touch on the person's card (`<crmApi> touch <card-id> "<note>" debrief` — see `_shared/board-card-flow.md`, if your setup ships one; never write to a retired CRM your settings say is no longer in use).
 - Person-to-person cross-references into other files (signal type 3).
 
 **Cross-client safety:** writing into a DIFFERENT client's file based on this transcript (e.g. "Sam knows Riley" → Riley's file) is allowed only at **high diarization confidence**. If the source line is garbled, downgrade it to a flagged item in the report instead of writing it. Never propagate a possible mishearing into another client's record.
@@ -49,9 +49,9 @@ Standalone work the email doesn't need: prep for a different meeting, a new skil
 
 **Loadedness (bounded, baked in):** do exactly the cheap lookups that make the prompt cold-startable — Gmail, Calendar, who-is-X, what people said (already in the transcript), file pointers. Embed them as facts. Do NOT do the heavy synthesis or build — that's the fresh window's job. Tell the prompt explicitly what's known vs what it still must do.
 
-**Where it lands:** save each prompt as a file in the central queue `prompts/YYYY-MM-DD-<slug>.md` AND echo it in chat. In a fresh window the user either pastes it or says "run prompts/...". Remind them to delete after use. (No per-client folder — a cross-subject prompt like a warm intro that came up mid-debrief belongs in the central queue where all pending work is visible at a glance.)
+**Where it lands:** save each prompt as a file in the central queue `prompts/YYYY-MM-DD-<slug>.md` AND echo it in chat. In a fresh window the user either pastes it or says "run prompts/...". Remind them to delete after use. (No per-client folder — a cross-subject prompt like one about a referral, born from another client's debrief, belongs in the central queue where all pending work is visible at a glance.)
 
-**No cap, but rank + flag.** List Lane-3 prompts ranked by urgency/value. Flag time-sensitive ones with the date ("John — Thursday 6/4, prep before then"). If a session spawns five, list five.
+**No cap, but rank + flag.** List Lane-3 prompts ranked by urgency/value. Flag time-sensitive ones with the date ("Riley — Thursday, prep before then"). If a session spawns five, list five.
 
 **Escape hatch:** if the user says "just do X now," build it inline instead of handing the prompt. The prompt is the default for standalone work, not a wall.
 
@@ -94,14 +94,14 @@ Ready to send (your trigger):
   - Stripe: draft invoice $300 to <recipient>  (your send)
 
 Prompts queued (run in a fresh window):
-  - prompts/2026-06-04-riley-thursday-prep.md  [URGENT — Thursday]
-  - prompts/2026-06-02-acme-co-spec-skill.md
+  - prompts/2026-06-04-riley-acme-thursday.md  [URGENT — Thursday]
+  - prompts/2026-06-02-widgetco-spec-skill.md
 
 Flagged (low confidence / your call):
   - <anything downgraded from a cross-client write, etc.>
 ```
 
-Use plain words. No emojis (the user's rule). If a lane is empty, omit its section.
+Use plain words. No emojis (unless the user says otherwise). If a lane is empty, omit its section.
 
 **After the report:** the debrief makes one optional LinkedIn-post offer (Phase 6 in SKILL.md, procedure in [content-post.md](content-post.md)). It renders below this report, not inside it — the report's three-lane contract stays intact.
 
@@ -109,7 +109,7 @@ Use plain words. No emojis (the user's rule). If a lane is empty, omit its secti
 
 ## Standalone (non-meeting) use
 
-When invoked on a pasted email thread or "handle this" with no meeting transcript, skip Phases 0-4 and run only detection ([detection-signals.md](detection-signals.md)) + this lane model on the pasted context.
+When invoked on a pasted email thread or "handle this" with no meeting transcript, skip Phases 0-4 and run only detection ([detection-signals.md](detection-signals.md)) + this lane model on the pasted context. This is what the thin `/handle-it` now points at.
 
 ## Execution toolbox
 

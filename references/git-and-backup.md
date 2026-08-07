@@ -1,28 +1,28 @@
 # Git and Backup
 
-How your Snowball folder stays safe — and how it follows you to a new laptop.
+How your second brain folder stays safe — and how it follows you to a new laptop.
 
 ## What this is
 
-Your Snowball folder is a **git repo**. Think of git as a time machine for the folder: every change you save gets a snapshot you can roll back to.
+Your second brain folder is a **git repo**. Think of git as a time machine for the folder: every change you save gets a snapshot you can roll back to.
 
 **GitHub** is where those snapshots get sent for safekeeping. Pushing your folder to a private GitHub repo gives you two things at once:
 
-- **An encrypted off-laptop backup.** If your laptop is lost, stolen, or wiped, your Snowball is still there.
+- **An encrypted off-laptop backup.** If your laptop is lost, stolen, or wiped, your second brain is still there.
 - **Access from any machine.** Sign into GitHub on a new laptop, clone the folder, and you're back — same identity, same skills, same history.
 
 Your repo is **private**. Only you (and anyone you explicitly invite) can see it.
 
-## Two ways your Snowball gets backed up
+## Two ways your second brain gets backed up
 
-Your Snowball is safe as soon as ONE of these is true, and `/day-one` handles this as its LAST setup step (after you've seen what your Snowball can do), not the first:
+Your second brain is safe as soon as ONE of these is true, and `/day-one` handles this as its LAST setup step (after you've seen what your second brain can do), not the first:
 
-**Option A, the easy one: your folder already lives in a cloud drive.** If your Snowball sits inside OneDrive, iCloud Drive, or Dropbox, that drive already copies every change to the cloud automatically. Nothing to set up, you're backed up. `/day-one` checks for this and, if it's true, skips the GitHub step entirely.
+**Option A, the easy one: your folder already lives in a cloud drive.** If your second brain sits inside OneDrive, iCloud Drive, or Dropbox, that drive already copies every change to the cloud automatically. Nothing to set up, you're backed up. `/day-one` checks for this and, if it's true, skips the GitHub step entirely.
 
 **Option B: publish to a private GitHub repo.** If your folder is NOT in a cloud drive, `/day-one` offers to back it up to your own private GitHub repo. It's optional, and you don't touch the terminal, it uses a button built into VS Code. The shape:
 
 1. **Publish to GitHub.** When Claude prompts you, click the **Source Control** icon on the left, then the **Publish to GitHub** button. If it asks you to sign in to GitHub, do it — a browser window opens, you approve it. (No GitHub account yet? The sign-in screen has a free "Create an account" link.)
-2. **Pick "private."** Choose **"Publish to GitHub private repository"** and name it `snowball`. In one click, VS Code creates the repo under your account, connects your folder to it, and pushes the first backup.
+2. **Pick "private."** Choose **"Publish to GitHub private repository"** and name it `secondbrain`. In one click, VS Code creates the repo under your account, connects your folder to it, and pushes the first backup.
 3. **Claude proves it's real, then moves on.** Before saying you're backed up, Claude actually reaches out to GitHub to confirm your repo is there and reachable — not just that it looks set up. If that one click didn't fully take (it happens — a browser closes, the connection hiccups), Claude fixes it on the spot from the terminal so you leave the session with a backup that genuinely works, not one that quietly isn't there.
 
 ## What `/king-intelligence:end-session` does
@@ -40,24 +40,24 @@ Two things stay on your laptop only and never get pushed to GitHub:
 - **`.env`** — where your API keys live. Keys never belong in a backup, even a private one.
 - **`.playwright-profile/`** — the browser session Claude uses when it needs to log in somewhere as you. It holds live cookies; pushing it would be the same as pushing your passwords.
 
-Both are listed in `.gitignore`, which is git's "don't ever back this up" file. So your backup is safe to push even though your Snowball folder contains real business data — the actual secrets stay local.
+Both are listed in `.gitignore`, which is git's "don't ever back this up" file. So your backup is safe to push even though your second brain folder contains real business data — the actual secrets stay local.
 
 ## Restoring on a new laptop
 
-Backed up by a cloud drive (Option A)? Restoring is simplest: install the same cloud app (OneDrive / iCloud / Dropbox) on the new laptop, sign in, and let it sync your Snowball folder back down. Then open it in VS Code and run `/day-one`. The steps below are for a GitHub backup (Option B).
+Backed up by a cloud drive (Option A)? Restoring is simplest: install the same cloud app (OneDrive / iCloud / Dropbox) on the new laptop, sign in, and let it sync your second brain folder back down. Then open it in VS Code and run `/day-one`. The steps below are for a GitHub backup (Option B).
 
 1. **Install Git, VS Code, and the Claude Code extension** — same as your first setup.
-2. **Clone your repo.** In VS Code: **Source Control → Clone Repository → pick your `snowball` repo** (or run `git clone <your-repo-url>` in the terminal). This downloads your whole Snowball.
+2. **Clone your repo.** In VS Code: **Source Control → Clone Repository → pick your `secondbrain` repo** (or run `git clone <your-repo-url>` in the terminal). This downloads your whole second brain.
 3. **Open it in VS Code, then run `/day-one`.** Claude notices you're on a fresh machine, walks you through re-adding your API keys to local env vars, and (when needed) re-creates your browser profile so Claude can log in as you again.
 
 When `/day-one` finishes, you're back where you left off — same identity, same skills, same history.
 
-## Sharing one Snowball with a teammate
+## Sharing one second brain with a teammate
 
-Two people can share one Snowball so it works as a single shared brain. The trick: one private repo, two laptops pointing at it. Do NOT have both people set up from scratch separately, or you end up with two unconnected copies.
+Two people can share one second brain so it works as a single shared brain. The trick: one private repo, two laptops pointing at it. Do NOT have both people set up from scratch separately, or you end up with two unconnected copies.
 
-1. **First person** sets up normally (`/day-one` publishes the private `snowball` repo to GitHub).
-2. **Second person** does NOT clone the template. They get access to the first person's repo (either both sign into the same GitHub account, or the first person invites them as a collaborator on the repo in GitHub), then in VS Code: **Source Control → Clone Repository → pick the `snowball` repo**. Now both laptops point at the same private repo.
+1. **First person** sets up normally (`/day-one` publishes the private `secondbrain` repo to GitHub).
+2. **Second person** does NOT clone the template. They get access to the first person's repo (either both sign into the same GitHub account, or the first person invites them as a collaborator on the repo in GitHub), then in VS Code: **Source Control → Clone Repository → pick the `secondbrain` repo**. Now both laptops point at the same private repo.
 3. **Working rhythm:** before you start, pull the latest down (Source Control → Sync Changes, or just tell Claude "sync the latest down"). When you finish, `/king-intelligence:end-session` saves and backs up for you, and it pulls down any of your teammate's changes first. To keep it simple, avoid both running a session on the exact same file at the exact same time.
 
 If two people did edit the same file at once, nothing is lost: both versions are saved, and Claude merges them and asks you to confirm.

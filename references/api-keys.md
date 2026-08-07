@@ -14,7 +14,7 @@ This rule exists because keys get lost otherwise — they scroll away in chat hi
 
 ## 2. Where it goes
 
-The key lives in an **environment variable** — a sticky note your computer keeps for itself, outside this Snowball folder, that any program on your laptop can read. Because it lives outside the folder, it never gets backed up to GitHub. That's the point.
+The key lives in an **environment variable** — a sticky note your computer keeps for itself, outside this second brain folder, that any program on your laptop can read. Because it lives outside the folder, it never gets backed up to GitHub. That's the point.
 
 ### On Windows
 
@@ -77,7 +77,7 @@ I record the env var **name** only — never the value. This lets future session
 I make sure `/references/<tool>-api.md` exists. If it doesn't, I create it with at least:
 
 - **What the tool is** — one sentence
-- **What you use it for in Snowball** — one paragraph
+- **What you use it for in second brain** — one paragraph
 - **Vendor docs** — a link
 
 If the file already exists, I leave it alone unless something is actually wrong.

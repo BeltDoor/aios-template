@@ -1,6 +1,6 @@
 ---
 name: skill-builder
-description: Build a new skill end-to-end inside this repo, or modify an existing one. Use when the user says "build me a skill", "automate this", "turn this into a skill", "I keep doing X by hand", "I want a skill for Y", "what should I automate next", or pastes a recurring task they want encoded, even if they never say the word "skill". Also use when extending, fixing, or re-triggering an existing skill.
+description: Build a new skill end-to-end inside this repo, or modify an existing one. Use when the user says "build me a skill", "automate this", "turn this into a skill", "I keep doing X by hand", "I want a skill for Y", "what should I automate next", or pastes a recurring task they want encoded, even if they never say the word "skill". Also use when extending, fixing, or re-triggering an existing skill. If this setup has its own tailored version of this skill, prefer that one.
 ---
 
 # /skill-builder
@@ -9,7 +9,7 @@ description: Build a new skill end-to-end inside this repo, or modify an existin
 
 The compositional engine that grows new skills inside this repo. I route you to the right thinking partner (`/grill-me` if there's a plan, `/brainstorming` if there isn't), lock the spec, enforce prerequisites, generate the SKILL.md, test it once, and commit.
 
-The voice gate points at your existing voice profile, decisions log to `decisions/log.md`, and TIME-SAVED self-ping is scoped to recurring real-time-saver skills only (deep-dives and setup tools are exempt). Triggering, cost, and durability rules draw on established skill-authoring methodology (Pocock `write-a-skill`, obra `superpowers/writing-skills`, Anthropic `skill-creator`).
+The voice gate points at your existing voice profile, decisions log to `decisions/log.md`, and TIME-SAVED tracking is scoped to recurring real-time-saver skills only (deep-dives and setup tools are exempt). Triggering, cost, and durability rules draw on established skill-authoring methodology (Pocock `write-a-skill`, obra `superpowers/writing-skills`, Anthropic `skill-creator`).
 
 ## What this skill is for
 
@@ -67,7 +67,7 @@ If no overlap, keep going.
 
 ### 4. Manual-time baseline (time-savers only)
 
-First, decide whether this skill is a **recurring real time-saver** or a **deep-dive / setup / one-shot tool**. Deep-dives (like `/grill-me`, `/brainstorming`) and setup/one-shot tools are **exempt** from TIME-SAVED tracking per CLAUDE.md. If the skill is exempt, **skip this step and the self-ping append in § 8**: no baseline, no row, no footer.
+First, decide whether this skill is a **recurring real time-saver** or a **deep-dive / setup / one-shot tool**. Deep-dives (like `/grill-me`, `/brainstorming`) and setup/one-shot tools are **exempt** from TIME-SAVED tracking per CLAUDE.md. If the skill is exempt, **skip this step and the ledger seeding in § 8**: no baseline, no row.
 
 If it IS a recurring time-saver, ask the user how long this task takes them by hand. `AskUserQuestion`:
 
@@ -86,7 +86,7 @@ Store the midpoint as an integer `manual_time_minutes`:
 - `40-60 min` → 50
 - Other → parse user's number directly
 
-This integer is what gets baked into the generated skill's self-ping line (§ AIOS appends) and seeded into the new TIME-SAVED.md row.
+This integer is what gets seeded into the new TIME-SAVED.md row (§ 8). The counting itself is automatic: the plugin's PostToolUse hook (`skill-count.mjs`) bumps the row on every run, so generated skills carry NO self-ping footer.
 
 ### 5. Connector gap — HARD GATE
 
@@ -130,9 +130,7 @@ Length cap for generated skills: soft **100 lines**. Past 150 = split into two s
 
 ### 8. AIOS appends
 
-For a **time-saver** skill, end the generated SKILL.md with the **self-ping block**; for an **exempt** skill (§ 4), skip it. For a **draft-related** skill, open the body with the **voice-read line**.
-
-See [`references/aios-appends.md`](references/aios-appends.md) for the exact paste text. Substitute `<skill-name>` and `<manual_time_minutes>` from the spec and the baseline.
+For a **time-saver** skill, seed its TIME-SAVED.md row with the baseline (see [`references/aios-appends.md`](references/aios-appends.md)); for an **exempt** skill (§ 4), skip it. Do NOT add a self-ping footer — counting is automatic (the plugin's `skill-count.mjs` PostToolUse hook increments the row on every run). If the skill will ship to clients through the plugin, also add its floor baseline to the marketplace `defaults/skill-minutes.json` at publish time. For a **draft-related** skill, open the body with the **voice-read line** (exact paste text in the same reference).
 
 Do **not** restate CEO voice rules, AskUserQuestion default, or verify-before-asserting in the generated skill. Those live in CLAUDE.md and auto-load as project instructions for every session. Restating bloats the skill past the 100-line cap.
 
@@ -250,4 +248,4 @@ When Step 3's overlap check routes to "Extend existing" instead of new build:
 - **Semantic-embedding overlap detection.** Step 3 is keyword + structural. Embedding-based is a later idea.
 - **Bulk build.** One skill per invocation.
 
-> Note: `/skill-builder` does NOT self-ping. It's exempt from TIME-SAVED tracking (a build/meta tool, per CLAUDE.md). The value it creates is tracked downstream, in the self-pings of the time-saver skills it builds.
+> Note: `/skill-builder` carries no baseline. It's exempt from TIME-SAVED tracking (a build/meta tool, per CLAUDE.md). The value it creates is tracked downstream, in the auto-counted rows of the time-saver skills it builds.

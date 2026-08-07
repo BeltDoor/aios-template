@@ -15,6 +15,13 @@
 // Usage (run from the brain root, or pass --repo):
 //   node time-saved-sync.mjs record --adhoc-min 150 --summary "..." --session-id <id> --date 06/30/26 \
 //        [--wins-json '[{"text":"...","minutes":180}]'] [--tools "email,recall"] [--rate 150] [--send]
+//   node time-saved-sync.mjs record --session-only --session-id <claude-session-id> --date 08/05/26 \
+//        [--work-floor-min N] [--send]
+//        -> passive session close (the SessionEnd hook): bump the session counter + lastEndedAt and
+//           send the snapshot. A session merely EXISTING adds ZERO minutes; --work-floor-min is the
+//           one exception (the tiered work-floor decision, 8/5/26): session-close.mjs passes a
+//           deterministic 10/30-min floor ONLY for a session that cleared the real-work action bar
+//           and ran no KI skill. Idempotent per session id — a repeat close can never double-credit.
 //   node time-saved-sync.mjs send                 -> retry sending the current snapshot only
 //   node time-saved-sync.mjs send --reset         -> deliberate recalibration: lets the portal ACCEPT a lower total
 //   node time-saved-sync.mjs set-rate 150         -> set the member's hourly rate (enables $ value)
@@ -221,10 +228,14 @@ async function send(state) {
   }
   const body = JSON.stringify(snapshotOf(state))
   try {
+    // --send-timeout-ms: the SessionEnd hook passes a small cap so a dead network can never
+    // hang a session close. Absent => no timeout (the /end-session path keeps today's behavior).
+    const timeoutMs = parseInt(flag('--send-timeout-ms', '0'), 10) || 0
     const res = await fetch(`${portal.replace(/\/$/, '')}/api/time-saved/ingest`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
       body,
+      ...(timeoutMs > 0 ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
     })
     const txt = await res.text()
     if (!res.ok) {
@@ -243,7 +254,74 @@ async function send(state) {
 }
 
 // ---------- commands ----------
+
+// Passive session close (Rail A, wired on SessionEnd via session-close.mjs). HARD RULE: a session
+// merely existing displaces no human time, so this adds ZERO minutes — no rollup, no wins, no
+// ledger write. It only advances the session counter (idempotent per Claude session id), stamps
+// lastEndedAt, and sends the unchanged snapshot so the portal's activity rail (streak / calendar /
+// last-active) lights up without the /end-session habit.
+async function doSessionOnly() {
+  const state = loadState()
+  const dateStr = flag('--date', null)
+  const sessionId = flag('--session-id', null)
+  const endedAt = new Date().toISOString()
+
+  const closed = Array.isArray(state.sessions.closedIds) ? state.sessions.closedIds : []
+  const alreadyClosed = sessionId ? closed.includes(sessionId) : false
+  // Double-count guard: /end-session's Phase 3.55 already counted this session (under a HEAD-hash
+  // id we cannot correlate with the Claude session id). If an ordinary record ran in the last 45
+  // minutes, this close almost certainly belongs to that same session, so skip the count bump.
+  // Residual edge (documented, accepted): /end-session then >45 more minutes of work before
+  // closing counts the session twice — sessions is a display stat and carries zero minutes.
+  const RECENT_RECORD_MS = 45 * 60 * 1000
+  const recentRecord = state.lastRecordAt && (Date.now() - Date.parse(state.lastRecordAt)) < RECENT_RECORD_MS
+
+  if (!alreadyClosed && !recentRecord) {
+    state.sessions.count += 1
+    const wk = weekOrdinal(dateStr)
+    if (wk !== null && !state.sessions.weekOrdinals.includes(wk)) state.sessions.weekOrdinals.push(wk)
+  }
+  if (sessionId && !alreadyClosed) state.sessions.closedIds = [...closed, sessionId].slice(-50)
+  state.sessions.lastEndedAt = endedAt
+
+  // The work floor (8/5/26): deterministic minutes for a tool-less session that did real
+  // work, decided by session-close.mjs from the action count. Recorded as an idempotent
+  // rollup keyed by the Claude session id, so a repeat close updates instead of stacking.
+  // Skipped under the same recent-record guard: if /end-session already recorded this
+  // session's real minutes, the floor must not add on top.
+  const floorMin = Math.max(0, parseInt(flag('--work-floor-min', '0'), 10) || 0)
+  let floorApplied = 0
+  if (floorMin > 0 && sessionId && !recentRecord) {
+    const floorId = `rollup_session-floor_${sessionId}`
+    const existing = state.rollups.find((r) => r.id === floorId)
+    if (existing) {
+      existing.endedAt = endedAt; existing.confirmedMinutes = floorMin
+    } else {
+      state.rollups.push({ id: floorId, endedAt, summary: '', confirmedMinutes: floorMin, source: 'work-floor' })
+    }
+    floorApplied = floorMin
+  }
+
+  recompute(state, dateStr)
+  writeState(state)
+
+  let result = { sent: false, reason: 'send not requested' }
+  if (has('--send')) result = await send(state)
+  writeState(state)
+
+  console.log(JSON.stringify({
+    ok: true,
+    sessionOnly: true,
+    counted: !alreadyClosed && !recentRecord,
+    workFloorMin: floorApplied,
+    totalHours: round2(state.hours.totalMinutes / 60),
+    sessions: state.sessions.count,
+    send: result,
+  }, null, 2))
+}
+
 async function doRecord() {
+  if (has('--session-only')) return doSessionOnly()
   const state = loadState()
   const dateStr = flag('--date', null)
   const adhocMin = Math.max(0, parseInt(flag('--adhoc-min', '0'), 10) || 0)
@@ -268,6 +346,7 @@ async function doRecord() {
     if (wk !== null && !state.sessions.weekOrdinals.includes(wk)) state.sessions.weekOrdinals.push(wk)
   }
   state.sessions.lastEndedAt = endedAt
+  state.lastRecordAt = endedAt // read by the session-only close's double-count guard
 
   // catch-a-wins harvested from the scratchpad (human-asserted; capped; shown separately)
   const WIN_CAP_MIN = 40 * 60

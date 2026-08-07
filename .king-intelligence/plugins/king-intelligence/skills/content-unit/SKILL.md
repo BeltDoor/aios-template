@@ -1,6 +1,6 @@
 ---
 name: content-unit
-description: Turn any raw input — an idea, a story, a topic, a transcript chunk, a half-formed thought — into one finished, on-voice social post built on Alex Hormozi's content-unit framework (Hook, Retain, Reward) and run through /stop-slop before it's ever shown. Use when the user says "turn this into a post", "make a content unit", "content-unit this", "make this a LinkedIn post", "write me a post about X", "turn this clip/story/idea into content", "Hormozi-ify this", or types /content-unit — and lean toward firing whenever they hand over raw material they want shaped into something postable as themselves or a client, even if they never say the skill name. Not for emails (use /email) or bulk multi-platform client runs (the SMM app).
+description: Turn any raw input — an idea, a story, a topic, a transcript chunk, a half-formed thought — into one finished, on-voice social post built on Alex Hormozi's content-unit framework (Hook, Retain, Reward) and run through /stop-slop before it's ever shown. Use when the user says "turn this into a post", "make a content unit", "content-unit this", "make this a LinkedIn post", "write me a post about X", "turn this clip/story/idea into content", "Hormozi-ify this", or types /content-unit — and lean toward firing whenever they hand over raw material they want shaped into something postable as themselves or a client, even if they never say the skill name. Not for emails (use /email) or bulk multi-platform client runs (a dedicated SMM app).
 argument-hint: "[raw idea, story, topic, or pasted text | optional voice-profile path]"
 allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion, Skill
 disable-model-invocation: false
@@ -12,7 +12,7 @@ disable-model-invocation: false
 
 > Before drafting, read [`onboarding/voice-profile.md`](onboarding/voice-profile.md) if it exists. The output must match the voice captured there. If it's missing, write in a clean, professional voice and say so once.
 
-This is the front door for crafting a single post the user (or an SMM client) will publish. It takes whatever raw material you give it and shapes it into Hormozi's atomic **content unit** — the smallest piece of material that hooks attention, retains it, and rewards it — then forces the draft through `/stop-slop` so nothing ships that reads like AI. The full framework, quoted from *$100M Leads* Ch. 6-7, lives in [`references/`](references/); read the relevant one when you need the detail, not all three up front.
+This is the front door for crafting a single post you (or an SMM client) will publish. It takes whatever raw material you give it and shapes it into Hormozi's atomic **content unit** — the smallest piece of material that hooks attention, retains it, and rewards it — then forces the draft through `/stop-slop` so nothing ships that reads like AI. The full framework, quoted from *$100M Leads* Ch. 6-7, lives in [`references/`](references/); read the relevant one when you need the detail, not all three up front.
 
 ## Why a framework instead of just writing
 
@@ -69,19 +69,11 @@ The breakdown is there so the user can see why it works and tweak one part witho
 
 ## Scope
 
-One content unit, one platform, per run. To chain several units into a long-form piece, run it again and link them (Hormozi's short-vs-long method is just linked units). Bulk generation across every platform is the SMM app's job, not this skill's. For an email, that's `/email`. This is the single-post craftsman.
+One content unit, one platform, per run. To chain several units into a long-form piece, run it again and link them (Hormozi's short-vs-long method is just linked units). Bulk generation across every platform is a job for a dedicated social-media app, not this skill. For an email, that's `/email`. This is the single-post craftsman.
 
 ## Invocation examples
 
 - `/content-unit` (no args) → asks for the raw material and the target platform
 - `/content-unit "the time a client almost fired me then 10x'd their spend"` → classifies it (Recent Past), drafts hooks, surfaces the angle pick
 - "turn this transcript bit into a LinkedIn post" + pasted text → auto-fires, runs the full unit
-- "make a content unit from this for Riley" + a client voice path → reads the client profile instead of the user's own
-
-## Self-ping (do this at the end of every invocation)
-
-Before you finish, update this skill's row in `TIME-SAVED.md` (at the user's repo root, if present):
-
-- Increment "Total uses" by 1
-- Recompute "Total saved (cumulative)" as `Total uses × 10 min`
-- Update "Last used" to today's date
+- "make a content unit from this for Riley" + a client voice path → reads the client profile instead of your own
