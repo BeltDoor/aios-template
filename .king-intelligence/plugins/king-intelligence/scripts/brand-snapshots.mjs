@@ -27,7 +27,51 @@
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
+import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
 import { brandConfig, WORKSPACE } from "./brand-check.mjs";
+
+// FINDING PLAYWRIGHT — this script lives in the plugin folder, so a bare
+// `import("playwright")` resolves from THERE and never sees the library the client
+// installed in their own workspace. That silently fails for every client.
+//
+// Note also that /king-intelligence:install-playwright installs a DIFFERENT thing: the
+// Playwright MCP *browser* (@playwright/mcp, run through npx). It does not put the
+// `playwright` node library anywhere this script can import. So resolve from every root
+// worth trying, and if it is genuinely absent say exactly what to install.
+async function loadChromium() {
+  const roots = [
+    WORKSPACE,
+    process.cwd(),
+    process.env.CLAUDE_PLUGIN_ROOT,
+    path.dirname(new URL(import.meta.url).pathname),
+  ].filter(Boolean);
+
+  // playwright is CommonJS, so importing it from ESM puts everything under .default.
+  // Reading only `mod.chromium` finds undefined and reports the library as missing when
+  // it is sitting right there — check both shapes.
+  const pick = (mod) => mod?.chromium || mod?.default?.chromium || null;
+
+  for (const root of roots) {
+    try {
+      const req = createRequire(path.join(root, "__resolve__.js"));
+      const entry = req.resolve("playwright");
+      const chromium = pick(await import(pathToFileURL(entry).href));
+      if (chromium) return chromium;
+    } catch {
+      // try the next root
+    }
+  }
+  // Last chance: a plain bare import, which covers a global install that happens to be
+  // on NODE_PATH.
+  try {
+    const chromium = pick(await import("playwright"));
+    if (chromium) return chromium;
+  } catch {
+    /* fall through to the message below */
+  }
+  return null;
+}
 
 const cfg = brandConfig();
 
@@ -108,13 +152,15 @@ async function main() {
     process.exit(1);
   }
 
-  let chromium;
-  try {
-    ({ chromium } = await import("playwright"));
-  } catch {
+  const chromium = await loadChromium();
+  if (!chromium) {
     process.stderr.write(
-      "Playwright is not installed, so the guide cannot be turned into pictures.\n" +
-        "Run /king-intelligence:install-playwright, then run this again.\n"
+      "The picture tool is not installed, so the guide cannot be turned into images.\n\n" +
+        "Install it in this workspace, then run this again:\n" +
+        "  npm install --save-dev playwright\n" +
+        "  npx playwright install chromium\n\n" +
+        "Note: /king-intelligence:install-playwright sets up the Playwright MCP browser, which\n" +
+        "is a different thing and does not provide this library.\n"
     );
     process.exit(1);
   }

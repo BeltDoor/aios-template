@@ -34,13 +34,21 @@ This run covers how your brand **looks**. How it *sounds* belongs to `/king-inte
 
 1. **Files here must persist.** Confirm this session lives in a real workspace, project folder, or repo that will still exist next conversation. If it will not (a throwaway chat window), stop and tell the user plainly to run /install-brand from Claude Code or another setup that keeps files.
 
-2. **The picture tool is required.** The gate works by making Claude LOOK at the guide, not read it, so the guide has to become images. Check for Playwright:
+2. **The picture tool is required.** The gate works by making Claude LOOK at the guide, not read it, so the guide has to become images. That needs the `playwright` **library**, installed in the user's workspace.
+
+   **This is not the same thing as `/king-intelligence:install-playwright`**, which sets up the Playwright MCP *browser* for clicking around websites. Having that one does not give you this one. Check from the workspace root:
 
    ```bash
-   node -e "import('playwright').then(()=>console.log('PLAYWRIGHT OK')).catch(()=>console.log('PLAYWRIGHT MISSING'))"
+   node -e "import('playwright').then(()=>console.log('PICTURE TOOL OK')).catch(()=>console.log('PICTURE TOOL MISSING'))"
    ```
 
-   If it is missing, run `/king-intelligence:install-playwright` now, then come back and continue. Do not proceed without it and do not quietly ship a weaker gate: reading the written rules is exactly what already failed.
+   If it is missing, install it in their workspace and wait for both commands to finish:
+
+   ```bash
+   npm install --save-dev playwright && npx playwright install chromium
+   ```
+
+   The browser download alone can take a couple of minutes on a first run. Do not proceed without it and do not quietly ship a weaker gate: reading the written rules is exactly what already failed.
 
 3. **Find the config.** Run this and hold onto the printed CONFIG_PATH:
 
