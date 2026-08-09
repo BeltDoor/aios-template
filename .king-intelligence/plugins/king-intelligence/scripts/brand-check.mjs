@@ -73,6 +73,73 @@ export function brandConfig() {
 
 const VISUAL_EXT = new Set([".html", ".htm", ".css", ".scss", ".svg", ".tsx", ".jsx", ".vue"]);
 
+/* ── DOCUMENTS AND DECKS ─────────────────────────────────────────────────────
+   Added 8/7/26. The scope above is web-shaped, because that is what the brand this
+   was ported from actually builds. But most clients never touch a web file: they ask
+   for a flyer, a proposal, a deck. Built as a Word file or a slide, that work sailed
+   straight past the gate and Claude never opened their brand guide — the exact miss
+   the gate exists to stop, just wearing a different file extension.
+
+   A .docx and a .pptx are both ZIP archives, so the CHECKER cannot read their colours.
+   The GATE can still stop the work before it starts, which is the half that matters
+   most here. What the checker does get is the generator script, which is plain text and
+   does carry the hex codes.
+
+   Switch off per client with "gateDocuments": false. */
+const DOC_EXT = new Set([".docx", ".dotx", ".pptx", ".potx", ".pdf", ".odt", ".odp", ".key", ".pages"]);
+
+// An unpacked Office package: editing word/document.xml or ppt/slides/slide3.xml IS
+// authoring the document, and it is how the docx/pptx skills edit an existing file.
+// Must match NESTED parts, not just the top level — slides live at ppt/slides/slideN.xml,
+// which is the single most common deck edit. A `[^/]*` here silently misses every one.
+const OOXML_PART = /(^|\/)(word|ppt)\/.*\.xml$/i;
+
+// Plain-text scripts are only document work when they actually pull in a document
+// generator. Gating every .js file would fire on ordinary code and get switched off.
+const SCRIPT_EXT = new Set([".js", ".mjs", ".cjs", ".ts", ".py"]);
+
+// pptxgenjs and python-pptx take colours as BARE hex — `color: "7A2FF2"`, no `#`. Every
+// colour check keys off `#`, so a killed colour in a deck generator passed straight
+// through while the same colour in a stylesheet was caught. Normalise the bare form
+// back to `#RRGGBB` before checking, but ONLY where it sits in a colour-shaped key, so
+// a git SHA or an id never gets mistaken for a colour.
+// Adding one character does not move any newline, so reported line numbers stay right.
+// The opening quote is REPLACED by the `#` rather than one being inserted, so the text
+// stays exactly the same length and every reported offset and line stays truthful.
+const BARE_HEX_COLOR = /\b(color|fill|bkgd|background|line|solidFill|fontColor|barColor)(\s*[:=]\s*)(["'])([0-9a-fA-F]{6})\3/gi;
+const normalizeBareHex = (src) =>
+  src.replace(BARE_HEX_COLOR, (_m, key, sep, q, hex) => `${key}${sep}#${hex}${q}`);
+const DOC_GENERATOR = /\b(pptxgenjs|python-pptx|python-docx|officegen|docxtemplater|html2pptx)\b|from\s+pptx\b|from\s+docx\b|import\s+pptx\b|import\s+docx\b|require\(['"]docx['"]\)|from\s+['"]docx['"]/i;
+
+// Bash that PRODUCES a document. Deliberately excludes every read path the document
+// skills use (markitdown, pandoc -t markdown, thumbnail.py, validate.py, bare unzip):
+// reading a contract someone sent is not brand work, and stopping it would be noise.
+const DOC_BASH = [
+  /--convert-to\s+(pdf|docx|pptx|odt|odp)\b/i,           // soffice/libreoffice export
+  /\bpandoc\b[^|;]*-o\s+\S+\.(docx|pptx|pdf|odt|odp)\b/i, // pandoc writing a document
+  /\bzip\b[^|;]*\.(docx|pptx|potx|dotx)\b/i,              // re-packing an edited package
+  /\badd_slide\.py\b/i,                                   // pptx skill: new slide
+];
+
+export function isDocumentBashCommand(cmd, cfg = brandConfig()) {
+  if (!cfg || cfg.gateDocuments === false) return false;
+  return DOC_BASH.some((re) => re.test(cmd || ""));
+}
+
+// `content` is what is about to be written (Write's content, Edit's new_string). It is
+// optional: without it, only path-based detection runs.
+export function isGuardedDocumentFile(absPath, content = "", cfg = brandConfig()) {
+  if (!cfg || cfg.gateDocuments === false) return false;
+  const rel = path.relative(WORKSPACE, absPath).split(path.sep).join("/");
+  if (rel.startsWith("..")) return false;
+  if (isSkipped(rel, cfg)) return false;
+  const ext = path.extname(absPath).toLowerCase();
+  if (DOC_EXT.has(ext)) return true;
+  if (OOXML_PART.test(rel)) return true;
+  if (SCRIPT_EXT.has(ext) && DOC_GENERATOR.test(content)) return true;
+  return false;
+}
+
 // Always skipped, for every client. Build output and dependencies are not hand-authored
 // brand work, and scanning them produces only noise.
 const SKIP_ALWAYS = [
@@ -408,7 +475,14 @@ export function checkFile(absPath, cfg = brandConfig()) {
   const rel = path.relative(WORKSPACE, absPath).split(path.sep).join("/");
   if (rel.startsWith("..")) return [];
   if (isSkipped(rel, cfg)) return [];
-  if (!VISUAL_EXT.has(path.extname(absPath).toLowerCase())) return [];
+
+  const ext = path.extname(absPath).toLowerCase();
+  const isVisual = VISUAL_EXT.has(ext);
+  // A .docx or .pptx is a ZIP, so there is nothing here to read. Its generator script
+  // is plain text though, and that is where the colours are actually written down —
+  // so a deck built by pptxgenjs still gets its palette checked.
+  const maybeGenerator = SCRIPT_EXT.has(ext) && cfg.gateDocuments !== false;
+  if (!isVisual && !maybeGenerator) return [];
 
   let raw;
   try {
@@ -418,8 +492,12 @@ export function checkFile(absPath, cfg = brandConfig()) {
   }
   // A minified bundle is not hand-authored brand work and produces only noise.
   if (raw.length > 1_500_000) return [];
+  // Only scan a script once it proves it builds documents. Checking every .js in the
+  // workspace would flag ordinary code and get the whole thing switched off.
+  if (!isVisual && !DOC_GENERATOR.test(raw)) return [];
 
-  const src = maskNonCode(raw, path.extname(absPath).toLowerCase());
+  let src = maskNonCode(raw, ext);
+  if (!isVisual) src = normalizeBareHex(src); // deck/doc generators write bare hex
 
   return [
     ...checkGlowBall(src),
@@ -505,7 +583,10 @@ function walk(dir, cfg, acc = []) {
     const rel = path.relative(WORKSPACE, full).split(path.sep).join("/");
     if (isSkipped(rel, cfg)) continue;
     if (e.isDirectory()) { walk(full, cfg, acc); continue; }
-    if (VISUAL_EXT.has(path.extname(e.name).toLowerCase())) acc.push(full);
+    const ext = path.extname(e.name).toLowerCase();
+    // Scripts are collected too; checkFile drops the ones that turn out not to build
+    // documents, so a full scan still covers deck generators without flagging code.
+    if (VISUAL_EXT.has(ext) || (cfg.gateDocuments !== false && SCRIPT_EXT.has(ext))) acc.push(full);
   }
   return acc;
 }

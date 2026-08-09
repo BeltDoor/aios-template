@@ -1,6 +1,6 @@
 ---
 name: map-my-work
-description: Map where the user's real business work actually lives on this computer — Desktop, Documents, OneDrive, SharePoint, iCloud Drive, Dropbox — and write it to references/where-my-work-lives.md so every future session knows where to look instead of asking. Two passes: a fast top-level sweep, then a deep dive only into the folders that hold business work. Reads folder and file NAMES only, never opens a document, never moves or copies anything. Use when the user says "map my computer", "where does my stuff live", "find my business files", "learn my folders", when /day-one hands off after consent, or when a session repeatedly can't find a file the user refers to. Requires explicit consent before the first scan.
+description: Map where the user's real business work actually lives — Desktop, Documents, Google Drive, OneDrive, SharePoint, iCloud Drive, Dropbox — and write it to references/where-my-work-lives.md so every future session knows where to look instead of asking. Asks FIRST whether the work is even on this computer, because a company can run entirely on Google Drive with almost nothing on the laptop; if it does, connects Drive as a folder before sweeping. Then a fast top-level sweep and a deep dive only into the folders that hold business work. Reads folder and file NAMES only, never opens a document, never moves or copies anything. Use when the user says "map my computer", "where does my stuff live", "find my business files", "learn my folders", when /day-one hands off after consent, or when a session repeatedly can't find a file the user refers to. Requires explicit consent before the first scan.
 ---
 
 # /map-my-work
@@ -35,6 +35,62 @@ Run `uname`:
 
 Everything below is Git Bash syntax and runs on both.
 
+## Pass 0 — is the work even on this computer? (do this before anything else)
+
+**A whole company can run on Google Drive and have almost nothing on the laptop.** If you sweep the machine and report back on Desktop and Documents, you will have written a confident map of the 5% and missed the business. This pass is what stops that.
+
+First, find out what is genuinely mounted here. Run all of these; the ones that don't exist stay silent:
+
+```bash
+ls -d "$HOME"/Library/CloudStorage/* 2>/dev/null                          # Mac: Google Drive, OneDrive, SharePoint, Box, Dropbox
+ls -d "$HOME"/Library/Mobile\ Documents/com~apple~CloudDocs 2>/dev/null   # Mac: iCloud Drive
+ls -d "$HOME"/OneDrive* "$HOME"/Dropbox "$HOME"/Box "$HOME"/iCloudDrive 2>/dev/null
+ls -d "$HOME"/My\ Drive "$HOME"/Google\ Drive 2>/dev/null                 # Windows: Drive for Desktop, folder mode
+for d in /c /d /e /f /g /h /i /j; do \
+  ls -d "$d/My Drive" "$d/Shared drives" "$d/Google Drive" 2>/dev/null; done   # Windows: Drive for Desktop as a drive letter
+```
+
+**The Windows drive-letter loop is not optional.** Google Drive for Desktop mounts as a lettered drive (usually `G:`) rather than a folder in the home directory, so every check above it comes back empty on a Windows machine that has Drive installed and full of work. Leaving it out is how you tell someone they have no Google Drive while they are looking at it.
+
+Then ask, once, with `AskUserQuestion`. Build the options out of what you actually found, so it reads as informed rather than a blank survey:
+
+> **Question:** "Where does your company's real work actually live?"
+>
+> **Options (adapt to what you found):**
+> - "On this computer" (Recommended when the sweep already found busy local folders)
+> - "Mostly in Google Drive"
+> - "Mostly somewhere else online" (Dropbox, SharePoint, Box, a system like QuickBooks or a job-management app)
+> - "A real mix of both"
+
+- **On this computer** → straight to Pass 1.
+- **A real mix** → Pass 1, and treat whatever else they named the same way as below.
+- **Google Drive, or another online home** → do **not** sweep and report yet. Go to the section below first.
+
+### If their work lives in Google Drive
+
+Say it plainly, no jargon: *"Then most of your business isn't on this laptop, it's online, and right now I can't see it. Two quick things fix that for good. Want me to walk you through them?"*
+
+**First, make Drive a folder on the machine (about 3 minutes, and it's the one that matters).**
+
+Google Drive for Desktop makes their Drive show up like any other folder, so the map, and every skill after it, can see it. It does **not** download their files or fill up their hard drive; it shows the names and fetches a file only when something opens it.
+
+1. Send them to **google.com/drive/download** and have them install Drive for Desktop.
+2. They sign in with the same Google account they already use for work.
+3. When it finishes, re-run the detection block above. You should now see `My Drive` (Windows: usually under a lettered drive) or `Library/CloudStorage/GoogleDrive-…` (Mac).
+4. Then run Pass 1 as normal. Drive is now just another folder, and a very important one, so it goes in the deep dive.
+
+If it still doesn't appear, don't loop. Say: *"Drive hasn't finished connecting yet. Close VS Code completely and open it again, then say 'try again' and I'll pick it up."*
+
+**Second, give me a live link into their Google account (optional, and only after the first one works).**
+
+Drive-as-a-folder covers PDFs, Word files, spreadsheets, images: anything that is a real file. What it can't open is a native Google Doc, Sheet or Slide, which shows up as a tiny link file with nothing inside it. If a lot of their work is Google Docs, run **`/install-google`**, which sets up the live connection and hands back the ability to read and write those documents directly.
+
+Offer it, don't force it. One line: *"If a lot of your work is Google Docs and Sheets rather than Word and Excel, there's one more setup that lets me open those properly. Worth doing now, or leave it for later?"*
+
+### Whatever they say, record it
+
+The answer to this question belongs in the map (see Pass 3's **Where the work really lives** line). A future session that knows "this company runs on Google Drive, and it's connected as a folder" never has to ask again, and never wastes a turn hunting the Desktop for something that was never there.
+
 **Two portability rules, both learned the hard way (8/7/26):**
 - Use **`-mtime -90`**, never `-newermt '-90 days'`. The relative form errors out on a Mac.
 - On a Mac, cloud drives live under `~/Library/…`, which the main sweep deliberately skips. They have to be listed explicitly (see below) or you will report that someone has no OneDrive when they have four years of work in it.
@@ -50,13 +106,7 @@ find "$HOME" -maxdepth 2 -type d \
   -not -path "*/node_modules/*" 2>/dev/null | head -400
 ```
 
-Then the cloud drives, which that command skips on purpose. Run all of these; the ones that don't exist stay silent:
-
-```bash
-ls -d "$HOME"/Library/CloudStorage/* 2>/dev/null            # Mac: OneDrive, SharePoint, Google Drive, Box
-ls -d "$HOME"/Library/Mobile\ Documents/com~apple~CloudDocs 2>/dev/null   # Mac: iCloud Drive
-ls -d "$HOME"/OneDrive* "$HOME"/Dropbox "$HOME"/iCloudDrive 2>/dev/null   # Windows + Mac shortcuts
-```
+Then the cloud drives, which that command skips on purpose. You already ran these in Pass 0; reuse what they returned rather than running them twice.
 
 Then one level inside each cloud root that exists:
 
@@ -64,7 +114,10 @@ Then one level inside each cloud root that exists:
 find "<cloud root>" -maxdepth 2 -type d -not -path "*/.*" 2>/dev/null | head -150
 ```
 
-A SharePoint document library synced through OneDrive shows up as `OneDrive - <Company Name>`. Treat every one of those as a strong business signal.
+Two naming signals worth knowing:
+
+- A SharePoint document library synced through OneDrive shows up as `OneDrive - <Company Name>`. Treat every one of those as a strong business signal.
+- Google Drive splits in two. `My Drive` is the person's own; `Shared drives` is the company's, and on a real business account that second one is usually where the money lives. Scan both, and never report on `My Drive` alone as though it were the whole picture.
 
 ## Pass 2 — decide what is business, then dig
 
@@ -103,6 +156,15 @@ _Mapped <today's date>. Folder and file names only; nothing was opened, moved, o
 
 <Two or three sentences. Where the real business work sits, and the one thing that
 would surprise a new assistant. Written for a person, not a machine.>
+
+## Where the work really lives
+
+<One line, from what they told you in Pass 0, not from what the scan happened to
+find. e.g. "This company runs on Google Drive. It's connected as a folder, so I can
+see it, and the Shared drives are the important half." Or: "Everything is on this
+laptop; there are no cloud drives connected." If a big part of their work is online
+and NOT connected yet, say so here in plain words, because every later session will
+otherwise assume the map is complete.>
 
 ## Business
 
@@ -167,6 +229,7 @@ Record every blocked folder under **Not looked at**. A map that quietly omits Do
 3. **Nothing leaves the laptop.** The map is written to this folder and nowhere else. It is never emailed, uploaded, or put in a message.
 4. **Never invent a path.** Every path in the map came back from a command you ran in this session.
 5. **Say what you skipped.** Caps, permission blocks and user exclusions all get named in the map.
+6. **A Google Doc on disk is a link, not a document.** Inside a Google Drive folder, native Docs, Sheets and Slides appear as tiny `.gdoc` / `.gsheet` / `.gslides` files of a few hundred bytes. They are pointers, and there is nothing in them to read. Count them and name them in the map as what they are, never as empty or broken files, and never as evidence that a folder is thin. A folder of 400 `.gdoc` files is 400 real documents.
 
 ## Self-ping (do this at the end of every invocation)
 

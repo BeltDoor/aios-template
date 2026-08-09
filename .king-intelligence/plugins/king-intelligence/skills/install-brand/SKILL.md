@@ -15,8 +15,10 @@ Four things, working together by the end of this run:
 
 - **Your brand law** — a short written file saying what your brand actually is, built from your real material and your own decisions.
 - **A guide you can look at** — one page showing your colours, type, logo rules and the list of things that are banned.
-- **A gate** — Claude cannot start visual work until it has looked at your guide. Once per session, then it goes quiet.
+- **A gate** — Claude cannot start visual work until it has looked at your guide. Once per session, then it goes quiet. It covers web pages and app screens, images, **and documents, decks and PDFs**, so a flyer built as a Word file is stopped just like one built as a web page.
 - **A checker** — it refuses output containing the specific things you rejected.
+
+One honest limit: a Word file and a PowerPoint are compressed archives, so the checker cannot read the colours inside a finished one. The gate still stops the work before it starts, and when a deck is built by a script the checker reads that script, which is where the colours are actually written.
 
 The last two are the point. Writing brand rules down does not work on its own: the rules this system came from were written in three separate places and were still skipped on the day they were locked. A prose rule gets skipped. A failing check does not.
 
@@ -141,6 +143,7 @@ Open it for them, wait for the digest, and read their notes as carefully as thei
      "bannedNamedColors": [],
      "bannedPatterns": [],
      "imageGenPatterns": [],
+     "gateDocuments": true,
      "enforce": true
    }
    ```

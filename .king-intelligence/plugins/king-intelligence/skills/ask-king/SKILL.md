@@ -39,7 +39,8 @@ If you find no skills at all, say this plainly and stop: "I could not find your 
 
 Group the skills you found and show them under plain headings.
 
-- If you read the catalog (source 1), group by each skill's own `category`, and show the groups in this order: Think it through, Writing & content, Comms & meetings, Design & web, Build & automate, Media, Sessions & memory, Prove the value, then anything left over.
+- If you read the catalog (source 1), group by each skill's own `category`, and show the groups in this order: Set up, Think it through, Writing & content, Comms & meetings, Design & web, Build & automate, Media, Sessions & memory, Prove the value, then anything left over.
+- **Set up** holds the one-time wiring runs (`install-…`). Show that group first, but keep it short: say plainly that these are run once each, and that someone who has already been set up can skip straight past them.
 - If you fell back to reading folders (source 2 or 3), sort each skill into the first of these plain buckets that fits, by what it is for: Writing and content, Meetings and follow-ups, Business questions and money, Video and visuals, Getting organized, Building and planning. Anything that fits none goes under Other tools.
 
 Leave out any group that has nothing in it. Never show an empty heading.

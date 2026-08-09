@@ -5,7 +5,6 @@
   },
   "cleanupPeriodDays": 365,
   "env": {
-    "CLAUDE_CODE_USE_POWERSHELL_TOOL": "false",
     "ENABLE_TOOL_SEARCH": "true",
     "DISABLE_TELEMETRY": "1",
     "DISABLE_ERROR_REPORTING": "1",

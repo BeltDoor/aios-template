@@ -44,16 +44,21 @@ async function isVisualWork(payload, mod, cfg) {
   if (tool === "Write" || tool === "Edit") {
     const fp = payload?.tool_input?.file_path;
     if (!fp) return false;
+    const abs = path.resolve(fp);
     // The shared scope logic already excludes the guide itself, its snapshots, the
     // rating file, build output and the carve-out folders. One definition, two consumers.
-    return mod.isGuardedVisualFile(path.resolve(fp), cfg);
+    if (mod.isGuardedVisualFile(abs, cfg)) return true;
+    // Documents and decks. The content is what proves a script is building one, so pass
+    // whatever is about to be written: Write sends `content`, Edit sends `new_string`.
+    const content = payload?.tool_input?.content ?? payload?.tool_input?.new_string ?? "";
+    return mod.isGuardedDocumentFile(abs, content, cfg);
   }
 
   if (tool === "Bash") {
+    const cmd = payload?.tool_input?.command || "";
     // Image generation is visual work even though no visual file is being written.
     // The patterns are the client's own image-generation commands, named during
     // /install-brand. With none configured this branch simply never fires.
-    const cmd = payload?.tool_input?.command || "";
     for (const p of cfg.imageGenPatterns || []) {
       try {
         if (new RegExp(p, "i").test(cmd)) return true;
@@ -61,7 +66,8 @@ async function isVisualWork(payload, mod, cfg) {
         // a malformed pattern is skipped, never fatal
       }
     }
-    return false;
+    // Exporting or re-packing a document or deck. Reading one is deliberately not here.
+    return mod.isDocumentBashCommand(cmd, cfg);
   }
 
   return false;
