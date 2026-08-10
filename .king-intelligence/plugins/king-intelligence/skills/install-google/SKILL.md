@@ -1,8 +1,7 @@
 ---
 name: install-google
-description: Connect the user's Google account so Claude can actually work in Google Drive, Docs, Sheets and Slides instead of guessing. Two parts, and most people only need the first. Part 1 puts Google Drive on the machine as a normal folder, which takes about three minutes and immediately lets Claude read and write every PDF, Word file, spreadsheet and image in their Drive. Part 2 adds a live link to their Google account for native Google Docs, Sheets and Slides, which show up on disk as empty link files and cannot be opened any other way. Use when the user says "connect my Google Drive", "set up Google", "my company runs on Google Drive", "connect Google Docs", "Claude can't see my Drive", "hook up my Google account", when /map-my-work finds their real work lives in Drive, or when they type /install-google. Not for Gmail alone (that is /install-email) and not for Outlook shops (that is /install-microsoft).
+description: Connect the user's Google account so Claude can actually work in Google Drive, Docs, Sheets and Slides instead of guessing. Two parts, and most people only need the first. Part 1 puts Google Drive on the machine as a normal folder, which takes about three minutes and immediately lets Claude read and write every PDF, Word file, spreadsheet and image in their Drive. Part 2 adds a live link to their Google account for native Google Docs, Sheets and Slides, which show up on disk as empty link files and cannot be opened any other way; Claude drives Google's developer console in the browser itself along a click path that was walked and recorded on a real account, so the user only signs in once. Use when the user says "connect my Google Drive", "set up Google", "my company runs on Google Drive", "connect Google Docs", "Claude can't see my Drive", "hook up my Google account", when /map-my-work finds their real work lives in Drive, or when they type /install-google. Not for Gmail alone (that is /install-email) and not for Outlook shops (that is /install-microsoft).
 disable-model-invocation: false
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion
 ---
 
 # /install-google: let Claude work in your Google Drive
@@ -103,11 +102,14 @@ Tell them the two numbers in plain words. *"You've got about 400 Google Docs and
 
 This gives Claude a direct connection to their Google account through Google's own command-line tool, which is what makes native Docs, Sheets and Slides readable and writable.
 
+**YOU DRIVE THE CONSOLE, THEY DO NOT.** Every screen below was walked end to end in a real Google Cloud account on 8/9/26 and the exact path recorded, so none of this is guesswork. The member's only job in Part 2 is one Google sign-in and one approval. Do not read these steps aloud as instructions for them to follow; do them.
+
 ## Before you start
 
-1. **Node is installed.** Check with `node --version`. It comes with the standard setup; if it's missing, that comes first.
-2. **They are the owner of the Google account, or an admin who can approve apps.** On a locked-down company Google Workspace, an administrator can block third-party access entirely, and you only find out at the sign-in step. If they are on a managed work account and not the admin, say so now rather than 25 minutes in.
-3. **They are staying at the keyboard for the whole run.** Step 2.4 cannot be deferred.
+1. **`/install-playwright` has been run.** That is what gives you the browser. Without it, you are reading a menu to someone over the phone, which is how this takes an hour and still goes wrong. If it isn't installed, run it first.
+2. **Node is installed.** Check with `node --version`. It comes with the standard setup.
+3. **They are the owner of the Google account, or an admin who can approve apps.** On a locked-down company Google Workspace, an administrator can block third-party access entirely, and you only find out at the sign-in step. If they are on a managed work account and not the admin, say so now rather than 25 minutes in.
+4. **They are staying at the keyboard.** Step 2.5 cannot be deferred, and step 2.6 needs their sign-in.
 
 ## Step 2.1 — Install Google's own Workspace tool
 
@@ -116,60 +118,89 @@ npm install -g @googleworkspace/cli
 gws --version
 ```
 
-This is published by Google's own `googleworkspace` organisation. Nothing here comes from King Intelligence.
+Published by Google's own `googleworkspace` organisation. Nothing here comes from King Intelligence.
 
-## Step 2.2 — Make a Google project for them
+> `gws auth setup` exists and looks like a shortcut. It is not: it requires the `gcloud` SDK, which is a large extra install most members will never otherwise need. The browser path below avoids it entirely.
 
-This is the part that is not built for normal people, so drive it clearly, one screen at a time. Never dump the whole list at them at once.
+## How to drive these screens (read this once, it saves the whole run)
 
-Open **console.cloud.google.com** and walk them through:
+Four rules, all learned by getting them wrong on the real console:
 
-1. **Create a project.** Top bar, the project dropdown, then New Project. Name it something they'll recognise later, like `<their company> AI`. Create, then make sure the new project is the one selected in the top bar. **Every step below has to happen inside that same project, and the console will drift you out of it without saying anything.** Check the top bar before each step.
-2. **Turn on the three services.** Search "Google Drive API" and Enable, then the same for "Google Docs API" and "Google Sheets API". Add "Google Slides API" if they use Slides.
+1. **Use real browser clicks and typing, never scripted value-setting.** These are Angular forms. Setting a field's value in JavaScript puts the right text on screen and the form still treats it as empty, so the button stays greyed out and nothing tells you why. Click and type like a person.
+2. **Navigate by direct link with `?project=<PROJECT_ID>` on the end.** That lands you in the right project every time and skips the whole search-and-drift problem.
+3. **The project ID is not the project name.** Google generates the ID: two random words, some digits and a suffix, nothing like the name that was typed. Read it off the project list and use it in every URL.
+4. **Check which element you are typing into.** A stale copy of a field can linger in the page while the live one sits inside the dialog. Ten minutes were lost to typing confidently into the wrong box, with the correct text visible on screen the whole time.
 
-## Step 2.3 — The consent screen
+## Step 2.2 — Create the project
 
-Left menu, **Google Auth Platform** (older accounts still call this the OAuth consent screen).
+Go to `https://console.cloud.google.com/projectcreate`, put a name they will recognise (their company plus "AI"), and click **Create**.
 
-1. User type: **External**. This sounds wrong and is correct. It only means the app isn't restricted to one company's internal directory.
-2. App name: something they'll recognise on the sign-in screen. Their company name is fine.
-3. Support email and developer email: their own address.
-4. Save through to the end.
+**Then find the project ID, because Google will not show it to you.** After Create, the console drops you on some *other* project's dashboard, not the new one. Open `https://console.cloud.google.com/cloud-resource-manager`, expand the organisation row (the button is labelled "Toggle node"), and read the ID from the row next to the name. Hold onto it; every URL below needs it.
 
-## Step 2.4 — HARD GATE: publish it to production
+## Step 2.3 — Switch on the services
 
-**This step is not optional and it cannot be left as a follow-up.** Do not continue past it, do not let the session end with it undone, and do not accept "I'll do that later."
+One direct link each. Click **Enable** on each page and wait for it to land on the metrics screen.
 
-On the same Google Auth Platform screen there is a **Publishing status**. A new app starts in **Testing**. Google kills the connection for any app left in Testing after exactly **7 days**, silently, with no warning to them and no error you will see. It simply stops working a week later, usually while nobody is around to fix it.
+```
+https://console.cloud.google.com/apis/library/drive.googleapis.com?project=<ID>
+https://console.cloud.google.com/apis/library/docs.googleapis.com?project=<ID>
+https://console.cloud.google.com/apis/library/sheets.googleapis.com?project=<ID>
+https://console.cloud.google.com/apis/library/slides.googleapis.com?project=<ID>
+```
 
-Have them click **Publish app** and confirm, so the status reads **In production**.
+Slides only if they use it. **There are two Enable buttons in the page and one of them is invisible**, so pick the one that actually renders rather than the first match.
 
-Then ask them to read the words on their screen back to you. Do not proceed until they have said "In production".
+## Step 2.4 — The consent screen
 
-They will see a note about the app being unverified, and Google will show a "Google hasn't verified this app" warning when they sign in. **That is fine and expected.** They are connecting their own account to their own project. Verification is for apps distributed to strangers. Tell them this before they hit it, so the warning doesn't scare them off mid-flow.
+`https://console.cloud.google.com/auth/overview?project=<ID>` then **Get started**. It is a four-step wizard on one page, and the order matters:
 
-*(Learned the hard way on a live client setup on 7/29/26: the warning appeared on screen, the session ran out of time, and five inboxes were set to die eight days later while the client was on a plane.)*
+1. **App Information.** App name (their company is fine), then **User support email — this is a dropdown, not a text box.** Open it and pick their address. Skipping it does not complain here; it fails at the very end with "An email address must be selected", after you have filled in everything else. Then **Next**.
+2. **Audience.** Choose **External**. This sounds wrong and is right: it only means the app is not restricted to one company's internal directory. On a personal Gmail account External is the only option anyway. Then **Next**.
+3. **Contact Information.** Type their email and press Enter so it becomes a chip. Then **Next**.
+4. **Finish.** Tick **I agree to the Google API Services: User Data Policy**, then click **Continue**, and only then **Create**.
 
-## Step 2.5 — Create the sign-in credential
+**That Continue button is the single easiest thing to miss in this whole run.** Create sits right next to it and looks like the finish line. Skip Continue and the wizard quietly does nothing: no error, no change, and the Audience page still says "Google Auth Platform not configured yet". If you land back on that message, this is why.
 
-Left menu, **Credentials**, then **Create credentials**, then **OAuth client ID**.
+When it works, the page redirects to `/auth/overview`.
 
-1. Application type: **Desktop app**.
-2. Name it anything.
-3. Create, then **Download JSON**. It lands in their Downloads folder as a long `client_secret_….json`.
+## Step 2.5 — HARD GATE: publish it to production
 
-Then put it where the tool looks for it. Claude runs this, not the member:
+**Not optional, and never a follow-up.** Do not continue past it, do not let the session end with it undone, and do not accept "I'll do that later."
+
+Go to `https://console.cloud.google.com/auth/audience?project=<ID>`. Read the **Publishing status** line. A new app says **Testing**. Google kills the connection for any app left in Testing after exactly **7 days**, silently, with no warning to them and no error you will see. It stops working a week later, usually while nobody is around to fix it.
+
+Click **Publish app**, then **Confirm** on the "Push to production?" dialog.
+
+**Then verify it, do not ask them.** Re-read the Publishing status line on the page. It must now say **In production**, with a "Back to testing" button beside it. That string is the proof. A run where you could not read those two words has not passed this gate, whatever anyone believes happened.
+
+They will see "Google hasn't verified this app" when they sign in next. **That is fine and expected.** They are connecting their own account to their own project; verification is for apps handed out to strangers. Tell them before they hit it, so the warning doesn't scare them off mid-flow.
+
+*(Learned the hard way on a live client setup on 7/29/26: the warning appeared, the session ran out of time, and five inboxes were set to die eight days later while the client was on a plane.)*
+
+## Step 2.6 — Create the sign-in credential
+
+Go to `https://console.cloud.google.com/auth/clients/create?project=<ID>`.
+
+1. **Application type** is a dropdown. Choose **Desktop app**.
+2. Leave the generated name alone and click **Create**.
+3. A dialog appears with the Client ID, the Client secret, and a **Download JSON** button. Click Download JSON.
+
+**The dialog says the secret can never be viewed or downloaded again once closed, and it means it.** Grab the file before anything else. If it does get closed, do not hunt for the secret: go to the Clients list and add a new one.
+
+The browser tool saves downloads to `.playwright-mcp/` inside the working folder. Move it into place and lock it down without ever opening it:
 
 ```bash
 mkdir -p "$HOME/.config/gws"
-mv "$(ls -t "$HOME"/Downloads/client_secret_*.json | head -1)" "$HOME/.config/gws/client_secret.json"
+mv "$(ls -t .playwright-mcp/client*secret*.json | head -1)" "$HOME/.config/gws/client_secret.json"
 chmod 600 "$HOME/.config/gws/client_secret.json"
 ls -l "$HOME/.config/gws/client_secret.json"
 ```
 
-**That file is a password. Never open it, never print it, never paste its contents anywhere, never commit it.** Confirm it exists by listing it, which is what the `ls` above is for. If you ever need to prove it is valid, check the file size, not the contents.
+If the member downloaded it themselves it will be in `~/Downloads` instead; the same `mv` works with that path.
 
-## Step 2.6 — Sign in
+**That file is a password. Never open it, never print it, never paste it anywhere, never commit it.** Prove it exists with `ls`, never with `cat`. A correct one is about 400 bytes and its top-level key is `installed`.
+
+## Step 2.7 — Sign in
 
 ```bash
 gws auth login --services drive,docs,sheets,slides
@@ -179,7 +210,7 @@ A browser opens. They sign in **with the same work account from Part 1** and app
 
 If the browser doesn't open, or it opens in the wrong profile, have them copy the address from the terminal into the browser they're already signed into.
 
-## Step 2.7 — Prove it works, with a real call
+## Step 2.8 — Prove it works, with a real call
 
 Not "it should be connected now". Run something and read back what comes out:
 
@@ -190,8 +221,8 @@ gws drive files list --params '{"pageSize": 5}' --format table
 
 The second one must return **actual file names they recognise**. If it returns an error or an empty list, the connection is not done, whatever the status says. The usual causes, in order:
 
-1. **They signed in with the wrong Google account** (personal instead of work). `gws auth logout`, then Step 2.6 again, watching which account they pick.
-2. **The APIs from Step 2.2 were enabled in a different project** than the credential came from. Check the project name in the top bar of the console matches.
+1. **They signed in with the wrong Google account** (personal instead of work). `gws auth logout`, then Step 2.7 again, watching which account they pick.
+2. **The services from Step 2.3 were switched on in a different project** than the credential came from. This is the most likely cause and it is invisible: re-open the API link with `?project=<ID>` and confirm it says Manage rather than Enable.
 3. **Their company admin blocks third-party apps.** The error will mention access being blocked by an administrator. This is not fixable from here; it needs their IT.
 
 Then prove the thing they actually came for. Open one of their real Google Docs and read a line back to them:
@@ -200,13 +231,13 @@ Then prove the thing they actually came for. Open one of their real Google Docs 
 gws drive files list --params '{"q": "mimeType='\''application/vnd.google-apps.document'\''", "pageSize": 3}' --format table
 ```
 
-## Step 2.8 — Write it down
+## Step 2.9 — Write it down
 
 Add a Google row to `CONNECTIONS.md` recording what is connected (Drive, Docs, Sheets, Slides), which account it is connected as, and today's date. Never write the credential itself, or any part of it.
 
 Then add one dated line to the same row: **"Publishing status confirmed In production on <date>."** If for any reason it was NOT confirmed, write that instead, in those words, and tell the user plainly that the connection will stop working in a week unless it gets published. Never record a hope as a fact.
 
-## Step 2.9 — Prove it again in eight days
+## Step 2.10 — Prove it again in eight days
 
 A connection that works today and dies on day seven is worse than one that never worked, because nobody is watching for it. Before you finish, tell the user in one line: *"I'll re-check this the next time we work together after <date + 8 days>, so we know it stuck."*
 
@@ -217,7 +248,7 @@ Then make that real rather than a promise: add the check to their own notes so a
 ## Rules that don't bend
 
 1. **Never open, print, paste or commit `client_secret.json` or anything under `~/.config/gws/`.** They are live credentials. Prove existence with `ls`, never with `cat`.
-2. **Part 2's publishing step is a gate, not a note.** A run that ends with the app in Testing has not succeeded, no matter how well the sign-in went.
+2. **Part 2's publishing step is a gate, not a note, and it is verified by reading the words "In production" off the page.** A run that ends with the app in Testing has not succeeded, no matter how well the sign-in went, and a member's recollection is not the check.
 3. **Never claim a connection works from a clean exit code.** Claim it from real file names that the user recognises.
 4. **One account, everywhere.** Part 1's Drive sign-in and Part 2's account must match, or half their work is visible and half isn't, in a way that is genuinely hard to spot later.
 5. **Part 1 is allowed to be the whole answer.** If most of their documents are Word and Excel, saying "you don't need Part 2" is the right outcome, not a failed run.
@@ -229,3 +260,7 @@ Then make that real rather than a promise: add the check to their own notes so a
 - **Windows mounts Drive on a lettered drive**, usually `G:`, which in the terminal is `/g`. Home-directory checks alone will miss it entirely.
 - **VS Code reads what's installed once, at launch.** Anything connected while it was already open is invisible until a full quit (File then Exit on Windows, not the X).
 - **A managed company Google account can block all of Part 2 at the admin level.** You find out at the sign-in step, not before. Ask whether it is a company-managed account before starting, so the possibility is named up front rather than discovered as a failure.
+- **Google's console fights scripted input, and it fails silently when it wins (walked live 8/9/26).** Setting a field's value in JavaScript renders the right text and leaves the form invalid, so the button stays greyed with no message. Real clicks and real keystrokes work. The destructive dialogs are the worst of it: the project shutdown box keeps a stale copy of its confirmation field in the page, so you can type the project ID perfectly, watch it appear on screen, and still be filling in the wrong element.
+- **The consent wizard's Continue button is a trap.** On the Finish step, Continue and Create sit side by side and Create looks like the end. Skip Continue and Create does nothing at all: no error, no change, and the only symptom is the Audience page still reading "not configured yet" minutes later.
+- **The support email on the consent screen is a dropdown that fails at the far end.** Leave it unset and the wizard lets you fill in every later step before refusing with "An email address must be selected".
+- **The OAuth secret is genuinely one-shot.** The creation dialog says the secret can never be viewed or downloaded again, and that is literal. If it closes, do not go looking: add a new client.
