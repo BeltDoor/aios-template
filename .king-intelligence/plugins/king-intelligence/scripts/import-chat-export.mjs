@@ -52,6 +52,7 @@ function parseArgs(argv) {
     if (a === "--repo") args.repo = argv[++i];
     else if (a === "--archive-dir") args.archiveDir = argv[++i];
     else if (a === "--map-file") args.mapFile = argv[++i];
+    else if (a === "--to") args.to = argv[++i];
     else args._.push(a);
   }
   return args;
@@ -208,11 +209,45 @@ async function* topLevelElements(jsonPath) {
   }
 }
 
+// ---------- manifest detection (Claude's newer export delivers a manifest + several one-time links) ----------
+
+function maybeManifest(inputPath) {
+  if (!/\.json$/i.test(inputPath)) return null;
+  const m = loadJSON(path.resolve(inputPath), null);
+  if (!m || !Array.isArray(m.data_files)) return null;
+  return {
+    manifest: true,
+    note: "This is a Claude export MANIFEST, not the data itself. Each export_url works ONCE and only from the user's logged-in browser (open each URL in its own real browser tab and catch the download event — anchor clicks and plain fetches get the app shell instead). Download the zips, then run convert on conversations-*.zip (and projects-*.zip if present).",
+    files: m.data_files.map((f) => ({ filename: f.filename, category: f.category, export_url: f.export_url })),
+  };
+}
+
+// ---------- projects (Claude ships projects.json OR a projects/ dir of per-project files) ----------
+
+function collectProjects(extractDir) {
+  const out = [];
+  const projFile = findFile(extractDir, "projects.json");
+  if (projFile) for (const p of loadJSON(projFile, []) || []) out.push(p);
+  for (const base of [extractDir, ...readdirSync(extractDir).map((e) => path.join(extractDir, e))]) {
+    const dir = path.join(base, "projects");
+    let st; try { st = statSync(dir); } catch { continue; }
+    if (!st.isDirectory()) continue;
+    for (const f of readdirSync(dir).filter((f) => f.endsWith(".json"))) {
+      const p = loadJSON(path.join(dir, f), null);
+      if (p && (p.name || p.uuid)) out.push(p);
+    }
+  }
+  const seen = new Set();
+  return out.filter((p) => { const k = p.uuid || p.name; if (seen.has(k)) return false; seen.add(k); return true; });
+}
+
 // ---------- format detection ----------
 
 async function detectFormat(extractDir) {
   const convPath = findFile(extractDir, "conversations.json");
   if (!convPath) {
+    // a projects-only zip (Claude's newer multi-zip export) is still importable
+    if (collectProjects(extractDir).length) return { format: "claude", convPath: null };
     const listing = readdirSync(extractDir).filter((f) => f !== ".extracted").slice(0, 20);
     fail(`no conversations.json in this zip — found: ${listing.join(", ") || "(empty)"}. This doesn't look like a ChatGPT or Claude export.`);
   }
@@ -390,11 +425,13 @@ function conversationMarkdown(conv, source, attachRel) {
 // ---------- commands ----------
 
 async function cmdInspect(zipPath) {
+  const manifest = maybeManifest(zipPath);
+  if (manifest) { console.log(JSON.stringify(manifest, null, 2)); return; }
   const { dir } = await extractZip(zipPath);
   const { format, convPath } = await detectFormat(dir);
   let count = 0, minDate = null, maxDate = null;
   const projects = new Set();
-  for await (const raw of topLevelElements(convPath)) {
+  for await (const raw of convPath ? topLevelElements(convPath) : []) {
     count++;
     const c = format === "chatgpt" ? normalizeChatgpt(raw) : normalizeClaude(raw);
     const d = ymd(c.started);
@@ -404,9 +441,7 @@ async function cmdInspect(zipPath) {
     }
     if (c.project) projects.add(String(c.project));
   }
-  const projFile = findFile(dir, "projects.json");
-  let namedProjects = [];
-  if (projFile) namedProjects = (loadJSON(projFile, []) || []).map((p) => p.name).filter(Boolean);
+  const namedProjects = collectProjects(dir).map((p) => p.name).filter(Boolean);
   console.log(JSON.stringify({
     format,
     zip: path.resolve(zipPath),
@@ -418,6 +453,8 @@ async function cmdInspect(zipPath) {
 }
 
 async function cmdConvert(zipPath, args) {
+  const manifest = maybeManifest(zipPath);
+  if (manifest) { console.log(JSON.stringify(manifest, null, 2)); return; }
   const root = repoRoot(args);
   const { dir, id: exportId } = await extractZip(zipPath);
   const { format, convPath } = await detectFormat(dir);
@@ -436,7 +473,7 @@ async function cmdConvert(zipPath, args) {
   const matchedFiles = new Set();
   let unmatchedAttachments = 0;
 
-  for await (const raw of topLevelElements(convPath)) {
+  for await (const raw of convPath ? topLevelElements(convPath) : []) {
     let conv;
     try {
       conv = format === "chatgpt" ? normalizeChatgpt(raw) : normalizeClaude(raw);
@@ -520,14 +557,16 @@ async function cmdConvert(zipPath, args) {
   }
 
   // Claude projects: write instructions + docs into staging/projects/
+  // (arrives as projects.json OR a projects/ folder of per-project files, possibly in its own zip)
   let projectsOut = [];
-  const projFile = format === "claude" ? findFile(dir, "projects.json") : null;
-  if (projFile) {
-    for (const p of loadJSON(projFile, []) || []) {
-      if (!p || !p.name) continue;
-      const pdir = path.join(staging, "projects", slug(p.name));
+  if (format === "claude") {
+    for (const p of collectProjects(dir)) {
+      if (!p) continue;
+      // starter projects can ship with an empty name — keep them, don't silently drop
+      const pname = p.name || `untitled-project-${String(p.uuid || "x").replace(/-/g, "").slice(0, 8)}`;
+      const pdir = path.join(staging, "projects", slug(pname));
       mkdirSync(pdir, { recursive: true });
-      const info = ["---", `type: imported-project`, `source: claude`, `title: ${yamlEscape(p.name)}`, `created: ${ymd(p.created_at)}`, "---", "", `# ${p.name}`, "", p.description || ""];
+      const info = ["---", `type: imported-project`, `source: claude`, `title: ${yamlEscape(pname)}`, `created: ${ymd(p.created_at)}`, "---", "", `# ${pname}`, "", p.description || ""];
       if (p.prompt_template) info.push("", "## Project instructions", "", p.prompt_template);
       writeFileSync(path.join(pdir, "project-instructions.md"), info.join("\n"));
       let docCount = 0;
@@ -536,7 +575,7 @@ async function cmdConvert(zipPath, args) {
         writeFileSync(path.join(pdir, slug(d.filename, 80) + ".md"), `# ${d.filename}\n\n${d.content || ""}`);
         docCount++;
       }
-      projectsOut.push({ name: p.name, docs: docCount, folder: `${stagingRel}/projects/${slug(p.name)}` });
+      projectsOut.push({ name: pname, docs: docCount, folder: `${stagingRel}/projects/${slug(pname)}` });
     }
   }
 
@@ -635,6 +674,73 @@ function cmdMap(args) {
   console.log(JSON.stringify({ map: mapRel, conversations: Object.keys(ledger).length, destinations: dests.length }, null, 2));
 }
 
+function resolveId(ledger, idOrId8) {
+  if (ledger[idOrId8]) return idOrId8;
+  const hits = Object.entries(ledger).filter(([, e]) => e.file && e.file.includes(`--${idOrId8}.md`));
+  return hits.length === 1 ? hits[0][0] : null;
+}
+
+// remove: move conversations OUT of the repo (e.g. private ones to a personal vault)
+// and DELIST them — they disappear from the ledger and therefore from the map.
+// usage: remove <ids.json | id8,id8,...> --to </abs/outside/dir> [--repo <dir>]
+function cmdRemove(target, args) {
+  const root = repoRoot(args);
+  const toDir = args.to;
+  if (!toDir || !path.isAbsolute(toDir)) fail("remove needs --to <absolute folder OUTSIDE the repo> for the destination");
+  if (path.resolve(toDir).startsWith(root + path.sep)) fail("remove's --to must be OUTSIDE the repo — use assign for moves within it");
+  const archiveRel = args.archiveDir || ARCHIVE_REL;
+  const ledgerPath = path.join(root, archiveRel, ".import-ledger.json");
+  const ledger = loadJSON(ledgerPath, null);
+  if (!ledger) fail("no ledger — run convert first");
+  let ids;
+  if (existsSync(path.resolve(target))) {
+    const parsed = loadJSON(path.resolve(target), null);
+    if (!Array.isArray(parsed)) fail("remove's ids file must be a JSON array of ids");
+    ids = parsed.map((x) => (typeof x === "string" ? x : x.id));
+  } else ids = target.split(",").map((s) => s.trim()).filter(Boolean);
+  mkdirSync(toDir, { recursive: true });
+  const moved = [], missing = [];
+  for (const raw of ids) {
+    const id = resolveId(ledger, raw);
+    const entry = id && ledger[id];
+    if (!entry) { missing.push(raw); continue; }
+    const src = path.join(root, entry.destination || entry.file);
+    if (!existsSync(src)) { missing.push(raw); continue; }
+    let dest = path.join(toDir, path.basename(src));
+    while (existsSync(dest)) dest = dest.replace(/\.md$/, "x.md");
+    renameSync(src, dest);
+    delete ledger[id]; // delisted: gone from the ledger, so gone from the map
+    moved.push(path.basename(dest));
+    writeFileSync(ledgerPath, JSON.stringify(ledger, null, 2));
+  }
+  console.log(JSON.stringify({ movedOut: moved.length, to: toDir, delisted: moved.length, missing, note: "re-run the map command to drop them from the map file" }, null, 2));
+}
+
+// peek: the title + FIRST USER LINE of a conversation, without ever opening the
+// whole file into a session (one huge message can be tens of thousands of characters).
+// usage: peek <id8[,id8,...]> [--repo <dir>]
+function cmdPeek(target, args) {
+  const root = repoRoot(args);
+  const archiveRel = args.archiveDir || ARCHIVE_REL;
+  const ledger = loadJSON(path.join(root, archiveRel, ".import-ledger.json"), null);
+  if (!ledger) fail("no ledger — run convert first");
+  const out = [];
+  for (const raw of target.split(",").map((s) => s.trim()).filter(Boolean)) {
+    const id = resolveId(ledger, raw);
+    const entry = id && ledger[id];
+    if (!entry) { out.push({ id: raw, error: "not in ledger" }); continue; }
+    const p = path.join(root, entry.destination || entry.file);
+    let firstUserLine = "";
+    try {
+      const text = readFileSync(p, "utf8");
+      const m = text.match(/^## You[^\n]*\n\n([^\n]*)/m);
+      firstUserLine = (m ? m[1] : "").slice(0, 200);
+    } catch { firstUserLine = "(file unreadable)"; }
+    out.push({ id: raw, title: entry.title, date: entry.date, messages: entry.messages, firstUserLine });
+  }
+  console.log(JSON.stringify(out, null, 2));
+}
+
 function cmdStatus(args) {
   const root = repoRoot(args);
   const archiveRel = args.archiveDir || ARCHIVE_REL;
@@ -660,10 +766,12 @@ try {
   if (cmd === "inspect" && target) await cmdInspect(target);
   else if (cmd === "convert" && target) await cmdConvert(target, args);
   else if (cmd === "assign" && target) cmdAssign(target, args);
+  else if (cmd === "remove" && target) cmdRemove(target, args);
+  else if (cmd === "peek" && target) cmdPeek(target, args);
   else if (cmd === "map") cmdMap(args);
   else if (cmd === "status") cmdStatus(args);
   else {
-    console.error("usage: node import-chat-export.mjs <inspect|convert> <zip> | assign <plan.json> | map | status   [--repo <dir>] [--archive-dir <rel>] [--map-file <rel>]");
+    console.error("usage: node import-chat-export.mjs <inspect|convert> <zip-or-manifest.json> | assign <plan.json> | remove <ids> --to <abs-dir> | peek <id8,...> | map | status   [--repo <dir>] [--archive-dir <rel>] [--map-file <rel>]");
     process.exit(2);
   }
 } catch (e) {

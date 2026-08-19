@@ -41,6 +41,16 @@ haven't exported yet: ChatGPT → Settings → Data controls → Export data; Cl
 Privacy → Export data. The download link the email carries expires within about a day, so they
 should grab it promptly — but the zip itself, once downloaded, keeps forever.
 
+**Claude's newer export is a MANIFEST, not a zip** (proven live 8/19/26): Downloads gets a
+`manifest-<ids>.json` pointing at ~5 separate zips (conversations, projects, memories,
+design_chats, light_metadata), and **each link works exactly once, only from the user's logged-in
+browser**. Running `inspect` on the manifest prints the file list and this warning. To fetch them,
+use the user's logged-in Playwright browser, and use the ONE method that works: open each
+`export_url` in its OWN new browser tab (`page.goto`) with a `waitForEvent("download")` listener,
+then `download.saveAs()` into Downloads. Do NOT curl the links (blocked), do NOT anchor-click them
+in an existing claude.ai tab, and do NOT fetch them from page context (both return the app's web
+page and can waste the single use). Then continue with `conversations-000.zip` as the zip.
+
 ### 2. Look inside (changes nothing)
 
 ```
@@ -64,8 +74,16 @@ The engine also writes two files you will use next: `inventory.md` (one line per
 
 ### 4. One honest heads-up about sensitive information
 
-Skim a sample of the converted files (titles from `inventory.md`, plus spot-open a dozen spread
-across the date range). If real people's information is in there — client names, health details,
+Skim titles from `inventory.md`, and sample a dozen conversations spread across the date range
+using **peek, never by opening the files** — one conversation can hold a 30,000-character
+transcript that floods the session:
+
+```
+node "${CLAUDE_PLUGIN_ROOT}/scripts/import-chat-export.mjs" peek <id8,id8,...>
+```
+
+That returns each conversation's title, date, and the first line the user typed, capped short.
+Use the same command later whenever a title is too cryptic to route. If real people's information is in there — client names, health details,
 financial or ID numbers — tell the user once, plainly: roughly how much and a couple of examples of
 the *kind* of thing you saw. Then continue. One clear statement, no lecture, and do not keep
 re-raising it.
@@ -88,6 +106,11 @@ resolve every open point through AskUserQuestion rounds — one decision per que
 - Is there a date before which nothing matters? (Recommend keeping everything; old ≠ useless.)
 - Each bucket's destination, wherever it isn't obvious from their folder map.
 - The explicit "I'm not sure about these" list — show it, ask, never guess.
+- **Deeply personal conversations get their own question.** Faith, health scares, relationships,
+  private struggles: if the user keeps a separate personal vault, offer to move those OUT of this
+  repo entirely with the engine's `remove` command (below) — they leave the ledger and the map, so
+  a business repo never indexes them. If there's no separate vault, the archive is fine; just say
+  what you saw in one plain sentence.
 - Anything else the inventory raises (a person who appears constantly, a topic with no home).
 
 Keep asking until you could not build it wrong. If a bucket needs a folder that doesn't exist,
@@ -108,9 +131,26 @@ Do it in batches of roughly 25-50 conversations and check in between batches wit
 progress note. After all moves, add one line to each destination folder's CLAUDE.md:
 "N conversations imported from ChatGPT/Claude on <date> — see references/imported-chats-map.md".
 
+**Moving private conversations OUT of the repo** (when approved in step 6):
+
+```
+node "${CLAUDE_PLUGIN_ROOT}/scripts/import-chat-export.mjs" remove <id8,id8,...> --to <absolute folder outside the repo>
+```
+
+That moves the files and delists them from the ledger and map. Never hand-move these or hand-edit
+the ledger.
+
 **Projects:** a Claude export's projects arrive in the staging folder under `projects/<name>/`
-(instructions + documents). Offer each project as its own bucket; its files move with a plain move
-to the destination the user picks.
+(instructions + documents). In the newer multi-zip export they come as a separate
+`projects-*.zip` — run `convert` on that zip too (the engine accepts a projects-only zip). Offer
+each project as its own bucket; its files move with a plain move to the destination the user picks.
+
+**The other zips in a newer Claude export** — handle deliberately, never silently skip:
+- `memories-*.zip`: the app's saved memories about the user. Offer to read them and fold the still-true
+  facts into the second brain's memory system (their format varies — look before promising).
+- `design_chats-*.zip`: design-tool conversations. Offer to convert (if it parses as conversations)
+  or park the zip's contents in the archive folder; usually not worth sorting.
+- `light_metadata-*.zip`: bookkeeping only — tell the user it holds nothing worth importing, skip it.
 
 ### 8. Build the map and the memory
 
