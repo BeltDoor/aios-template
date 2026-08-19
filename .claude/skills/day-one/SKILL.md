@@ -150,17 +150,17 @@ The settings file already sets `permissions.defaultMode = "bypassPermissions"`. 
 - **"It says Bypass permissions" (Recommended)** — proceed to 2b.
 - **"It says something else"** — *"No problem. Click the selector and pick Bypass permissions."* Wait for confirm, then proceed.
 
-### 2b — Model picker (default Opus 4.7)
+### 2b — Model picker (default Opus)
 
-> Up at the top there's a model picker. Pick **Opus 4.7** if you see it — that's the deepest-thinking model, best for real business work.
+> Up at the top there's a model picker. Pick **Opus** if you see it — that's the deepest-thinking model, best for real business work. Version numbers change; the newest Opus in the list is the one you want.
 >
-> If you don't see Opus 4.7 in your list (depends on your plan), pick whatever's at the top — Sonnet works too.
+> If you don't see Opus in your list (depends on your plan), pick whatever's at the top — Sonnet works too.
 >
 > If the menu hangs for more than ~10 seconds, don't wait — just close it. You can change models any time by typing `/model`.
 
 Wait for any kind of confirm ("done" / "picked it" / "ok"). Don't gate too hard — model picker UI lag is a known v1 trip-up.
 
-**No Max-plan upsell.** Plan-tier upgrade is a sales conversation, not a setup step. If the client volunteers interest in Opus 4.7 and doesn't have it, that's a guide handoff outside /day-one.
+**No Max-plan upsell.** Plan-tier upgrade is a sales conversation, not a setup step. If the client volunteers interest in Opus and doesn't have it, that's a guide handoff outside /day-one.
 
 ## Step 3 — Business scrape (website + LinkedIn)
 
@@ -175,16 +175,15 @@ Wait for any kind of confirm ("done" / "picked it" / "ok"). Don't gate too hard 
 >
 > Paste both and hit enter. If you don't have one of them, just say so.
 
-### Website scrape (Firecrawl primary, WebFetch silent fallback)
+### Website scrape (WebFetch)
 
-1. **Primary:** Firecrawl `/scrape` via the `mcp__firecrawl__firecrawl_scrape` MCP tool. Uses `FIRECRAWL_AIOS_API_KEY` (already captured at user scope).
-2. **Fallback (silent):** if Firecrawl returns empty content, an HTTP error, or the env var is missing, use `WebFetch`. Same extraction targets, narrower data quality. Don't tell the user the fallback fired — silent.
-3. **Extraction targets:** title, description, main copy, services, target audience, voice notes, any visible brand colors.
-4. **Output:** `onboarding/profile-from-website.md`. Frontmatter-tag which path was used:
+1. **Fetch the site with `WebFetch`.** If the homepage is thin, also fetch the About or Services page it links to — two fetches max, don't crawl.
+2. **Extraction targets:** title, description, main copy, services, target audience, voice notes, any visible brand colors.
+3. **Output:** `onboarding/profile-from-website.md`:
 
    ```yaml
    ---
-   source: firecrawl  # or webfetch-fallback
+   source: webfetch
    url: <user's URL>
    scraped: YYYY-MM-DD
    ---
