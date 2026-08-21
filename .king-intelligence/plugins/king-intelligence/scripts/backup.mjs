@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // King Intelligence — always-on backup & teammate sync.
 // One script, two modes (wired in hooks.json):
-//   node backup.mjs sync            -> SessionStart: pull a teammate's latest if behind
+//   node backup.mjs sync            -> SessionStart: merge a teammate's latest if behind
 //   node backup.mjs save [--final]  -> Stop / SessionEnd: commit + push (debounced unless --final)
 //
 // Self-gates HARD: only acts inside a managed Snowball (repo root has CLAUDE.md + SKILLS.md +
@@ -10,12 +10,20 @@
 // Google Drive / Dropbox) and warns instead. ALWAYS exits 0 — a backup hook must never block a
 // session or lose work. Runs identically on Windows/Mac (Node, no shell builtins).
 //
-// SAFETY RULES (added 08/17/26 after six "cloud backup didn't finish" strandings):
+// SAFETY RULES (08/17/26 after six "cloud backup didn't finish" strandings; RULE 3 rewritten
+// 08/19/26 after the working-tree REWIND defect fired 21x in one day):
 //   1. NEVER write to a repo that is mid-rebase/merge or on a detached head. Committing onto a
-//      half-finished rebase is what stranded the work every single time.
+//      half-finished operation is what stranded the work every single time.
 //   2. NEVER stash. A stash-and-walk-away on a failed pull is what leaked 27 `ki-autosync` stashes.
-//   3. NEVER `rebase --abort` — it hard-resets a working tree that a concurrent session may be
-//      using. `rebase --quit` + a non-forced checkout instead.
+//   3. NEVER `pull --rebase`. A rebase BEGINS by checking out the upstream commit, which rewrites
+//      every locally-newer file in the LIVE working tree to the teammate's OLDER content for the
+//      whole rebase (reflog-proven: silent deletions and reverted edits, 8/18-8/19/26). Integrate
+//      with fetch + `merge @{u}` instead: merge writes ONLY paths the upstream side changed,
+//      refuses up front (touching nothing) when uncommitted edits overlap those paths, and on
+//      conflict `merge --abort` restores the exact pre-merge tree — safe here because we only
+//      merge right after committing, so that tree is our own fresh save. (`rebase --abort` stays
+//      banned: a failed rebase's tree is ALREADY rewound before you could abort; merge has no
+//      such window.)
 //   4. Take the shared lock (`<gitdir>/ki-backup.lock`, atomic mkdir; `flock` does not exist on
 //      macOS) so a dozen writers on one brain queue instead of racing. `scripts/repo-sync.sh`
 //      takes the same lock.
@@ -87,13 +95,16 @@ function doSync(root) {
   // RULE 2 — never stash to make room for a pull. A dirty tree just waits for the save path.
   if (porcelain(root).length > 0) return;
 
-  const branch = currentBranch(root);
-  const pull = git(["pull", "--rebase", "--quiet"], root);
-  if (pull.ok) {
+  // RULE 3 — merge, never `pull --rebase`. From a clean tree this fast-forwards when we have
+  // nothing local (every touched file moves FORWARD to the teammate's newer content) or makes a
+  // merge commit when we're also ahead; the next save pushes it. A file dirtied mid-flight that
+  // overlaps the merge makes git refuse before touching anything.
+  const merge = git(["merge", "--no-edit", "--no-verify", "--quiet", "@{u}"], root);
+  if (merge.ok) {
     emit(`You're current — pulled ${behind} update${behind === 1 ? "" : "s"} from your team.`);
     return;
   }
-  recoverFromFailedRebase(root, branch);
+  recoverFromFailedMerge(root);
   // stay quiet on failure; the next save / end-session handles a real conflict
 }
 
@@ -103,6 +114,13 @@ function doSave(root) {
 
   if (porcelain(root).length === 0) {
     touch(tsFile);
+    // A clean tree can still hold unpushed commits (a conflict deferral a human then resolved,
+    // or a push that failed offline). Push them so the cloud copy converges instead of waiting
+    // for the next edit. Cheap when there is nothing to push (one local git call).
+    if (aheadCount(root) > 0) {
+      const p = pushNow(root, currentBranch(root));
+      if (!p.ok) emit(pushFailMsg(p.err));
+    }
     return; // nothing to save
   }
 
@@ -114,22 +132,17 @@ function doSave(root) {
   touch(tsFile);
   if (!commit.ok) return; // nothing committed / hook race
 
-  // Integrate a teammate's work before pushing (pull --rebase fetches first).
-  // Only when an upstream exists, else the very first push has nothing to rebase onto.
-  if (hasUpstream(root)) {
-    const reb = git(["pull", "--rebase", "--quiet"], root);
-    if (!reb.ok) {
-      const conflict = /conflict|could not apply|patch failed/i.test(reb.err + reb.out);
-      recoverFromFailedRebase(root, branch); // RULE 3 — quit, never abort
-      if (conflict) {
-        emit(
-          "Your work is saved on this laptop. You and a teammate changed the same spot, so I'll sort the merge with you next time — nothing is lost."
-        );
-        return; // never force, never lose
-      }
-      // not a conflict (likely network): fall through, let the push attempt report it
-    }
+  // Fold a teammate's pushes in before pushing — by MERGE, never rebase (RULE 3). Self-gates
+  // on an upstream existing, else the very first push has nothing to integrate.
+  const integ = integrateUpstream(root);
+  if (integ.conflict) {
+    emit(
+      "Your work is saved on this laptop. You and a teammate changed the same spot, so I'll sort the merge with you next time — nothing is lost."
+    );
+    return; // never force, never lose; the tree still shows OUR content, exactly as committed
   }
+  // non-conflict failure (network, or a mid-flight write overlapping the merge — git refused
+  // and touched nothing): fall through, let the push attempt report it
 
   const push = pushNow(root, branch);
   if (!push.ok) emit(pushFailMsg(push.err));
@@ -153,30 +166,69 @@ function midOperation(root) {
   return !git(["symbolic-ref", "-q", "HEAD"], root).ok; // detached head
 }
 
-// A failed `pull --rebase` leaves the repo half-rebased and off its branch. Put it back EXACTLY
-// as it was, without a global hard reset — `--abort` and `checkout --force` both blow away files a
-// concurrent session may be writing this second. Instead: note which files the rebase mangled,
-// quit, move the branch label back over HEAD, resync the index, and restore ONLY those files.
-// Leaving the repo detached or with conflict markers in the tree is what the next auto-save then
-// commits, which is the whole stranding disease.
-function recoverFromFailedRebase(root, branch) {
+// Fold the teammate's pushes into ours without EVER rewinding the live working tree.
+// fetch + merge, never `pull --rebase` (RULE 3): merge computes the result in memory and then
+// writes ONLY paths the UPSTREAM side changed since the merge base; a path only WE changed is
+// never written, so a rewind is structurally impossible. If an uncommitted edit overlaps a
+// merge-touched path, git refuses up front and changes nothing. Returns { ok, conflict }.
+function integrateUpstream(root) {
+  if (!hasUpstream(root)) return { ok: true, conflict: false };
+  git(["fetch", "--quiet"], root);
+  if (behindCount(root) <= 0) return { ok: true, conflict: false }; // nothing to fold in
+  const merge = git(["merge", "--no-edit", "--no-verify", "--quiet", "@{u}"], root);
+  if (merge.ok) return { ok: true, conflict: false };
+  // MERGE_HEAD present = the merge started and hit real conflicts. Absent = git refused before
+  // touching anything (dirty overlap / network / odd state) and there is nothing to undo.
+  const conflict = existsSync(join(gitDir(root), "MERGE_HEAD"));
+  recoverFromFailedMerge(root);
+  return { ok: false, conflict };
+}
+
+// A conflicted merge must never be left behind — midOperation() would (rightly) pause every
+// future backup. `merge --abort` restores the EXACT pre-merge tree, which is safe here because
+// we only merge right after committing: the pre-merge tree is our own fresh save. It also
+// PRESERVES files a concurrent writer dirtied that the merge didn't touch. The one case it
+// refuses ("entry not uptodate"): a path the merge staged clean that a concurrent writer then
+// edited inside this sub-second window. For those: snapshot the writer's bytes in memory, sync
+// the path to the index (merged content — FORWARD, never older), abort, then put the bytes
+// back as ordinary unstaged edits for the next save to commit. Nothing lost, nothing mid-merge.
+function recoverFromFailedMerge(root) {
   const g = gitDir(root);
-  const rebasing =
-    existsSync(join(g, "rebase-merge")) || existsSync(join(g, "rebase-apply"));
-  const detached = !git(["symbolic-ref", "-q", "HEAD"], root).ok;
-  if (!rebasing && !detached) return; // nothing to undo
+  if (!existsSync(join(g, "MERGE_HEAD"))) return; // merge never touched the tree
+  if (git(["merge", "--abort"], root).ok) return; // the common case: exact restore
 
-  const mangled = (git(["diff", "--name-only", "--diff-filter=U"], root).out || "")
-    .trim()
-    .split("\n")
-    .filter(Boolean);
+  const saved = [];
+  for (const f of dirtyNonConflictPaths(root)) {
+    try {
+      saved.push({ f, data: readFileSync(join(root, f)) });
+    } catch {}
+    git(["checkout", "-q", "--", f], root); // index = merged = forward content, never older
+  }
+  const aborted = git(["merge", "--abort"], root).ok;
+  for (const s of saved) {
+    try {
+      writeFileSync(join(root, s.f), s.data);
+    } catch {}
+  }
+  if (!aborted) warnMidOperationOnce(); // last resort: defer to a human; work untouched on disk
+}
 
-  if (rebasing) git(["rebase", "--quit"], root);
-  if (!branch || branch === "HEAD") return; // no branch to go home to; the guard blocks future saves
-
-  git(["symbolic-ref", "HEAD", "refs/heads/" + branch], root); // label back on the branch
-  git(["reset", "--mixed", "-q", "HEAD"], root); // index matches the branch; working tree untouched
-  for (const f of mangled) git(["checkout", "-q", "HEAD", "--", f], root); // drop the marker soup
+// Worktree-side edits (concurrent writers) on paths that are NOT merge-conflicted. Conflicted
+// paths are excluded on purpose: --abort resets them cleanly, and resurrecting their contents
+// would re-plant conflict-marker soup for the next auto-save to commit (the stranding disease).
+function dirtyNonConflictPaths(root) {
+  const raw = git(["status", "--porcelain", "-z"], root).out || "";
+  const parts = raw.split("\0");
+  const out = [];
+  for (let i = 0; i < parts.length; i++) {
+    const e = parts[i];
+    if (!e || e.length < 4) continue;
+    const x = e[0], y = e[1], f = e.slice(3);
+    if (x === "R" || x === "C") i++; // rename/copy entries carry a second, origin path
+    if (x === "U" || y === "U" || (x === "A" && y === "A") || (x === "D" && y === "D")) continue;
+    if (y === "M" || y === "D" || y === "T") out.push(f);
+  }
+  return out;
 }
 
 function takeLock(root) {
@@ -248,13 +300,18 @@ function behindCount(root) {
   return r.ok ? parseInt((r.out || "0").trim(), 10) || 0 : 0;
 }
 
+function aheadCount(root) {
+  if (!hasUpstream(root)) return 0;
+  const r = git(["rev-list", "--count", "@{u}..HEAD"], root);
+  return r.ok ? parseInt((r.out || "0").trim(), 10) || 0 : 0;
+}
+
 function pushNow(root, branch) {
   let p = git(["push", "--quiet"], root);
   if (!p.ok && /non-fast-forward|fetch first|rejected/i.test(p.err)) {
-    // a teammate pushed between our rebase and our push: integrate once, try once more
-    const reb = git(["pull", "--rebase", "--quiet"], root);
-    if (reb.ok) p = git(["push", "--quiet"], root);
-    else recoverFromFailedRebase(root, branch || currentBranch(root));
+    // a teammate pushed between our merge and our push: fold theirs in once (merge, never
+    // rebase — RULE 3) and try once more. A conflict here just defers to the next save.
+    if (integrateUpstream(root).ok) p = git(["push", "--quiet"], root);
   }
   if (!p.ok) {
     const b = branch || currentBranch(root) || "HEAD";

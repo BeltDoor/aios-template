@@ -8,6 +8,7 @@
 // exits 0. Set KI_AUTOUPDATE_DRYRUN=1 (+ optional KI_AUTOUPDATE_FAKE_LATEST=x.y.z) to exercise the
 // message paths without touching the real install.
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, rmSync } from "node:fs";
+// (rmSync + existsSync are also used by the update-failure record added 8/21/26)
 import { execSync } from "node:child_process";
 import { join } from "node:path";
 import { homedir } from "node:os";
@@ -102,9 +103,30 @@ try {
   // throttle
   const marker = join(data, ".last-autocheck");
   const now = Date.now();
-  let last = 0; try { last = parseInt(readFileSync(marker, "utf8"), 10) || 0; } catch {}
   const TWENTY_H = 20 * 60 * 60 * 1000;
-  if (now - last < TWENTY_H) process.exit(0);
+  const ONE_H = 60 * 60 * 1000;
+  // marker format is "<epoch>" (old) or "<epoch>:<waitMs>" (new). A run that FAILED writes the
+  // short wait, so a machine that cannot update retries within the hour instead of once a day.
+  // A machine can otherwise sit versions behind for weeks while in daily use, silently.
+  let last = 0, wait = TWENTY_H;
+  try {
+    const raw = String(readFileSync(marker, "utf8")).trim().split(":");
+    last = parseInt(raw[0], 10) || 0;
+    if (raw[1]) wait = parseInt(raw[1], 10) || TWENTY_H;
+  } catch {}
+  if (now - last < wait) process.exit(0);
+
+  // Whatever happens below, leave a record of it. It rides up to the portal on the next snapshot,
+  // which is the only way the owner ever finds out a client's updates are failing.
+  const errPath = join(data, "time-saved", "update-error.json");
+  const noteFailure = (stage, detail) => {
+    try {
+      mkdirSync(join(data, "time-saved"), { recursive: true });
+      writeFileSync(errPath, JSON.stringify({ stage, detail: String(detail || "").slice(0, 300), at: new Date().toISOString() }));
+    } catch {}
+  };
+  const clearFailure = () => { try { if (existsSync(errPath)) rmSync(errPath, { force: true }); } catch {} };
+  const stamp = (waitMs) => { try { mkdirSync(data, { recursive: true }); writeFileSync(marker, now + ":" + waitMs); } catch {} };
 
   // gate: only keyed clients can pull from the marketplace. A free-starter / offline client
   // makes the catalog refresh throw; we swallow it and fall back to the pattern nudge.
@@ -115,7 +137,10 @@ try {
   // to the unseen-suggestion path and never apply anything).
   let catalogRefreshed = false;
   if (DRY) { catalogRefreshed = true; }
-  else { try { execSync('claude plugin marketplace update king-intelligence', { timeout: 30000, stdio: "ignore" }); catalogRefreshed = true; } catch {} }
+  else {
+    try { execSync('claude plugin marketplace update king-intelligence', { timeout: 30000, stdio: "ignore" }); catalogRefreshed = true; }
+    catch (e) { noteFailure("marketplace-refresh", e && e.message); }
+  }
 
   let msg = null;
   if (catalogRefreshed) {
@@ -124,7 +149,10 @@ try {
       // SILENT APPLY: tools update on their own (the dial). Best-effort; it lands on next restart.
       let applied = false;
       if (DRY) { applied = true; }
-      else { try { execSync('claude plugin update king-intelligence@king-intelligence', { timeout: 60000, stdio: "ignore" }); applied = true; } catch {} }
+      else {
+        try { execSync('claude plugin update king-intelligence@king-intelligence', { timeout: 60000, stdio: "ignore" }); applied = true; clearFailure(); }
+        catch (e) { noteFailure("apply-update", e && e.message); }
+      }
 
       // the fresh update just restored every skill folder — re-apply the client's opt-out now
       if (applied && !DRY) pruneDisabledSkills(root, data);
@@ -141,6 +169,8 @@ try {
     }
   }
 
+  if (catalogRefreshed) clearFailure(); // reaching the marketplace at all means the rail is alive
+
   // no new version -> still surface unseen file-level suggestions (these never auto-apply).
   if (!msg) {
     const unseen = unseenPatternCount(root, data);
@@ -153,8 +183,7 @@ try {
     emit(msg);
     // record + stamp only after emitting, so a write failure never silences the next session
     try {
-      mkdirSync(data, { recursive: true });
-      writeFileSync(marker, String(now));
+      stamp(catalogRefreshed ? TWENTY_H : ONE_H);
       const cfgPath = join(data, "config.json");
       if (existsSync(cfgPath)) {
         const cfg = JSON.parse(readFileSync(cfgPath, "utf8"));
@@ -163,8 +192,9 @@ try {
       }
     } catch {}
   } else {
-    // quiet session: still stamp so we don't recheck for 20h
-    try { mkdirSync(data, { recursive: true }); writeFileSync(marker, String(now)); } catch {}
+    // quiet session: stamp so we do not recheck for 20h. But if the marketplace could not be
+    // reached at all, that is NOT a quiet session, it is a broken rail: retry within the hour.
+    stamp(catalogRefreshed ? TWENTY_H : ONE_H);
   }
 } catch {}
 process.exit(0);
