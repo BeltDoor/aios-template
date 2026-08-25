@@ -1,6 +1,6 @@
 ---
 name: install-always-on-server
-description: Set up a computer that runs your Claude all day and all night, so work happens while every machine you normally touch is asleep, and your second brain is reachable from your phone anywhere. Two paths, and Claude helps you pick with real evidence, not a sales pitch. Path 1 uses a computer you already own (a spare desktop or old laptop, costs nothing). Path 2 rents a small cloud server for a few dollars a month. Either way you finish with your second brain synced onto the always-on machine, one scheduled job proven to have run while you slept, and the door: a private connection that lets the Claude app on your phone and claude.ai read and work in your second brain with every computer of yours shut. Use when you say "set up an always-on computer", "I want Claude running 24/7", "run Claude while I sleep", "my automations stop when I close my laptop", "put Claude on my spare computer", "set up a server for Claude", "rent a server", "run this every morning without me", "I want my inbox sorted before I get up", "set up scheduled jobs", "the computer that never sleeps", or "Hetzner", even if you never say the words server or always-on. Not for simply checking on the Claude running on your main computer from your phone. That is /install-remote-control, takes two minutes, and needs no new machine. Not for browser automation either. That is /install-playwright.
+description: Set up a computer that runs your Claude all day and all night, so work happens while every machine you normally touch is asleep, and your second brain is reachable from your phone anywhere. Two paths, and Claude helps you pick with real evidence, not a sales pitch. Path 1 uses a computer you already own (a spare desktop or old laptop, costs nothing). Path 2 rents a small cloud server for a few dollars a month. Either way you finish with your second brain synced onto the always-on machine, one scheduled job proven to have run while you slept, named always-on Claude tabs (name-1, name-2, name-3) waiting in the Claude app on your phone, and the door: a private connection that lets claude.ai read and work in your second brain with every computer of yours shut. Use when you say "set up an always-on computer", "I want Claude running 24/7", "run Claude while I sleep", "my automations stop when I close my laptop", "put Claude on my spare computer", "set up a server for Claude", "rent a server", "run this every morning without me", "I want my inbox sorted before I get up", "set up scheduled jobs", "the computer that never sleeps", or "Hetzner", even if you never say the words server or always-on. Not for simply checking on the Claude running on your main computer from your phone. That is /install-remote-control, takes two minutes, and needs no new machine. Not for browser automation either. That is /install-playwright.
 allowed-tools: Bash, Read, Edit, Write
 disable-model-invocation: false
 ---
@@ -11,12 +11,13 @@ disable-model-invocation: false
 
 ## What you get
 
-When this setup is done, four things are true:
+When this setup is done, five things are true:
 
 1. **A machine runs your Claude 24 hours a day.** Your laptop can sleep, travel, and close. The work continues.
 2. **Your second brain lives on it and stays in sync with your main computer automatically**, both directions.
 3. **One scheduled job does real work while you sleep**, and it proves itself by leaving something you can see in the morning.
-4. **The door is open:** the Claude app on your phone and claude.ai on any browser can read your second brain, write to it, and start real jobs on the machine, from anywhere, with every computer of yours shut.
+4. **Your phone's Claude app shows named, always-on tabs** — `<name>-1`, `<name>-2`, `<name>-3` — full Claude sessions on the machine you can open, steer, and approve from anywhere, and that come back on their own if one dies.
+5. **The door is open:** claude.ai on any browser can read your second brain, write to it, and start real jobs on the machine, from anywhere, with every computer of yours shut.
 
 Two ways to get there. Read both before picking:
 
@@ -64,7 +65,7 @@ Then say both numbers before recommending: *"Path 1 costs you nothing and an aft
 
 1. **A Claude Pro or Max subscription.** The always-on machine bills the existing plan, zero dollars extra. That is the whole design. If the user has neither, stop here and talk it through: without a subscription the machine would bill for every single use, and this build is not designed for that.
 2. **The second brain's cloud backup is on.** Check: `git ls-remote origin` succeeds from inside the second-brain folder. Required for Path 2 (it is how the files travel); strongly recommended for Path 1. If it is off, switch it on first.
-3. **Phone apps:** Tailscale (both paths) and Termius (Path 2). Both free.
+3. **On the phone:** just the Claude app, which most users already have. Nothing else to install on the phone, either path.
 4. Path 1 only: the spare machine at hand, its charger, and its spot chosen.
 5. Path 2 only: a payment card, in the user's hands, never Claude's.
 
@@ -90,7 +91,7 @@ On Windows, install Git for Windows FIRST, before anything ever opens Claude. Ol
 
 ### Step 1.4: The private network
 
-Tailscale on this machine, the main computer, and the phone, all signed into the same Tailscale account (free). On a Mac, install it with the standalone installer from tailscale.com/download, **not** the App Store copy — only the standalone one gives the terminal the `tailscale` command that the door and its kill switch use later. Note this machine's Tailscale address (looks like `100.x.y.z`). From now on that address is its name.
+Tailscale on this machine and the main computer, both signed into the same Tailscale account (free). On a Mac, install it with the standalone installer from tailscale.com/download, **not** the App Store copy — only the standalone one gives the terminal the `tailscale` command that the door and its kill switch use later. Note this machine's Tailscale address (looks like `100.x.y.z`). From now on that address is its name.
 
 ### Step 1.5: Keep the files in sync
 
@@ -98,7 +99,7 @@ If the cloud backup is on (the normal case): give this machine its own git ident
 
 ### Step 1.6: Phone access
 
-Run `/install-remote-control` **on this machine**. The Claude app on the phone then shows this machine's session directly; two minutes, no terminal involved. One honest note: that phone path uses the normal sign-in, which expires every so often and needs a re-login at the machine. The scheduled job below does not share that problem; its token lasts a year (Step 1.7).
+Run `/install-remote-control` **on this machine**. The Claude app on the phone then shows this machine's session directly; two minutes, no terminal involved. To get the full named-tabs layout instead (`<name>-1` through `<name>-3`, each rebuilt on its own if it dies), follow Step 2.7 here — it works on this machine too once tmux is installed (Mac: `brew install tmux`). One honest note: the phone path uses the normal sign-in, which expires every so often and needs a re-login at the machine. The scheduled job below does not share that problem; its token lasts a year (Step 1.7).
 
 ### Step 1.7: The job's own sign-in
 
@@ -232,12 +233,30 @@ case $- in *i*) [ -d "$HOME/secondbrain" ] && cd "$HOME/secondbrain" ;; esac
 
 5. The toolkit ships inside the second brain, so it arrived with the clone. Prove it: start `claude` and type one slash command.
 
-### Step 2.7: Phone access (Termius)
+### Step 2.7: Phone access — named Claude tabs, always on
 
-1. Tailscale app on the phone, same account, toggled on.
-2. In Termius (free), generate the phone its own SSH key and add its public half to the server's `~/.ssh/authorized_keys`. Its own key means a lost phone can be revoked alone.
-3. Create a plain SSH host: address = the server's `100.x.y.z`, user = `<boxuser>`. **Skip any paid upsell sheet it shows** (AI features, sync); a plain SSH host and its key are free, and the identical result.
-4. Tap the host. Type `claude`. That is the whole daily flow.
+This is the daily phone experience the whole build aims at: open the Claude app and this machine's sessions are sitting there as named tabs — `<name>-1`, `<name>-2`, `<name>-3` (pick a short name for the machine; their first name or business name works) — alive around the clock with every computer of theirs shut. Same list at claude.ai/code in any browser. Three tabs so one can grind on a long job while another stays free to talk to. No terminal app on the phone, ever.
+
+1. Remote Control has to be allowed on this machine: run the Step 1 checks from `/install-remote-control` here (the four blocking privacy settings, no rerouted connection) and fix what they find the same way.
+2. The tabs need the **normal claude.ai sign-in**, not the 1-year token: run `claude auth login` in the server terminal; it prints a link — open it on the phone, approve, paste the code back. **The number one trap in this build: the 1-year token from Step 2.5, if it is in a tab's environment, silently blocks Remote Control AND flips billing to pay-per-use.** That token is for scheduled jobs only; the launcher below unsets it on purpose, and that line must never be "cleaned up."
+3. `apt install -y tmux` — the shelf the tabs sit on.
+4. Create `~/bin/tabs.sh`, the keeper. It builds one tmux window per tab, each running Claude with Remote Control on, inside the second brain, with the job token unset. Safe to run any time; it only rebuilds what is missing:
+
+```bash
+#!/bin/bash
+COUNT=3; PREFIX="<name>"; DIR="$HOME/secondbrain"
+tmux has-session -t rc 2>/dev/null || tmux new-session -d -s rc -c "$DIR"
+for i in $(seq 1 "$COUNT"); do
+  tab="$PREFIX-$i"
+  tmux list-windows -t rc -F '#W' | grep -qx "$tab" || tmux new-window -t rc -n "$tab" -c "$DIR"
+  tmux list-panes -t "rc:$tab" -F '#{pane_current_command}' | grep -q claude || \
+    tmux send-keys -t "rc:$tab" "unset CLAUDE_CODE_OAUTH_TOKEN ANTHROPIC_API_KEY; claude --remote-control $tab" C-m
+done
+```
+
+5. `chmod +x` it, run it once, and schedule it every five minutes with cron. A tab that dies comes back on its own within five minutes, including after a reboot.
+6. Prove it from the phone: Claude app, Code tab — the named tabs are listed with a green dot. Open `<name>-1`, send one message, watch it answer.
+7. Two honest limits, said out loud: the tabs ride the normal sign-in, which expires every so often — when all the tabs vanish from the app at once, the two-minute fix is `claude auth login` on the server again (it is in the snag list). And the smallest 4 GB server holds three tabs comfortably but not more; do not raise the count on it.
 
 ---
 
@@ -293,7 +312,7 @@ It prints the machine's public `https://….ts.net` address. The connector addre
 
 ## Prove it is done (observables, never a clean exit code)
 
-1. **The anywhere test:** phone on cellular, Wi-Fi off. Reach the machine (Claude app session on Path 1, Termius on Path 2) and type one real slash command. It runs.
+1. **The anywhere test:** phone on cellular, Wi-Fi off. Open one of the machine's named tabs in the Claude app (Path 1 without tabs: the machine's session) and type one real slash command. It runs.
 2. **The door test:** from the claude.ai app on the phone, ask the connector to read one real file from the second brain. The contents come back.
 3. **The overnight test:** the next morning, the job's dated file exists with a timestamp from while the user slept. **This artifact is the definition of done for this whole skill.** Nothing is reported as finished until it exists.
 4. **Path 2 only:** the outside knock already failed correctly in Step 2.4, and `claude -p` answered without a login error in Step 2.5.
@@ -303,7 +322,7 @@ It prints the machine's public `https://….ts.net` address. The connector addre
 
 ### "I can't reach the server anymore" / SSH just hangs
 
-Tailscale is toggled off on the phone or laptop, or the machine rebooted before Tailscale was enabled at boot. Check the Tailscale app on both ends first, same account. A true lockout on Path 2 goes through the provider's web console, the spare key. The firewall never gets weakened.
+Tailscale is toggled off on the main computer, or the machine rebooted before Tailscale was enabled at boot. Check the Tailscale app on both machines first, same account. A true lockout on Path 2 goes through the provider's web console, the spare key. The firewall never gets weakened.
 
 ### "Invalid token" or a login error days after setup
 
@@ -329,9 +348,9 @@ The sync script is not scheduled or backed off after a conflict. Run it by hand 
 
 `ANTHROPIC_API_KEY` got set on the machine. Its mere presence silently switches Claude from the flat subscription to pay-per-use billing. Remove it from the env file; the 1-year login token is the only Claude credential that belongs there.
 
-### Termius wants money
+### The tabs vanished from the phone app
 
-An upsell sheet (AI features, cross-device sync). Close it and save the plain SSH host; hosts and keys are free, and plain SSH is the identical result.
+All at once: the normal sign-in expired — `claude auth login` on the server, two minutes, and the keeper brings the tabs back on its next run. One tab only: it died mid-job and comes back within five minutes on its own; if it never does, run `~/bin/tabs.sh` by hand and read what the window says. A tab that shows "Claude API" instead of the subscription plan means the job token leaked into its environment — the `unset` line in `tabs.sh` is missing or was edited out.
 
 ### Windows: Claude quits instantly with a wall of text
 
