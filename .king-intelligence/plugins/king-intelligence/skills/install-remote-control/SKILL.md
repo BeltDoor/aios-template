@@ -1,6 +1,6 @@
 ---
 name: install-remote-control
-description: Set up Claude Code Remote Control so you can see and steer your Claude sessions from your phone, and fix the red "Remote Control error: Remote Control initialization failed" banner. Use when you say "install remote control", "set up remote control", "put Claude on my phone", "control Claude from my phone", "continue my session from my phone", "connect my phone to Claude", "the remote control thing is broken", when the red initialization-failed message appears, or when you want to check on Claude while away from your computer, even if you never say the words remote control. Also run it again after changing Claude accounts or moving to a new computer.
+description: Set up Claude Code Remote Control so you can see and steer your Claude sessions from your phone, and fix the red "Remote Control error: Remote Control initialization failed" banner. Use when you say "install remote control", "set up remote control", "put Claude on my phone", "control Claude from my phone", "continue my session from my phone", "connect my phone to Claude", "the remote control thing is broken", when the red initialization-failed message appears, or when you want to check on Claude while away from your computer, even if you never say the words remote control. Also run it again after changing Claude accounts or moving to a new computer. Not for making Claude work while the computer is off or asleep, or for a machine that runs jobs overnight on its own. That is /install-always-on-server; this skill's computer must stay on and awake to be reachable.
 allowed-tools: Bash, Read, Edit, Write
 disable-model-invocation: false
 ---
@@ -111,7 +111,9 @@ sudo pmset -c sleep 0
 powercfg /change standby-timeout-ac 0
 ```
 
-Say it plainly to the user: "Leave the computer plugged in and lid open when you want to reach it from your phone."
+Say it plainly to the user: "Leave the computer plugged in and lid open when you want to reach it from your phone." If they want to reach a Mac laptop with the lid **closed**, that takes one more setting, offered but not pushed: `sudo pmset -a disablesleep 1` (undo later with `sudo pmset -a disablesleep 0` — until then the machine never sleeps at all, wrong for a laptop that goes back in a bag). On a Windows laptop, set the lid-close action to "do nothing" in power settings; a closed lid otherwise sleeps it regardless of the command above.
+
+If what they actually want is Claude doing work while the computer is off, this skill is the wrong tool: point them at `/install-always-on-server`.
 
 ### Step 6: Phone in hand (this is the finish line)
 

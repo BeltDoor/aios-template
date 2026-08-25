@@ -14,7 +14,8 @@
 // BRAIN_DOOR_TOKEN (64 random hex characters). Optional: BRAIN_DOOR_PORT (8123),
 // BRAIN_DOOR_HOST (127.0.0.1), BRAIN_DOOR_HOME (~/.second-brain-door, holds the
 // audit log and job records), BRAIN_DOOR_ENV_FILE (a KEY=VALUE file loaded into
-// job runs), BRAIN_DOOR_CLAUDE (path to the claude binary).
+// job runs), BRAIN_DOOR_CLAUDE (path to the claude binary), BRAIN_DOOR_DENY
+// (comma-separated extra folder names to refuse, on top of the built-in list).
 //
 // Needs @modelcontextprotocol/sdk installed beside it (npm install in BRAIN_DOOR_HOME).
 
@@ -71,6 +72,16 @@ const DENY = [
   /(^|\/)\.ssh(\/|$)/,
 ];
 
+// Extra folders the owner named as private (BRAIN_DOOR_DENY=folder1,folder2).
+for (const name of String(process.env.BRAIN_DOOR_DENY || '').split(',')) {
+  const folder = name.trim().replace(/^\/+|\/+$/g, '');
+  if (!folder) continue;
+  const esc = folder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  DENY.push(new RegExp(`(^|\\/)${esc}(\\/|$)`));
+}
+
+const REAL_ROOT = fsSync.realpathSync(ROOT);
+
 class Blocked extends Error {}
 
 function safe(rel) {
@@ -83,13 +94,41 @@ function safe(rel) {
   if (DENY.some((re) => re.test('/' + inside.split(path.sep).join('/')))) {
     throw new Blocked(`Blocked path: ${inside || '.'} is on the never-share list.`);
   }
+  // A symlink inside the brain must not lead outside it (or into a denied
+  // folder): resolve the real location of the nearest existing ancestor and
+  // re-check both rules against where it actually points.
+  let probe = abs;
+  while (probe !== ROOT && !fsSync.existsSync(probe)) probe = path.dirname(probe);
+  const real = fsSync.realpathSync(probe);
+  if (real !== REAL_ROOT && !real.startsWith(REAL_ROOT + path.sep)) {
+    throw new Blocked('Path is outside the second-brain folder.');
+  }
+  const realInside = path.relative(REAL_ROOT, real);
+  if (realInside && DENY.some((re) => re.test('/' + realInside.split(path.sep).join('/')))) {
+    throw new Blocked(`Blocked path: ${inside || '.'} is on the never-share list.`);
+  }
   return { abs, rel: inside || '.' };
 }
+
+// The log records who did what, where — never a second copy of file contents.
+// Long values (file bodies, search text) are truncated to a preview.
+function auditArgs(args) {
+  const out = {};
+  for (const [k, v] of Object.entries(args || {})) {
+    const s = String(v);
+    out[k] = s.length > 200 ? `${s.slice(0, 200)}… (${Buffer.byteLength(s)} bytes)` : v;
+  }
+  return out;
+}
+
+const MAX_AUDIT_BYTES = 5_000_000;
 
 async function audit(entry) {
   const line = JSON.stringify({ at: new Date().toISOString(), ...entry }) + '\n';
   try {
-    await fs.appendFile(AUDIT, line);
+    const size = (await fs.stat(AUDIT).catch(() => ({ size: 0 }))).size;
+    if (size > MAX_AUDIT_BYTES) await fs.rename(AUDIT, AUDIT + '.1').catch(() => {});
+    await fs.appendFile(AUDIT, line, { mode: 0o600 });
   } catch {
     /* never let logging break the door */
   }
@@ -382,10 +421,10 @@ function buildServer() {
     const { name, arguments: args = {} } = req.params;
     try {
       const text = await callTool(name, args);
-      await audit({ tool: name, args, ok: true });
+      await audit({ tool: name, args: auditArgs(args), ok: true });
       return { content: [{ type: 'text', text }] };
     } catch (e) {
-      await audit({ tool: name, args, ok: false, error: e.message });
+      await audit({ tool: name, args: auditArgs(args), ok: false, error: e.message });
       return {
         content: [{ type: 'text', text: `${e instanceof Blocked ? 'Blocked' : 'Error'}: ${e.message}` }],
         isError: true,

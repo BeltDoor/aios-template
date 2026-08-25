@@ -62,7 +62,7 @@ Then say both numbers before recommending: *"Path 1 costs you nothing and an aft
 
 ## Before we start (Claude checks these)
 
-1. **A Claude Pro or Max subscription.** The always-on machine bills the existing plan, zero dollars extra. That is the whole design.
+1. **A Claude Pro or Max subscription.** The always-on machine bills the existing plan, zero dollars extra. That is the whole design. If the user has neither, stop here and talk it through: without a subscription the machine would bill for every single use, and this build is not designed for that.
 2. **The second brain's cloud backup is on.** Check: `git ls-remote origin` succeeds from inside the second-brain folder. Required for Path 2 (it is how the files travel); strongly recommended for Path 1. If it is off, switch it on first.
 3. **Phone apps:** Tailscale (both paths) and Termius (Path 2). Both free.
 4. Path 1 only: the spare machine at hand, its charger, and its spot chosen.
@@ -80,17 +80,17 @@ Permanent spot, plugged in, wired internet if possible. Then a real physical ste
 
 The part people miss: the screen may sleep, the computer must not, and on a laptop, closing the lid must do nothing.
 
-**Mac:** `sudo pmset -c sleep 0` (warn first: it asks for their computer password and nothing shows as they type; that blank prompt is normal). **Windows (PowerShell):** `powercfg /change standby-timeout-ac 0`, and set the lid-close action to "do nothing" in power settings.
+**Mac:** `sudo pmset -c sleep 0` (warn first: it asks for their computer password and nothing shows as they type; that blank prompt is normal). A Mac **laptop** that will sit with its lid closed needs one more: `sudo pmset -a disablesleep 1` — without it, closing the lid sleeps the machine no matter what else is set. Say the tradeoff: this stops the machine sleeping entirely until it is undone (`sudo pmset -a disablesleep 0`), which is exactly right for this job and wrong for a laptop that ever goes back in a bag. **Windows (PowerShell):** `powercfg /change standby-timeout-ac 0`, and set the lid-close action to "do nothing" in power settings.
 
 Also turn on automatic login, so an overnight update reboot does not strand the machine at a login screen. Say the tradeoff out loud first: anyone who sits at this machine is in without a password. For a machine in a locked home doing this job, that is usually the right trade, but it is the user's call.
 
 ### Step 1.3: Claude Code and the toolkit on it
 
-On Windows, install Git for Windows FIRST, before anything ever opens Claude. Without it Claude Code exits with a wall of technical text. Then install Claude Code, sign in normally (this machine has a screen and a browser), and set up the second brain on it the same way as the main machine: clone it from the cloud backup, then confirm the toolkit loads by typing one slash command from inside the folder.
+On Windows, install Git for Windows FIRST, before anything ever opens Claude. Older Claude Code versions quit with a wall of technical text without it, newer ones quietly fall back to a limited mode, and cloning the second brain needs Git either way. Then install Claude Code, sign in normally (this machine has a screen and a browser), and set up the second brain on it the same way as the main machine: clone it from the cloud backup, then confirm the toolkit loads by typing one slash command from inside the folder.
 
 ### Step 1.4: The private network
 
-Tailscale on this machine, the main computer, and the phone, all signed into the same Tailscale account (free). Note this machine's Tailscale address (looks like `100.x.y.z`). From now on that address is its name.
+Tailscale on this machine, the main computer, and the phone, all signed into the same Tailscale account (free). On a Mac, install it with the standalone installer from tailscale.com/download, **not** the App Store copy — only the standalone one gives the terminal the `tailscale` command that the door and its kill switch use later. Note this machine's Tailscale address (looks like `100.x.y.z`). From now on that address is its name.
 
 ### Step 1.5: Keep the files in sync
 
@@ -114,7 +114,7 @@ Then continue at **"Your one first job"** below.
 
 Say before any signup page is open: *"This is roughly five to twenty dollars a month, billed monthly, cancel anytime. You type the card in. I never see or enter payment details."*
 
-We use **Hetzner Cloud**; any similar host works. The user creates the account and pays. Then create a server: **Ubuntu 24.04**, the smallest plan with 4 GB of memory they offer. It is enough. Before checkout, Claude prepares the main computer's SSH public key so the user pastes it during creation; the server is then key-only from its first breath.
+We use **Hetzner Cloud**; any similar host works. One thing to know before starting: Hetzner reviews every new account by hand and sometimes asks for a photo ID, so the account can take hours to approve (or get declined). If the build is scheduled, create the account a day ahead; if the account gets declined, DigitalOcean or Vultr work the same way at a similar price. The user creates the account and pays. Then create a server: **Ubuntu 24.04**, the smallest plan with 4 GB of memory they offer (about six dollars a month as of late August 2026). It is enough. Before checkout, Claude prepares the main computer's SSH public key so the user pastes it during creation; the server is then key-only from its first breath.
 
 ### Step 2.2: First login and the everyday user
 
@@ -122,11 +122,13 @@ As root, once:
 
 ```bash
 apt update && apt upgrade -y
-apt install -y ufw unattended-upgrades
+apt install -y ufw unattended-upgrades git nodejs npm
 adduser <boxuser>
 usermod -aG sudo <boxuser>
 loginctl enable-linger <boxuser>
 ```
+
+(`git` carries the files in Step 2.6 and `nodejs`/`npm` run the door later; a fresh server ships with none of them.)
 
 Plain words for the user: root is the master key, and nobody works holding the master key. The everyday user is what everything runs as. "Linger" lets that user's scheduled work run with nobody logged in.
 
@@ -177,7 +179,11 @@ touch ~/.box.env && chmod 600 ~/.box.env
 # paste into the file:  CLAUDE_CODE_OAUTH_TOKEN=<the token>
 ```
 
-And make every login load it, in `~/.bashrc`: `set -a; [ -f "$HOME/.box.env" ] && . "$HOME/.box.env"; set +a`
+And make every login load it, at the **very top** of `~/.bashrc` (the stock Ubuntu file stops reading a few lines in for remote commands, so a line added at the bottom never runs for them):
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"; set -a; [ -f "$HOME/.box.env" ] && . "$HOME/.box.env"; set +a
+```
 
 4. **Prove it:** `claude -p "What is 12 times 12?"` on the server answers with no login error. That answer is also the billing proof: the subscription is paying, not a per-use bill.
 5. Merge `"hasCompletedOnboarding": true` into the server's `~/.claude.json`. Merge into the existing file, never replace it. This stops the full-screen Claude from running a first-time wizard that tries to open a browser the server does not have.
@@ -185,7 +191,7 @@ And make every login load it, in `~/.bashrc`: `set -a; [ -f "$HOME/.box.env" ] &
 
 ### Step 2.6: The second brain onto the server
 
-1. Ask before cloning: *"Is there any folder in your second brain too personal for a rented machine?"* Anything named gets excluded so it never touches the server at all.
+1. Ask before cloning: *"Is there any folder in your second brain too personal for a rented machine?"* Anything named gets excluded so it is never downloaded to the server, and it goes on the door's own refuse list later. One honest limit, said plainly: the exclusion is a strong screen, not a vault — git will fetch that folder's history if something on the server ever explicitly asks for it, so anything truly radioactive belongs out of the second brain entirely.
 2. Create a deploy key (an SSH key that unlocks only this one repository): generate it on the server, and the user pastes the public half into GitHub under the repository's Settings, Deploy keys, with **write access** ticked.
 3. Clone light, excluding what was named:
 
@@ -203,15 +209,21 @@ The separate name means every change made by this machine is recognizable at a g
 
 ```bash
 #!/bin/bash
-exec 9>"$HOME/.repo-sync.lock"; flock -n 9 || exit 0
+LOCK="$HOME/.repo-sync.lock"
+if [ -d "$LOCK" ] && [ -n "$(find "$LOCK" -mmin +30 2>/dev/null)" ]; then rmdir "$LOCK" 2>/dev/null; fi
+mkdir "$LOCK" 2>/dev/null || exit 0
+trap 'rmdir "$LOCK" 2>/dev/null' EXIT
 cd "$HOME/secondbrain" || exit 1
+BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null) || exit 1
 if [ -n "$(git status --porcelain)" ]; then git add -A; git commit -qm "auto-save (box) $(date +%m/%d/%y-%H:%M)" || true; fi
 git fetch --quiet origin || exit 0
-git pull --rebase --quiet origin main || { git rebase --abort 2>/dev/null; exit 0; }
-git push --quiet origin main || true
+git pull --rebase --quiet origin "$BRANCH" || { git rebase --abort 2>/dev/null; exit 0; }
+git push --quiet origin "$BRANCH" || true
 ```
 
-`chmod +x` it, schedule it every 30 minutes with cron, and add the auto-land block to `~/.bashrc` so every login starts inside the second brain (skills only load from inside that folder; starting Claude anywhere else looks broken):
+Two things in there are deliberate: the folder-style lock works on Mac and Linux both (the `flock` tool a Linux-only version would use does not exist on a Mac), and the branch is read from the repo instead of assuming it is called `main` (a repo whose branch is `master` would otherwise sync nothing, silently, forever).
+
+`chmod +x` it, schedule it every 30 minutes with cron, and add the auto-land block to `~/.bashrc` so every login starts inside the second brain (skills only load from inside that folder; starting Claude anywhere else looks broken). On a Path 1 Mac this block goes in `~/.zshrc` instead — Macs read a different startup file, and a `~/.bashrc` there is dead text that never runs:
 
 ```bash
 claude() { [ "$PWD" = "$HOME" ] && cd "$HOME/secondbrain"; command claude "$@"; }
@@ -224,7 +236,7 @@ case $- in *i*) [ -d "$HOME/secondbrain" ] && cd "$HOME/secondbrain" ;; esac
 
 1. Tailscale app on the phone, same account, toggled on.
 2. In Termius (free), generate the phone its own SSH key and add its public half to the server's `~/.ssh/authorized_keys`. Its own key means a lost phone can be revoked alone.
-3. Create a plain SSH host: address = the server's `100.x.y.z`, user = `<boxuser>`. **Skip the paid "AI coding mode" upsell**; plain SSH is the identical result free.
+3. Create a plain SSH host: address = the server's `100.x.y.z`, user = `<boxuser>`. **Skip any paid upsell sheet it shows** (AI features, sync); a plain SSH host and its key are free, and the identical result.
 4. Tap the host. Type `claude`. That is the whole daily flow.
 
 ---
@@ -243,7 +255,7 @@ The door lets the Claude app on the phone and claude.ai on any browser reach the
 
 Say this before building it: *"This creates one locked door on the public internet. It only opens with a long random key, it can only see your second brain, it refuses your private folder and anything secret, it writes down every knock, and there is one command that slams it shut. I will show you that command."*
 
-1. Copy the door program to the machine and install its one dependency:
+1. Copy the door program to the machine and install its one dependency. The door runs on Node.js: the Step 2.2 install already put it on a Path 2 server, but a Path 1 machine may not have it — check `node -v` first, and if it is missing install the LTS from nodejs.org (the standard installer), then reopen the terminal.
 
 ```bash
 mkdir -p ~/.second-brain-door && cd ~/.second-brain-door
@@ -260,7 +272,14 @@ echo "BRAIN_DOOR_ENV_FILE=$HOME/.box.env" >> ~/.door.env
 chmod 600 ~/.door.env
 ```
 
-3. Keep it running. Path 2: a systemd user service that loads `~/.door.env` (`EnvironmentFile=%h/.door.env`, `ExecStart=node %h/.second-brain-door/door-server.mjs`, `Restart=always`, then `systemctl --user enable --now`). Path 1 Mac: a LaunchAgent with `RunAtLoad` and `KeepAlive`. Path 1 Windows: a Task Scheduler task at logon. Prove it locally: `curl -s http://127.0.0.1:8123/healthz` prints `ok`.
+If a private folder was named in Step 2.6, or this is a Path 1 machine (which carries the whole second brain, nothing excluded), put that folder on the door's own refuse list too: `echo "BRAIN_DOOR_DENY=<folder>" >> ~/.door.env` (comma-separate several). The door always refuses a folder named `personal` plus every secret-shaped file; this line covers a private folder named anything else.
+
+3. Keep it running, and mind the one trap: the door refuses to start unless its settings file is loaded first, and only systemd knows how to load such a file on its own.
+   - **Path 2:** a systemd user service with `EnvironmentFile=%h/.door.env`, `ExecStart=/usr/bin/node %h/.second-brain-door/door-server.mjs` (confirm the path with `which node`; systemd wants the full path), `Restart=always`, then `systemctl --user enable --now`.
+   - **Path 1 Mac:** a LaunchAgent with `RunAtLoad` and `KeepAlive` whose program is one bash line that loads the settings itself, because LaunchAgents cannot read an env file: `/bin/bash -lc 'set -a; . "$HOME/.door.env"; exec node "$HOME/.second-brain-door/door-server.mjs"'`.
+   - **Path 1 Windows:** a Task Scheduler task at logon pointing at a small `door.cmd` that first `set`s the values from the settings file, then runs `node` on the script.
+
+   Prove it locally: `curl -s http://127.0.0.1:8123/healthz` prints `ok`. If it never does, the service almost certainly started without its settings loaded — re-read this step.
 4. Put it on the internet with Tailscale Funnel (needs the one-time Funnel approval in the Tailscale admin page, which Claude walks the user to):
 
 ```bash
@@ -312,7 +331,7 @@ The sync script is not scheduled or backed off after a conflict. Run it by hand 
 
 ### Termius wants money
 
-The "AI coding mode" paywall. Close the sheet and save the plain SSH host; it is the identical result free.
+An upsell sheet (AI features, cross-device sync). Close it and save the plain SSH host; hosts and keys are free, and plain SSH is the identical result.
 
 ### Windows: Claude quits instantly with a wall of text
 
