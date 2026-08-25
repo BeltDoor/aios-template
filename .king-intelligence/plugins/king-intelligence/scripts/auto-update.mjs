@@ -118,6 +118,16 @@ try {
 
   // Whatever happens below, leave a record of it. It rides up to the portal on the next snapshot,
   // which is the only way the owner ever finds out a client's updates are failing.
+  // Is this machine even ON the updatable rail? A free-starter install has only a local
+  // marketplace (king-intelligence-starter) and can never pull a release, by design. Telling
+  // those two cases apart is what keeps the short retry meaningful.
+  const onKeyedRail = (() => {
+    try {
+      const km = JSON.parse(readFileSync(join(homedir(), ".claude", "plugins", "known_marketplaces.json"), "utf8"));
+      return Object.keys(km || {}).some((k) => k === "king-intelligence");
+    } catch { return false; }
+  })();
+
   const errPath = join(data, "time-saved", "update-error.json");
   const noteFailure = (stage, detail) => {
     try {
@@ -139,7 +149,7 @@ try {
   if (DRY) { catalogRefreshed = true; }
   else {
     try { execSync('claude plugin marketplace update king-intelligence', { timeout: 30000, stdio: "ignore" }); catalogRefreshed = true; }
-    catch (e) { noteFailure("marketplace-refresh", e && e.message); }
+    catch (e) { if (onKeyedRail) noteFailure("marketplace-refresh", e && e.message); }
   }
 
   let msg = null;
@@ -183,7 +193,7 @@ try {
     emit(msg);
     // record + stamp only after emitting, so a write failure never silences the next session
     try {
-      stamp(catalogRefreshed ? TWENTY_H : ONE_H);
+      stamp(catalogRefreshed || !onKeyedRail ? TWENTY_H : ONE_H);
       const cfgPath = join(data, "config.json");
       if (existsSync(cfgPath)) {
         const cfg = JSON.parse(readFileSync(cfgPath, "utf8"));
@@ -194,7 +204,7 @@ try {
   } else {
     // quiet session: stamp so we do not recheck for 20h. But if the marketplace could not be
     // reached at all, that is NOT a quiet session, it is a broken rail: retry within the hour.
-    stamp(catalogRefreshed ? TWENTY_H : ONE_H);
+    stamp(catalogRefreshed || !onKeyedRail ? TWENTY_H : ONE_H);
   }
 } catch {}
 process.exit(0);

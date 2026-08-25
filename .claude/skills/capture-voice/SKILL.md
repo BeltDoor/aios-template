@@ -5,7 +5,7 @@ description: Captures the user's writing voice from their real sent emails and w
 
 # /capture-voice
 
-The foundational skill that builds [`/onboarding/voice-profile.md`](../../../onboarding/voice-profile.md) from the user's real sent emails. Every future draft-related skill (email, social post, SMS, customer copy) reads that profile before writing as the user.
+The foundational skill that builds [`references/voice-profile.md`](../../../references/voice-profile.md) from the user's real sent emails. Every future draft-related skill (email, social post, SMS, customer copy) reads that profile before writing as the user.
 
 ## Pre-conditions (must be true before this runs)
 
@@ -18,7 +18,7 @@ One pass, in order. Don't skip steps. If a hard gate fires, stop and resolve bef
 
 ### 1. Detect-existing gate
 
-Check whether [`/onboarding/voice-profile.md`](../../../onboarding/voice-profile.md) already exists. If it does, `AskUserQuestion`:
+Check whether [`references/voice-profile.md`](../../../references/voice-profile.md) already exists. If it does, `AskUserQuestion`:
 
 1. **"Refresh from new corpus (Recommended — voice evolves, fresh capture stays accurate)"** — proceed to Step 2 with overwrite intent (preserve original `created:`, add/update `updated:` per [`CLAUDE.md`](../../../CLAUDE.md) § Timestamps on every file you write).
 2. **"Show me what's there first, then decide"** — `Read` the existing file, display it, re-ask the question.
@@ -103,11 +103,11 @@ Show the 5-8 anti-pattern candidates as a plain list:
 
 Ask in plain chat: *"All good? Or edit / drop / add any? For example, you might want to add things like 'don't call clients guys' or 'don't use the word leverage' that wouldn't show up in your inbox but you know you want banned."*
 
-Freeform reply — again not `AskUserQuestion`, because the user might add, drop, OR edit. Target a final count of **8-12** anti-patterns (research-backed range — see [`/decisions/2026-05-24-capture-voice-spec.md`](../../../decisions/2026-05-24-capture-voice-spec.md) § 2.3).
+Freeform reply — again not `AskUserQuestion`, because the user might add, drop, OR edit. Target a final count of **8-12** anti-patterns (research-backed range).
 
 ### 8. Mechanical write — voice-profile.md (~150 line cap, 6 sections in this exact order)
 
-Write [`/onboarding/voice-profile.md`](../../../onboarding/voice-profile.md) with these six sections, in this order, no others:
+Write [`references/voice-profile.md`](../../../references/voice-profile.md) with these six sections, in this order, no others:
 
 1. **H1 + creation stamp.** Per [`CLAUDE.md`](../../../CLAUDE.md) § Timestamps:
 
@@ -175,7 +175,7 @@ If iterate keeps needing more than 2 cycles, the corpus or the spec has an issue
 
 Stage and commit ONLY the files this build touched:
 
-- `/onboarding/voice-profile.md` (new or modified)
+- `references/voice-profile.md` (new or modified)
 - [`SKILLS.md`](../../../SKILLS.md) — modify the `/capture-voice` row's status flag to `[live]` if it isn't already. (Row addition happens at install — see § Install vs invoke below.)
 
 **Do NOT add a TIME-SAVED.md row.** This skill is exempt — see § Self-ping EXEMPTION at the bottom of this file.
@@ -204,7 +204,7 @@ If the user says yes, invoke `/skill-builder` via the Skill tool in the same ses
 Per Decision 20 in [`REBUILD-PROMPT.md`](../../../../REBUILD-PROMPT.md), `/capture-voice` is installed via the trigger phrase: `pull /capture-voice from BeltDoor/aios-template main and install it`. Two moments:
 
 - **Install moment** (Claude reads BeltDoor repo, copies this SKILL.md into local `.claude/skills/capture-voice/SKILL.md`):
-  - Add a row to [`SKILLS.md`](../../../SKILLS.md): `/capture-voice — captures your writing voice from your sent emails to build /onboarding/voice-profile.md`. Status: `[live]`. Trigger phrases: `capture my voice`, `build voice profile`, `refresh my voice`.
+  - Add a row to [`SKILLS.md`](../../../SKILLS.md): `/capture-voice — captures your writing voice from your sent emails to build references/voice-profile.md`. Status: `[live]`. Trigger phrases: `capture my voice`, `build voice profile`, `refresh my voice`.
   - No TIME-SAVED row added — see § Self-ping EXEMPTION.
   - After install completes, `AskUserQuestion`:
     1. **"Yes, run /capture-voice now (Recommended — that's why you installed it)"** — invoke immediately.
@@ -243,4 +243,4 @@ No versioned files. Git history preserves prior profiles for diffing.
 
 **Why:** This is a setup / install tool, not a recurring-value skill. TIME-SAVED tracks recurring per-use time savings; a one-shot voice capture doesn't fit that model. The compounding value of `/capture-voice` surfaces downstream — every draft-related skill the user builds via `/skill-builder` saves ~5 minutes per use (the typical per-email time saved by the AI nailing voice without manual editing). `/skill-builder` should recommend `5` as the `manual_time_minutes` baseline when building draft-related skills that consume this profile.
 
-This exemption is documented in [`/decisions/2026-05-24-capture-voice-spec.md`](../../../decisions/2026-05-24-capture-voice-spec.md) § 2.12. If the exemption needs to apply to other setup tools (e.g. `/install-connector`), formalize as Decision 27 ("Setup tools are exempt from self-ping") via `ADD-ITEM-PROMPT.md` in a follow-up session.
+If the exemption needs to apply to other setup tools (e.g. `/install-connector`), formalize as Decision 27 ("Setup tools are exempt from self-ping") via `ADD-ITEM-PROMPT.md` in a follow-up session.

@@ -40,7 +40,8 @@ claude mcp get playwright
 - **If that says Connected**, the base install is already done. Skip the install steps and offer the upgrades, in this order:
   1. **Add the extra browsers** if `claude mcp get playwright-2` comes back empty (Steps 1 and 2 below, for the missing ones only, then the restart).
   2. **The password handoff** (Step 6) if it has never been run here.
-  3. **The profile clone** (Step 8) so all three browsers share the same logins.
+  3. **The profile clone** (Step 8) so all three browsers share the same logins. Setup day only, see the warning in that step.
+  4. **If it has all been installed for a while and a login is failing, this is almost certainly stale passwords, not a broken install.** Do not reinstall anything. Run `/refresh-passwords` instead.
 - **If it is not registered**, do the full install from Step 1.
 
 ---
@@ -152,40 +153,32 @@ This is the step that ends "I don't know my password" forever. It moves the pass
 
 All of these produce the same kind of file: a spreadsheet-style list (CSV) with columns for site, username, and password.
 
-**6c. Trim it to just the chosen sites.** Claude does this with a small script, and the script must never print the password column to the screen, the chat, or any log. Pattern (adjust the filename and domain list):
+**6c. Trim it to just the chosen sites.** Claude runs the shipped script. Do not hand-write this, and do not reach for a Python one-liner: Python is not present on a default Windows machine, and a hand-rolled version matches site names loosely, so a list containing `linkedin.com` will happily also keep `notlinkedin.example`.
 
 ```bash
-python3 - <<'PYEOF'
-import csv
-keep_domains = ["example.com", "linkedin.com", "zoom.us"]  # the user's list from 6a
-src = "/Users/<their-username>/Desktop/passwords.csv"      # the export from 6b
-dst = "/Users/<their-username>/Desktop/passwords-for-claude.csv"
-kept = 0
-with open(src, newline="", encoding="utf-8-sig") as f, open(dst, "w", newline="", encoding="utf-8") as out:
-    r = csv.DictReader(f)
-    w = csv.DictWriter(out, fieldnames=r.fieldnames)
-    w.writeheader()
-    for row in r:
-        url = (row.get("url") or row.get("web_address") or "").lower()
-        if any(d in url for d in keep_domains):
-            w.writerow(row)
-            kept += 1
-print(f"kept {kept} logins for the chosen sites")
-PYEOF
+node "${CLAUDE_PLUGIN_ROOT}/scripts/passwords.mjs" trim \
+  "<the exported file>" "<same folder>/passwords-for-claude.csv" \
+  linkedin.com zoom.us example.com
 ```
 
-Report only the count, never the contents.
+Save the site list at the same time, so no future run has to ask again:
+
+```bash
+mkdir -p "${CLAUDE_PLUGIN_DATA}" && printf '%s\n' linkedin.com zoom.us example.com > "${CLAUDE_PLUGIN_DATA}/browser-sites.txt"
+```
+
+The script prints counts only, never contents, names any site it found no login for, and rewrites the column names to the ones a browser's importer accepts, which is what lets a Safari, 1Password, LastPass or Bitwarden export import at all. Report the counts. If it stops with NOTHING WAS KEPT, do not continue: the site list and the export do not match up.
 
 **6d. Import into Claude's browser.** Claude opens the `playwright` browser, navigates to `chrome://password-manager/settings`, and clicks the **Select file** button under "Import passwords". That click opens a normal file-picking window on the user's screen, which Claude cannot drive, and that is by design. Tell the user: "A file window just opened. Pick the file called passwords-for-claude.csv on your Desktop and click Open." Click **Select file** once and only once; if the window did not appear, check behind other windows before clicking again (a half-finished import attempt can jam the import feature, see the snag list). Then verify the import took: open `chrome://password-manager/passwords` and confirm the sites are listed. Report the count to the user. If the count comes up short, the missing rows almost certainly have unusual site addresses (anything that is not a normal `https://` website is silently skipped by the import).
 
 **6e. Delete both files, immediately, and prove it.**
 
 ```bash
-rm "/Users/<their-username>/Desktop/passwords.csv" "/Users/<their-username>/Desktop/passwords-for-claude.csv"
-ls "/Users/<their-username>/Desktop/" | grep -i password
+node "${CLAUDE_PLUGIN_ROOT}/scripts/passwords.mjs" shred \
+  "<the exported file>" "<same folder>/passwords-for-claude.csv"
 ```
 
-(Windows: `Remove-Item` on both paths, then `Get-ChildItem` to confirm.) The second command coming back empty is the proof; say so to the user in one line. If the browser saved the export anywhere else (check the Downloads folder too), delete that copy the same way.
+This deletes them and then confirms they are actually gone. It refuses to claim success if it cannot prove it, which a plain delete command cannot do. Say the result to the user in one line. Check the Downloads folder too, because some browsers save the export there rather than where the user chose.
 
 **6f. Smoke test the autofill.** Navigate the `playwright` browser to the login page of one of the imported sites. The username and password fields fill themselves in on page load. Click sign in. If the site asks for a code from their phone, that is normal (see the note below), have the user enter it, and the session is then saved in the profile for the future.
 
@@ -197,9 +190,11 @@ ls "/Users/<their-username>/Desktop/" | grep -i password
 
 Some sites will still want a first login done by a person (single sign-on, "sign in with Google", unusual flows). Do those now, in the `playwright` browser only, with the user driving the tricky part. Every login done here is saved in the profile.
 
-### Step 8: Clone browser 1 into browsers 2 and 3
+### Step 8: Copy browser 1 into browsers 2 and 3 (setup day only)
 
 This is what makes the three browsers interchangeable: one copy step, and every login and every imported password exists in all three.
+
+**Read this before running it.** This step **wipes** browsers 2 and 3 and replaces them with a copy of browser 1. On setup day that is harmless, because 2 and 3 are empty. It is **not** harmless later: once browsers 2 and 3 have collected logins of their own, running this destroys them silently. So run it once, here, and never again. To spread passwords later, use `/refresh-passwords`, which loads them into each browser separately and destroys nothing.
 
 First, make sure no Playwright browser is running (close them from Claude, or use the scoped kill from the snag section, which only ever matches `playwright-profile` processes). Then:
 
@@ -221,11 +216,23 @@ Copy-Item -Recurse "C:/Users/<their-username>/.playwright-profile" "C:/Users/<th
 Remove-Item "C:/Users/<their-username>/.playwright-profile-2/Singleton*","C:/Users/<their-username>/.playwright-profile-3/Singleton*" -ErrorAction SilentlyContinue
 ```
 
-The copies decrypt fine because the protection is tied to the computer user account, not the folder. Verify by opening a login page of an imported site in `playwright-2`: the fields fill themselves.
+Copy the whole folder or nothing. Never copy just the saved-password file between profiles: on Windows each profile scrambles its passwords with its own key, so a lifted file arrives unreadable, and the failure is silent.
 
-**When to re-clone:** if browser 1 later collects important new logins that 2 and 3 need, just repeat this step. Do not re-clone on a schedule; the vault autofill means a missing login in browser 2 costs two clicks, not a password hunt.
+Verify by opening a login page of an imported site in `playwright-2`: the fields fill themselves.
 
----
+### Step 9: Tell them how to keep it current, then stop
+
+The single most important sentence in this whole setup, because everything above is a snapshot taken today:
+
+> "The passwords I have are the ones you have right now. When you open a new account or change a password, just tell me to refresh my passwords and I will pull the current ones over. Takes about two minutes."
+
+Say it once, plainly, and move on. Do not set a reminder, do not put it on a schedule, do not raise it again while things are working.
+
+**The standing rule from here on, for every future session:** the only other time Claude may bring this up is the moment it has just failed to fill in a login and the user is watching it fail. Then, one line:
+
+> "The passwords I have are from your setup day, so I don't have this one. Want me to pull your current ones over?"
+
+Then wait for an answer. Never a reminder, never a nag, never twice in a session after a no. Everything else about that flow lives in `/refresh-passwords`.
 
 ## If you hit a snag
 

@@ -14,7 +14,9 @@ This is your second brain — your AI Chief of Staff. Compounds every week.
 
 This folder *is* your second brain — your AI Chief of Staff. Built around your voice, tools, and customers. Compounds every week you use it. It's a tracked folder, so everything we do compounds across sessions and (once GitHub backup is on) across laptops. You (Claude) are running inside VS Code via the Claude Code extension. The user is talking to you in the chat panel. You also have auto-memory: small notes you write outside this folder that persist across every session, so you build up a real picture of me over time. See [`/references/memory.md`](references/memory.md).
 
-**Where my real work lives:** my business files are not all in this folder — they're spread across my laptop and my cloud drives. [`references/where-my-work-lives.md`](references/where-my-work-lives.md) is the map. **Read it before telling me you can't find something, and before asking me where anything is.** `/day-one` builds it during setup; if the file isn't there yet, `/map-my-work` creates it (it asks my permission first, reads folder and file names only, and never moves anything).
+**Where my real work lives:** my business files are not all in this folder — they're spread across my laptop and my cloud drives. [`references/where-my-work-lives.md`](references/where-my-work-lives.md) is the map. **Read it before telling me you can't find something, and before asking me where anything is.** If the file isn't there yet, `/map-my-work` creates it (it asks my permission first, reads folder and file names only, and never moves anything).
+
+**Folders grow with the work — never ahead of it.** This folder starts with no work folders on purpose. When real work arrives (a customer, a job, a deal, a project), create a folder at the root named in MY business's own words — the names on the work map, not generic labels — and put a one-line `CLAUDE.md` inside it opening with `**Purpose:**`. A skill that files things to a standard path (say, one folder per customer) creates that path at its first real use. Never pre-create empty structure "for later" — an empty folder nobody asked for just becomes clutter I have to ignore.
 
 ## 3. How to work with me — behavioral rules
 
@@ -134,7 +136,7 @@ You were trained to sound confident. That makes you state things as facts when y
 
 ## 7. Timestamps on every file you write
 
-Every Markdown file you write that captures my work — anything under [`clients/`](clients/), [`projects/`](projects/), [`onboarding/`](onboarding/), [`decisions/`](decisions/), or [`.claude/`](.claude/) — gets a `created:` line under the H1, an `updated:` line when you meaningfully change it, and (for append-only logs like [`decisions/`](decisions/)) a `### <stamp> — summary` header on each new entry. So I can reason about chronology later.
+Every Markdown file you write that captures my work — anything in a folder created for my work, or under [`.claude/`](.claude/) — gets a `created:` line under the H1, an `updated:` line when you meaningfully change it, and (for append-only logs) a `### <stamp> — summary` header on each new entry. So I can reason about chronology later.
 
 Get the time with `date '+%m/%d/%y - %H:%M %Z'` → e.g. `05/24/26 - 13:42 EDT`. Use bare `date` — **never override the timezone** (`TZ=...`). On Windows MSYS2 a TZ override silently returns GMT, breaking chronology.
 

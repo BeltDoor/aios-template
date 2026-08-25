@@ -52,7 +52,7 @@ Just as important as what to save. Memory is small and fast; bloating it makes i
 
 Don't save:
 
-- **Anything that's already in a file.** Your client list is in the `clients/` folder. Your skills are in `SKILLS.md`. Your connected tools are in `CONNECTIONS.md`. Don't duplicate.
+- **Anything that's already in a file.** Your client work is in its own folders. Your skills are in `SKILLS.md`. Your connected tools are in `CONNECTIONS.md`. Don't duplicate.
 - **Today's task details.** What you're working on *right now* in this conversation isn't memory — it's current context. When you say "I'm drafting an email to Mark," that's not a memory; it's the task.
 - **One-off facts that won't matter next session.** "The temperature is 72 degrees" isn't memory. "I always work outside in the morning when it's under 75" — that's a feedback memory.
 - **Code, file paths, or system structure.** Claude can read those directly from the folder. Memory is for the things the folder *can't* tell Claude.

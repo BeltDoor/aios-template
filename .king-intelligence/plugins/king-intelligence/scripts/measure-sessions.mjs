@@ -53,12 +53,38 @@ export const MIN_OUTWARD = 10;
 const IDLE_CAP_MS = 5 * 60 * 1000;
 
 // ---------- where things live ----------
+// ONE fixed home, always. This used to follow CLAUDE_PLUGIN_DATA when it was set, which meant a
+// hook run and a hand run stored their ledger and their machine identity in two different places.
+// The machine then registered TWICE, each copy measured the same transcripts on its own, and the
+// portal summed both: the owner's own total read exactly double. It also moves with the plugin,
+// so a reinstall would have orphaned the history. It lives under the home folder now and nowhere
+// else. KI_TIME_SAVED_DIR stays, for tests only.
 const DATA =
   process.env.KI_TIME_SAVED_DIR ||
-  (process.env.CLAUDE_PLUGIN_DATA
-    ? path.join(process.env.CLAUDE_PLUGIN_DATA, "time-saved")
-    : path.join(os.homedir(), ".claude", "king-intelligence", "time-saved"));
+  path.join(os.homedir(), ".claude", "king-intelligence", "time-saved");
 const LEDGER = path.join(DATA, "sessions.jsonl");
+adoptLegacyData();
+
+// A build before this one may have written the ledger under the plugin's data folder. Move it in
+// rather than start from nothing. Runs once: after the move the old folder holds no ledger.
+function adoptLegacyData() {
+  try {
+    if (process.env.KI_TIME_SAVED_DIR || !process.env.CLAUDE_PLUGIN_DATA) return;
+    const old = path.join(process.env.CLAUDE_PLUGIN_DATA, "time-saved");
+    if (old === DATA) return;
+    const oldLedger = path.join(old, "sessions.jsonl");
+    if (!fs.existsSync(oldLedger)) return;
+    fs.mkdirSync(DATA, { recursive: true });
+    // never clobber a real ledger already in the fixed home
+    if (!fs.existsSync(LEDGER)) {
+      for (const f of ["sessions.jsonl", "measured.json", "machine.json"]) {
+        const from = path.join(old, f);
+        if (fs.existsSync(from) && !fs.existsSync(path.join(DATA, f))) fs.copyFileSync(from, path.join(DATA, f));
+      }
+    }
+    fs.renameSync(oldLedger, oldLedger + ".migrated");
+  } catch { /* a failed adoption just means a re-measure, never a crash */ }
+}
 const INDEX = path.join(DATA, "measured.json");
 const PROJECTS = process.env.KI_PROJECTS_DIR || path.join(os.homedir(), ".claude", "projects");
 

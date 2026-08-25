@@ -93,7 +93,7 @@ Resume only after every required tool is verified connected. No "ship with TODO.
 
 **What "draft-related" means.** The skill PRODUCES text the user sends or posts AS THEMSELVES. Includes: emails, social posts, SMS, Slack messages, blog posts, video scripts, customer-facing copy. **Excludes:** internal summaries, action-item lists, meeting minutes, time audits, status snapshots — anything the user reads but doesn't send as-them.
 
-If the skill is draft-related AND [`/onboarding/voice-profile.md`](../../../onboarding/voice-profile.md) does not exist: **stop. Do not draft the SKILL.md.**
+If the skill is draft-related AND [`references/voice-profile.md`](../../../references/voice-profile.md) does not exist: **stop. Do not draft the SKILL.md.**
 
 Tell the user, in plain words:
 
@@ -231,13 +231,13 @@ If `/<skill-name>` doesn't have a row yet, add one with the same fields.
 Paste at the top of the generated SKILL.md body (right under the H1 and any 1-line purpose):
 
 ```markdown
-> Before drafting, read [`/onboarding/voice-profile.md`](../../../onboarding/voice-profile.md). The output must match the voice captured there.
+> Before drafting, read [`references/voice-profile.md`](../../../references/voice-profile.md). The output must match the voice captured there.
 ```
 
 ## Out of scope (parked, not v1.0)
 
 - **Cross-session resume.** If /skill-builder is interrupted mid-build (context compaction, user steps away for a day), v1.0 expects re-invocation from scratch.
-- **Self-build.** Bootstrap exception — this SKILL.md was hand-written from the locked spec at [`/decisions/2026-05-24-skill-builder-spec.md`](../../../decisions/2026-05-24-skill-builder-spec.md).
+- **Self-build.** Bootstrap exception — this SKILL.md was hand-written from its locked spec.
 - **Semantic-embedding overlap detection.** Step 3 is keyword + structural. Embedding-based is a v1.1 idea.
 - **Bulk build.** One skill per invocation.
 

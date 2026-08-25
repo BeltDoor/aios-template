@@ -1,6 +1,6 @@
 ---
 name: map-my-work
-description: Map where the user's real business work actually lives — Desktop, Documents, Google Drive, OneDrive, SharePoint, iCloud Drive, Dropbox — and write it to references/where-my-work-lives.md so every future session knows where to look instead of asking. Asks FIRST whether the work is even on this computer, because a company can run entirely on Google Drive with almost nothing on the laptop; if it does, connects Drive as a folder before sweeping. Then a fast top-level sweep and a deep dive only into the folders that hold business work. Reads folder and file NAMES only, never opens a document, never moves or copies anything. Use when the user says "map my computer", "where does my stuff live", "find my business files", "learn my folders", when /day-one hands off after consent, or when a session repeatedly can't find a file the user refers to. Requires explicit consent before the first scan.
+description: Map where the user's real business work actually lives — Desktop, Documents, Google Drive, OneDrive, SharePoint, iCloud Drive, Dropbox — and write it to references/where-my-work-lives.md so every future session knows where to look instead of asking. Asks FIRST whether the work is even on this computer, because a company can run entirely on Google Drive with almost nothing on the laptop; if it does, connects Drive as a folder before sweeping. Then a fast top-level sweep and a deep dive only into the folders that hold business work. Reads folder and file NAMES only, never opens a document, never moves or copies anything. Use when the user says "map my computer", "where does my stuff live", "find my business files", "learn my folders", when the setup prompt from the Get Started page fires it, or when a session repeatedly can't find a file the user refers to. Requires explicit consent before the first scan.
 ---
 
 # /map-my-work
@@ -11,7 +11,7 @@ I find out where your real work lives, once, so nobody has to explain it again. 
 
 **Do not run a single scan command until the user has said yes, in this session, to a question that named what I read.**
 
-Normally `/day-one` asks for me, up front, before it hands me off to run in the background. If you were invoked by `/day-one` and the handoff says consent was given, proceed straight to Pass 1.
+If the setup prompt that invoked me says consent was already given, proceed straight to Pass 1.
 
 If you were invoked any other way, ask first with `AskUserQuestion`:
 

@@ -1,1 +1,1 @@
-Your hours are now measured instead of estimated. Your system reads its own record of every session and counts the real work it did for you, so a full day no longer shows up as thirty minutes.
+A fix to how your hours are counted: one computer is now counted once, so your total is your real total.

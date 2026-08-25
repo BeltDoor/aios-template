@@ -23,7 +23,7 @@ Find the `## end-session` section and parse its `- key: value` lines. The keys t
 - **scratchpadFile** — the in-session gotcha buffer harvested in Phase 3 (example: `.claude/session-scratch.md`). Claude logs errors/blockers/dead-ends here the moment they happen; this skill files each into its permanent home and resets the file. If not configured or absent, skip the harvest (still do the Phase 1 backup scan for unlogged gotchas).
 - **folderLayoutDoc** — the folder-layout map that the orgCheckScript regenerates in Phase 3.6 (example: `references/operating/folder-layout.md`). The map's tree lives between `AUTO-LAYOUT` markers and is owned by the script, so never hand-edit the tree.
 - **memoryIndexFormat** — how the memory index is shaped in Phase 3/4 (example: `pin-band` — a `[PIN]` band at the top, fresh entries newest-first below).
-- **timeSavedSyncScript** — the deterministic time-saved core run in Phase 3.55 (default: `${CLAUDE_PLUGIN_ROOT}/scripts/time-saved-sync.mjs`). It folds the session's calibrated roll-up into the local ledger (silently — no confirm question) and phones the number up to the members portal. **Opt-in: if this key isn't set OR the script isn't on disk, skip Phase 3.55 entirely and silently.**
+- **timeSavedSyncScript** — the deterministic time-saved core run in Phase 3.55 (default: `${CLAUDE_PLUGIN_ROOT}/scripts/time-saved-sync.mjs`). It measures the session from the machine's own record of it, folds that into the durable ledger (silently, no confirm question) and phones the totals up to the members portal. **Opt-in: if this key isn't set OR the script isn't on disk, skip Phase 3.55 entirely and silently.**
 - **timeSavedState** — the local time-saved ledger file the Phase 3.55 review writes + Phase 7 commits (example: `.claude/time-saved/state.json`).
 
 Throughout the phases below, wherever it says "the `<key>` from your settings," use the value you parsed here.
@@ -242,17 +242,23 @@ So the root-level registries never drift from reality, refresh them every close.
 
 **`TIME-SAVED.md` — recompute totals (if it's in your registries).** For each of the tracked time-saver rows, recompute `Total saved = Total uses × Manual time per use` and confirm `Last used` reflects any invocation this session. Only the tracked time-saver skills have rows; deep-dives and setup tools are exempt (per root CLAUDE.md / Decision 12/27) — never add rows for them. If `TIME-SAVED.md` doesn't exist yet, skip (it's created out-of-band, not by this skill).
 
-## Phase 3.55: Time-Back review — the time-saved capture (opt-in)
+## Phase 3.55: Time-Back capture (opt-in)
 
-**Gate:** only run this phase if a **timeSavedSyncScript from your settings** is configured AND the script exists on disk. If not, skip the whole phase silently (no mention in the close-out). This keeps it additive — a setup that hasn't enabled it never sees it.
+**Gate:** only run this phase if a **timeSavedSyncScript from your settings** is configured AND the script exists on disk. If not, skip the whole phase silently (no mention in the close-out).
 
-This is the one place the session's time saved gets captured. Phase 3.5 just refreshed the per-skill `TIME-SAVED.md` (the deterministic skills spine), so those minutes are already counted. This phase captures the **ad-hoc remainder** — the real work this session that did NOT run through a tracked skill (a contract reviewed, a doc drafted, an inbox triaged, a site fixed). Most sessions have some; a pure-skills session may have none.
+**You do not estimate anything here any more.** The old version of this phase asked you to judge how long the session's work would have taken a competent person by hand, then apply a calibration to the guess. That whole approach is retired. The time saved is now MEASURED from the machine's own record of every session: how long it genuinely worked, which documents it created and changed, what it drafted. A figure you write by hand can no longer raise or lower it, and passing one is simply ignored.
 
-**Do NOT double-count.** Anything already represented by a `TIME-SAVED.md` skill row this session is counted by the spine — exclude it from this ad-hoc figure.
+So this phase is one command:
 
-Run the review exactly per [`references/time-back-review.md`](references/time-back-review.md): build the calibrated figure silently (competent-peer baseline, **×0.2 calibration — multiply the total by 0.2, then round down to the nearest 15 minutes — permanent, never skip it**; no confirm question, no AskUserQuestion, no breakdown shown, ever), then record it via the **timeSavedSyncScript from your settings**, passing the Phase-1 short HEAD hash as the stable session id (idempotent — a re-run can't double-count) plus today's date and the `candidate_wins` JSON. Carry `totalHours`, `adhocHours`, and whether the send landed into the Phase 8 Receipt 1 line — that single receipt line is the only place this phase ever surfaces to the owner.
+```bash
+node <timeSavedSyncScript> record --send
+```
 
-**Never ask about a dollar rate.** If the ledger has no hourly rate set, hours alone is a complete, honest number. Only set a rate if the owner brings it up themselves (`node <timeSavedSyncScript> set-rate <n>`).
+It measures this session, folds it into the durable ledger, and posts the totals to the members portal. It always exits 0: offline, or a setup with no portal token, just keeps the number local until next time. It never blocks the close.
+
+Read the JSON it prints and carry `totalHours` and whether the send landed into the Phase 8 Receipt 1 line. That single receipt line is the only place this phase ever surfaces to the owner.
+
+**Never ask about a dollar rate.** Hours alone is a complete, honest number, and the rate lives on the owner's own members page.
 
 ## Phase 3.6: Organization sweep — every folder documented, the map current (automatic, EVERY run)
 

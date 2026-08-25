@@ -20,7 +20,7 @@ Three skills that used to live in this folder now live there: `/king-intelligenc
 
 **Status:** `[live]`
 
-**Purpose.** Walks me through Day One of my second brain: voice tool, two settings (bypass mode + model picker), website + LinkedIn scrape, personalized identity paragraph. Ends with a soft-ask handoff to `/skill-builder`. One-shot per client; assumes a guided session.
+**Purpose.** Walks me through Day One of my second brain: a fast website + LinkedIn look at my business, my identity and a business snapshot written into `CLAUDE.md`, then switching on backup. Ends with a soft-ask handoff to `/skill-builder`. One-shot per client; assumes a guided session.
 
 **Invoke when I say:**
 - "set me up"
@@ -35,7 +35,7 @@ Three skills that used to live in this folder now live there: `/king-intelligenc
 
 **Status:** `[live]`
 
-**Purpose.** Works out where my real business files are across this whole laptop — Desktop, Documents, Downloads, OneDrive, SharePoint, iCloud Drive, Dropbox — and writes it down in [`references/where-my-work-lives.md`](references/where-my-work-lives.md) so no session ever has to ask me again. Asks my permission first. Reads folder and file **names only**, never opens a document, and **never moves, copies, or renames anything**. If my folders are a mess it offers me a clean-up prompt to run later; it never tidies on its own. `/day-one` runs this in the background during setup.
+**Purpose.** Works out where my real business files are across this whole laptop — Desktop, Documents, Downloads, OneDrive, SharePoint, iCloud Drive, Dropbox — and writes it down in [`references/where-my-work-lives.md`](references/where-my-work-lives.md) so no session ever has to ask me again. Asks my permission first. Reads folder and file **names only**, never opens a document, and **never moves, copies, or renames anything**. If my folders are a mess it offers me a clean-up prompt to run later; it never tidies on its own. Runs as its own prompt during setup, alongside `/day-one`.
 
 **Invoke when I say:**
 - "map my computer"
@@ -66,7 +66,7 @@ Three skills that used to live in this folder now live there: `/king-intelligenc
 
 **Status:** `[live]`
 
-**Purpose.** Topic-loader. Resolves a named client / project / initiative to its folder under `clients/` or `projects/`, fans out in parallel across the folder + auto-memory + wired connectors (Gmail, Calendar, HubSpot, Otter, Notion, Drive), and hands back a tight chat-only briefing. Empty sections get omitted entirely (no filler). Bare invocation surfaces a recent-folders menu.
+**Purpose.** Topic-loader. Resolves a named client / project / initiative to its work folder (creating one on first use if the topic is new), fans out in parallel across the folder + auto-memory + wired connectors (Gmail, Calendar, HubSpot, Otter, Notion, Drive), and hands back a tight chat-only briefing. Empty sections get omitted entirely (no filler). Bare invocation surfaces a recent-folders menu.
 
 **Invoke when I say:**
 - "load up Atlas Brewery for me"
