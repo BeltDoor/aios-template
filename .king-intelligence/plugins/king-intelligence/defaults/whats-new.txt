@@ -1,1 +1,1 @@
-A fix to how your hours are counted: one computer is now counted once, so your total is your real total.
+New: the computer that never sleeps. Say "set up an always-on computer" and Claude will help you put your second brain on a machine that runs 24/7 (a spare computer or a cheap rented server), do real work while you sleep, and stay reachable from your phone anywhere.

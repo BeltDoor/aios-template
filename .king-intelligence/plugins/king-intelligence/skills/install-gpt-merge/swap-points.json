@@ -1,0 +1,5 @@
+{
+  "skill": "install-gpt-merge",
+  "description": "Imports a ChatGPT or Claude chat export into the second brain, sorted into real folders with an idempotent ledger",
+  "swapPoints": []
+}

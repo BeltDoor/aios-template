@@ -1,0 +1,5 @@
+{
+  "skill": "install-always-on-server",
+  "description": "Sets up an always-on machine (a spare computer or a rented cloud server) that runs Claude 24/7 with the second brain synced onto it, one scheduled job, phone access, and the claude.ai door",
+  "swapPoints": []
+}
