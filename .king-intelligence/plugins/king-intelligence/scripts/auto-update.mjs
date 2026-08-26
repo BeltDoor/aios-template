@@ -81,6 +81,41 @@ function pruneDisabledSkills(root, data) {
   } catch { return 0; }
 }
 
+// KILL SWITCH (added 8/26/26). A machine whose membership has ENDED turns the toolkit off
+// itself. The portal's /api/plugin-access/status answers with the machine's own marketplace
+// token: "live" (carry on), "ended" (membership positively over -> disable the plugin locally),
+// "unknown" (the token matches nothing — a regenerated line — tell the member, never disable).
+// A network error, timeout, or 5xx answers null and NOTHING happens: only a confirmed "ended"
+// from a successful database read ever disables, the same never-cut-off-on-an-outage law the
+// portal's own revoke cron follows. Free-starter installs have no portal marketplace and are
+// skipped entirely.
+function portalToken() {
+  try {
+    const km = JSON.parse(readFileSync(join(homedir(), ".claude", "plugins", "known_marketplaces.json"), "utf8"));
+    const url = km?.["king-intelligence"]?.source?.url || "";
+    const m = url.match(/^https:\/\/([^@/]+)@members\.king-intelligence\.com\/marketplace\.git$/);
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch { return null; }
+}
+
+async function accessStatus(token) {
+  if (process.env.KI_AUTOUPDATE_DRYRUN === "1") return process.env.KI_AUTOUPDATE_FAKE_ACCESS || null;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 8000);
+    const res = await fetch("https://members.king-intelligence.com/api/plugin-access/status", {
+      headers: { Authorization: "Bearer " + token },
+      signal: ctrl.signal,
+    });
+    clearTimeout(t);
+    if (res.status !== 200) return null; // 5xx / anything odd = could not check = do nothing
+    const body = await res.json();
+    return body && (body.access === "live" || body.access === "ended" || body.access === "unknown")
+      ? body.access
+      : null;
+  } catch { return null; }
+}
+
 function unseenPatternCount(root, data) {
   try {
     const shipped = readdirSync(join(root, "patterns")).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, ""));
@@ -142,6 +177,41 @@ try {
   // makes the catalog refresh throw; we swallow it and fall back to the pattern nudge.
   const DRY = process.env.KI_AUTOUPDATE_DRYRUN === "1";
   const installed = readVersion(join(root, ".claude-plugin", "plugin.json"));
+
+  // ---- KILL SWITCH: is this machine's membership still live? ----
+  // Runs before the catalog refresh so an ended membership is handled in one clean step
+  // instead of surfacing as a mysterious failed update. Only a portal-keyed machine is
+  // checked; GitHub-PAT and free-starter machines have no portal token and are skipped.
+  {
+    const tok = DRY ? "dry-run" : portalToken();
+    if (tok) {
+      const status = await accessStatus(tok);
+      if (status === "ended") {
+        if (!DRY) {
+          try { execSync('claude plugin disable king-intelligence@king-intelligence', { timeout: 30000, stdio: "ignore" }); }
+          catch (e) { noteFailure("kill-switch-disable", e && e.message); }
+        }
+        emit(
+          "Your King Intelligence membership has ended, so the toolkit has switched itself off on this computer. " +
+          "Nothing of yours was touched: your files, your notes, and everything you built are exactly where they were. " +
+          "Rejoin any time at https://members.king-intelligence.com and your tools come right back. " +
+          "IMPORTANT: tell the user the line above in your own first reply, then carry on with whatever they asked."
+        );
+        stamp(ONE_H); // if the disable didn't stick, try again within the hour
+        process.exit(0);
+      }
+      if (status === "unknown") {
+        emit(
+          "King Intelligence: this computer's access line is out of date (it was probably regenerated on the member page). " +
+          "Updates are paused until it's refreshed. Tell the user: grab the new install line from " +
+          "https://members.king-intelligence.com/system and paste it here. Mention this once, briefly, then carry on."
+        );
+        stamp(TWENTY_H); // don't nag every session; tools keep working locally meanwhile
+        process.exit(0);
+      }
+      // "live" or null (couldn't check) -> carry on to the normal update path.
+    }
+  }
 
   // refresh the catalog (gate: a free-starter / offline client makes this throw, so we fall back
   // to the unseen-suggestion path and never apply anything).

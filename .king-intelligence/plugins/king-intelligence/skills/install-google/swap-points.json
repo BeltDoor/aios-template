@@ -1,5 +1,0 @@
-{
-  "skill": "install-google",
-  "description": "Puts Google Drive on the user's computer as a normal folder, and optionally wires the live link for native Google Docs",
-  "swapPoints": []
-}

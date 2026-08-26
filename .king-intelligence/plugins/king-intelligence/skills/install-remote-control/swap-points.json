@@ -1,5 +1,0 @@
-{
-  "skill": "install-remote-control",
-  "description": "Sets up Claude Code Remote Control (phone access to local sessions) on a client's machine and fixes the initialization-failed error caused by telemetry-blocking settings",
-  "swapPoints": []
-}

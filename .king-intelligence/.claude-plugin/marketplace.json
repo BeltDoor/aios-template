@@ -1,7 +1,7 @@
 {
   "name": "king-intelligence-starter",
   "owner": { "name": "Jacob King", "email": "jacob@king-intelligence.com" },
-  "description": "King Intelligence starter toolkit, bundled into your Snowball. The full skill set, free. Get your personal key from Jacob to switch on live updates.",
+  "description": "King Intelligence starter toolkit, bundled into your Snowball. A taste of the member skill set. Members get the full toolkit, always current, with their personal key.",
   "plugins": [
     {
       "name": "king-intelligence",

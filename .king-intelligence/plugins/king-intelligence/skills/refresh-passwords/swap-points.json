@@ -1,5 +1,0 @@
-{
-  "skill": "refresh-passwords",
-  "description": "Tops up the website passwords available to the client's Playwright browsers, so logins for accounts created after setup day stop failing",
-  "swapPoints": []
-}

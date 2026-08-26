@@ -1,5 +1,0 @@
-{
-  "skill": "install-playwright",
-  "description": "Installs the standard King Intelligence Playwright MCP setup (official @playwright/mcp server with a persistent browser profile) on a client's machine",
-  "swapPoints": []
-}
