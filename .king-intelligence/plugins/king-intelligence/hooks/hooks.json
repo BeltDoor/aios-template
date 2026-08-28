@@ -1,4 +1,5 @@
 {
+  "_comment_SessionStart": "Two blocks on purpose (8/27/26). Claude Code fires SessionStart with one of four sources: startup, resume, clear, compact (confirmed in the claude binary's strings). A block matched to 'startup' runs ONLY on a cold open, so a member who lives in resumed sessions never got their plugin update, never got an unsent session swept, and would never pick up a newly published skill's command. auto-update, session-sweep and sync-commands are each internally throttled (20h / 1h / 1h), so running them on every source costs nothing and closes that hole. seed-config and the backup pull stay startup-only deliberately.",
   "hooks": {
     "SessionStart": [
       {
@@ -10,15 +11,24 @@
           },
           {
             "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/backup.mjs\" sync"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/auto-update.mjs\""
           },
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/backup.mjs\" sync"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/session-sweep.mjs\""
           },
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/session-sweep.mjs\""
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/sync-commands.mjs\"",
+            "timeout": 15
           }
         ]
       }
@@ -47,7 +57,7 @@
         ]
       },
       {
-        "matcher": "Skill",
+        "matcher": "Skill|mcp__king-intelligence__use_skill",
         "hooks": [
           {
             "type": "command",

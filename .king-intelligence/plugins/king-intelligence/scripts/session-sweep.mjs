@@ -22,11 +22,15 @@ import { fileURLToPath } from "node:url";
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const THROTTLE_MS = 60 * 60 * 1000;
 
+// Deliberately NOT keyed to CLAUDE_PLUGIN_DATA, which is set when Claude Code runs a
+// script as a hook and unset when a person runs the same script by hand: anything stored
+// there silently forks into two copies. That is what minted a second machine identity on
+// 8/21/26 and made Jacob's own total read exactly double. measure-sessions.mjs was fixed
+// then; this file kept the old shape and only governed a throttle marker, so it was a
+// landmine rather than a live bug. Same fixed home-dir path as the engine, one truth.
 const DATA =
   process.env.KI_TIME_SAVED_DIR ||
-  (process.env.CLAUDE_PLUGIN_DATA
-    ? join(process.env.CLAUDE_PLUGIN_DATA, "time-saved")
-    : join(homedir(), ".claude", "king-intelligence", "time-saved"));
+  join(homedir(), ".claude", "king-intelligence", "time-saved");
 
 try {
   const marker = join(DATA, ".last-sweep");

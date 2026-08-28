@@ -29,9 +29,7 @@ const GIT_TIMEOUT = 10000;
 
 function run() {
   const payload = readPayload();
-  if (payload.tool_name && payload.tool_name !== "Skill") return;
-
-  const skill = normalizeSkill(payload.tool_input && payload.tool_input.skill);
+  const skill = skillFromPayload(payload);
   if (!skill) return;
 
   const cwd = payload.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
@@ -45,6 +43,21 @@ function run() {
   if (existsSync(join(root, ".no-autobackup"))) return; // same kill switch as backup
 
   bumpLedger(join(root, "TIME-SAVED.md"), skill, baselineFor(skill));
+}
+
+// Two invocation paths, one counter (Skills Door migration, 8/27/26):
+//   1. The legacy local-skill path: tool "Skill", the name in tool_input.skill.
+//   2. The Skills Door path: the door's MCP tool "mcp__king-intelligence__use_skill"
+//      (what every synced stub calls), the name in tool_input.name. Matcher shape
+//      confirmed against a REAL transcript payload from the 8/27 door E2E, not guessed.
+// list_skills / get_skill_file are deliberately NOT counted: fetching a reference file
+// or browsing the menu is not a use of a skill.
+function skillFromPayload(payload) {
+  const tool = payload.tool_name || "";
+  const input = payload.tool_input || {};
+  if (tool === "Skill") return normalizeSkill(input.skill);
+  if (tool === "mcp__king-intelligence__use_skill") return normalizeSkill(input.name);
+  return null;
 }
 
 // "king-intelligence:content-unit" -> "content-unit"; "/email" -> "email". Lowercased slug,

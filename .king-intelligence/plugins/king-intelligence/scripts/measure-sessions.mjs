@@ -153,8 +153,19 @@ async function measureFile(file) {
         if (typeof p === "string" && p && !NOISE.test(p)) touched.add(shortHash(p));
         continue;
       }
-      if (name === "Skill" && typeof input.skill === "string") {
-        const s = input.skill.split(":").pop().replace(/^\//, "").trim().toLowerCase();
+      // Two invocation paths, one counter (Skills Door migration, 8/27/26). The local
+      // Skill tool, and the door's MCP tool that every synced command stub calls. Miss
+      // the second and a member's "which tools you use" breakdown silently goes dark
+      // the day the plugin stops shipping skill files. Hours are unaffected either way
+      // (they come from active time and touched documents, not from skill detection).
+      const skillName =
+        name === "Skill" && typeof input.skill === "string"
+          ? input.skill
+          : name === "mcp__king-intelligence__use_skill" && typeof input.name === "string"
+            ? input.name
+            : null;
+      if (skillName !== null) {
+        const s = skillName.split(":").pop().replace(/^\//, "").trim().toLowerCase();
         if (s) skills.push(s.replace(/[^a-z0-9_-]/g, "").slice(0, 64));
         continue;
       }
@@ -415,6 +426,14 @@ async function doSweep() {
   const rows = readLedger();
   const idx = has("--full") ? {} : readIndex();
   let measured = 0, skipped = 0;
+  // Counted because "measured: 0" alone cannot be read (8/27/26). It means one of three
+  // completely different things: nobody worked, every session was already counted, or
+  // every transcript failed to read. A machine in the third state looks exactly like a
+  // quiet member, forever, and three members currently report nothing at all. The index
+  // is only stamped on success, so a permanently unreadable transcript is retried every
+  // sweep and fails every time, which is precisely the case that needs a name.
+  let unreadable = 0, empty = 0;
+  const firstProblem = { file: null, why: null };
 
   for (const file of allTranscripts()) {
     let st;
@@ -424,8 +443,21 @@ async function doSweep() {
     try {
       const row = await measureFile(file);
       if (row) { rows.set(row.id, row); measured += 1; }
+      else {
+        // A transcript with nothing measurable in it. Common and harmless on its own;
+        // only interesting when it is ALL of them.
+        empty += 1;
+        if (!firstProblem.file) { firstProblem.file = path.basename(file); firstProblem.why = "nothing measurable in it"; }
+      }
       idx[file] = stamp;
-    } catch { /* one bad transcript never stops the sweep */ }
+    } catch (e) {
+      // One bad transcript never stops the sweep, but it is no longer invisible.
+      unreadable += 1;
+      if (!firstProblem.file) {
+        firstProblem.file = path.basename(file);
+        firstProblem.why = String((e && e.message) || e).slice(0, 160);
+      }
+    }
   }
 
   // A transcript Claude Code has deleted keeps its ledger line: the record outlives the source.
@@ -433,7 +465,15 @@ async function doSweep() {
   writeIndex(idx);
   dropLock();
   const total = rollup(rows);
-  return { measured, skipped, ...total, ...(has("--send") ? { send: await send(total) } : {}) };
+  return {
+    measured,
+    skipped,
+    unreadable,
+    empty,
+    ...(firstProblem.file ? { firstProblem } : {}),
+    ...total,
+    ...(has("--send") ? { send: await send(total) } : {}),
+  };
 }
 
 async function doSession(id) {
@@ -505,8 +545,52 @@ async function main() {
     console.error("commands: sweep [--full] [--send] | session <id> [--send] | send | total | verify");
     process.exit(2);
   }
+  lastResult = result;
   console.log(JSON.stringify(result, null, has("--json") ? 0 : 2));
 }
 
-try { await main(); } catch { /* never block a session */ } finally { try { dropLock(); } catch { /* ignore */ } }
+/**
+ * THE RECEIPT (8/27/26). This engine swallows every error and always exits 0, on purpose:
+ * measuring must never block a member's session. The cost is that a machine where the sweep
+ * fails EVERY time fails invisibly every hour forever, with nothing anywhere to separate
+ * "this member does not work much" from "this member's work has never once reached us".
+ * Three members have never reported an hour, and this is one of the ways that happens unseen.
+ * So the outcome is written down. Nothing reads it in order to decide anything; it exists so
+ * a silent machine can be asked what went wrong instead of guessed about.
+ */
+function writeReceipt(outcome) {
+  try {
+    fs.mkdirSync(DATA, { recursive: true });
+    fs.writeFileSync(
+      path.join(DATA, ".last-run"),
+      JSON.stringify({ at: new Date().toISOString(), cmd: cmd ?? null, ...outcome })
+    );
+  } catch {
+    /* a receipt is never worth an error of its own */
+  }
+}
+
+let lastResult = null;
+try {
+  await main();
+  // Carry the counts into the receipt, so the answer to "why is this member silent"
+  // is on disk without anyone having to re-run anything.
+  writeReceipt({
+    ok: true,
+    error: null,
+    ...(lastResult && typeof lastResult === "object"
+      ? {
+          measured: lastResult.measured,
+          skipped: lastResult.skipped,
+          unreadable: lastResult.unreadable,
+          empty: lastResult.empty,
+          firstProblem: lastResult.firstProblem ?? null,
+        }
+      : {}),
+  });
+} catch (e) {
+  writeReceipt({ ok: false, error: String((e && e.message) || e).slice(0, 300) });
+} finally {
+  try { dropLock(); } catch { /* ignore */ }
+}
 process.exit(0);

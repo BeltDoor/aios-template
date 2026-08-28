@@ -160,7 +160,7 @@ try {
 
 // ===== pillar: connections (claude mcp list + requires-mcp declarations) =====
 {
-  const p = { available: false, servers: [], gaps: [], note: "" };
+  const p = { available: false, servers: [], gaps: [], note: "", checkedSkillCount: 0 };
   const out = tryExec("claude", ["mcp", "list"]);
   if (out) {
     p.available = true;
@@ -178,6 +178,7 @@ try {
     for (const name of readdirSync(sdir)) {
       const sk = join(sdir, name, "SKILL.md");
       if (!existsSync(sk)) continue;
+      p.checkedSkillCount += 1;
       const decl = frontmatterField(readText(sk), "requires-mcp");
       if (!decl) continue;
       for (const part of decl.split(",")) {
@@ -188,16 +189,32 @@ try {
       }
     }
   } catch { /* no skills dir */ }
-  p.note = p.available
-    ? (p.gaps.length ? "Some skills need a connection you don't have set up yet." : "All connections your skills need are present.")
-    : "Couldn't read your connections (skipped, not blocking).";
+  // Same trap as the skills pillar: this reads the connection requirements OUT of the
+  // skills on disk, and from v0.47.0 there are none. With nothing read, "all connections
+  // your skills need are present" is a green tick backed by nothing. Say what is true.
+  const nothingToCheck = p.checkedSkillCount === 0;
+  p.note = !p.available
+    ? "Couldn't read your connections (skipped, not blocking)."
+    : nothingToCheck
+      ? "Your skills come from your membership now, so this can't tell in advance which connections they need. If a skill asks for one, it will say so at the time."
+      : p.gaps.length
+        ? "Some skills need a connection you don't have set up yet."
+        : "All connections your skills need are present.";
   report.pillars.connections = p;
 }
 
 // ===== pillar: skills (installed + stray duplicates) =====
 {
-  const p = { installed: [], duplicates: [], note: "" };
+  // From v0.47.0 the plugin ships NO skills: they are served from the member's
+  // membership, one use at a time. This pillar can then only ever find zero, and the
+  // danger is what it would say next. Reporting "no stray duplicates found" and "all
+  // connections your skills need are present" would be a clean bill of health this
+  // check can no longer back, which is exactly the failure shape Jacob has been
+  // burned by before: a green tick whose scope no longer matches its claim. So when
+  // there are no local skills to inspect, it says so plainly instead. (8/27/26)
+  const p = { installed: [], duplicates: [], note: "", servedFromMembership: false };
   try { p.installed = readdirSync(join(root, "skills")).filter((n) => existsSync(join(root, "skills", n, "SKILL.md"))); } catch {}
+  p.servedFromMembership = p.installed.length === 0;
   // a real local skill folder that duplicates one the client already gets via the plugin
   try {
     const localDir = join(proj, ".claude", "skills");
@@ -211,9 +228,11 @@ try {
       }
     }
   } catch {}
-  p.note = p.duplicates.length
-    ? "Found local skill copies that duplicate plugin skills. Confirm against the real list before cleaning."
-    : "No stray duplicate skills found.";
+  p.note = p.servedFromMembership
+    ? "Your skills come straight from your membership now, so there is nothing installed here to check. This is normal."
+    : p.duplicates.length
+      ? "Found local skill copies that duplicate plugin skills. Confirm against the real list before cleaning."
+      : "No stray duplicate skills found.";
   report.pillars.skills = p;
 }
 

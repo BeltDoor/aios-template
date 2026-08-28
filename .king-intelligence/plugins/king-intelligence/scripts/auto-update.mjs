@@ -187,12 +187,30 @@ try {
     if (tok) {
       const status = await accessStatus(tok);
       if (status === "ended") {
+        // REMOVE, not just disable (Jacob's call, 8/26/26): the skills must not remain on a
+        // non-member's machine. Uninstall the plugin (fallback: disable), drop the keyed
+        // marketplace (the cached clone is a second on-disk copy of every skill), then sweep
+        // any leftover king-intelligence folders under ~/.claude/plugins. ONLY those two
+        // exactly-named folders are ever touched — never the member's own files, never other
+        // plugins, and never CLAUDE_PLUGIN_DATA (their config survives so a rejoin restores
+        // their setup exactly). The starter marketplace (king-intelligence-starter) is not
+        // touched either; a machine on it never reaches this code (no portal token).
         if (!DRY) {
-          try { execSync('claude plugin disable king-intelligence@king-intelligence', { timeout: 30000, stdio: "ignore" }); }
-          catch (e) { noteFailure("kill-switch-disable", e && e.message); }
+          try { execSync('claude plugin uninstall king-intelligence@king-intelligence', { timeout: 60000, stdio: "ignore" }); }
+          catch {
+            try { execSync('claude plugin disable king-intelligence@king-intelligence', { timeout: 30000, stdio: "ignore" }); }
+            catch (e) { noteFailure("kill-switch-disable", e && e.message); }
+          }
+          try { execSync('claude plugin marketplace remove king-intelligence', { timeout: 30000, stdio: "ignore" }); } catch {}
+          for (const leftover of [
+            join(homedir(), ".claude", "plugins", "marketplaces", "king-intelligence"),
+            join(homedir(), ".claude", "plugins", "cache", "king-intelligence"),
+          ]) {
+            try { if (existsSync(leftover)) rmSync(leftover, { recursive: true, force: true }); } catch {}
+          }
         }
         emit(
-          "Your King Intelligence membership has ended, so the toolkit has switched itself off on this computer. " +
+          "Your King Intelligence membership has ended, so the toolkit has been removed from this computer. " +
           "Nothing of yours was touched: your files, your notes, and everything you built are exactly where they were. " +
           "Rejoin any time at https://members.king-intelligence.com and your tools come right back. " +
           "IMPORTANT: tell the user the line above in your own first reply, then carry on with whatever they asked."
