@@ -209,9 +209,40 @@ function writeConnection(root, token) {
   };
   try {
     writeFileSync(path, JSON.stringify(cfg, null, 2) + "\n");
+    ensureIgnored(root);
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * KEEP THE MEMBER'S KEY OUT OF THEIR OWN REPO (8/27/26).
+ *
+ * .mcp.json holds a LIVE key to their toolkit. Their second brain is a git repo that
+ * the plugin backs up automatically with `git add -A` on every session close, and
+ * nothing was ignoring this file, so from the moment they were connected their key was
+ * being committed and pushed to GitHub. Their backup repo is usually private, which
+ * contains it, but usually is not always and a key in git history outlives the file
+ * that held it.
+ *
+ * So the ignore rule is written wherever the connection is. New members get it in their
+ * template; this is for every folder that already exists. Appended, never rewritten: a
+ * member's own .gitignore is theirs.
+ */
+function ensureIgnored(root) {
+  const file = join(root, ".gitignore");
+  try {
+    let text = "";
+    try { text = readFileSync(file, "utf8"); } catch { /* no .gitignore yet */ }
+    if (/^\.mcp\.json\s*$/m.test(text)) return;
+    const note =
+      "\n# Your personal King Intelligence connection. It holds a LIVE key to your\n" +
+      "# toolkit, so it must never be committed. It is rebuilt for you automatically.\n" +
+      ".mcp.json\n";
+    writeFileSync(file, text ? text.replace(/\n*$/, "\n") + note : note.replace(/^\n/, ""));
+  } catch {
+    /* a repo we cannot write to is not worth an error here */
   }
 }
 

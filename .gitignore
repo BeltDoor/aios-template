@@ -3,3 +3,9 @@ node_modules/
 .playwright-profile/
 *.log
 .DS_Store
+
+# Your personal King Intelligence connection. It contains a LIVE key to your
+# toolkit, so it must never be committed: a key in git history outlives the file,
+# and it would be pushed to your backup on every session close. It is rebuilt for
+# you automatically, so nothing is lost by keeping it out of your repo.
+.mcp.json
