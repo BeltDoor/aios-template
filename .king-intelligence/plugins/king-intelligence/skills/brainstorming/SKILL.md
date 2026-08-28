@@ -115,4 +115,4 @@ A browser-based companion for showing mockups, diagrams, and visual options duri
 Even after acceptance, decide browser vs terminal per question — the guide covers how.
 
 If they agree to the companion, read the detailed guide before proceeding:
-`${CLAUDE_PLUGIN_ROOT}/skills/brainstorming/visual-companion.md`
+call `get_skill_file` with name `brainstorming` and path `visual-companion.md`.

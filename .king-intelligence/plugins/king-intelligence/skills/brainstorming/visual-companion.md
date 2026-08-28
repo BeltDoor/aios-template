@@ -2,6 +2,15 @@
 
 Browser-based visual brainstorming companion for showing mockups, diagrams, and options.
 
+## First: get the companion's scripts
+
+They are served with this skill rather than installed on the computer. Once per session,
+call `list_skill_files` with name `brainstorming`, then for every path starting with
+`scripts/` call `get_skill_file` with name `brainstorming` and that path, saving each one
+to `.claude/king-intelligence/brainstorming/<that same path>`. Keep the folder shape: the
+server loads its own template and helper from beside itself. Make `scripts/start-server.sh`
+and `scripts/stop-server.sh` executable (`chmod +x`) after saving them.
+
 ## When to Use
 
 Decide per-question, not per-session. The test: **would the user understand this better by seeing it than reading it?**
@@ -34,7 +43,7 @@ The server watches a directory for HTML files and serves the newest one to the b
 
 ```bash
 # Start server with persistence (mockups saved to project)
-${CLAUDE_PLUGIN_ROOT}/skills/brainstorming/scripts/start-server.sh --project-dir /path/to/project
+.claude/king-intelligence/brainstorming/scripts/start-server.sh --project-dir /path/to/project
 
 # Returns: {"type":"server-started","port":52341,"url":"http://localhost:52341",
 #           "screen_dir":"/path/to/project/.superpowers/brainstorm/12345-1706000000/content",
@@ -52,7 +61,7 @@ Save `screen_dir` and `state_dir` from the response. Tell user to open the URL.
 **Claude Code (macOS / Linux):**
 ```bash
 # Default mode works — the script backgrounds the server itself
-${CLAUDE_PLUGIN_ROOT}/skills/brainstorming/scripts/start-server.sh --project-dir /path/to/project
+.claude/king-intelligence/brainstorming/scripts/start-server.sh --project-dir /path/to/project
 ```
 
 **Claude Code (Windows):**
@@ -60,7 +69,7 @@ ${CLAUDE_PLUGIN_ROOT}/skills/brainstorming/scripts/start-server.sh --project-dir
 # Windows auto-detects and uses foreground mode, which blocks the tool call.
 # Use run_in_background: true on the Bash tool call so the server survives
 # across conversation turns.
-${CLAUDE_PLUGIN_ROOT}/skills/brainstorming/scripts/start-server.sh --project-dir /path/to/project
+.claude/king-intelligence/brainstorming/scripts/start-server.sh --project-dir /path/to/project
 ```
 When calling this via the Bash tool, set `run_in_background: true`. Then read `$STATE_DIR/server-info` on the next turn to get the URL and port.
 
@@ -68,14 +77,14 @@ When calling this via the Bash tool, set `run_in_background: true`. Then read `$
 ```bash
 # Codex reaps background processes. The script auto-detects CODEX_CI and
 # switches to foreground mode. Run it normally — no extra flags needed.
-${CLAUDE_PLUGIN_ROOT}/skills/brainstorming/scripts/start-server.sh --project-dir /path/to/project
+.claude/king-intelligence/brainstorming/scripts/start-server.sh --project-dir /path/to/project
 ```
 
 **Gemini CLI:**
 ```bash
 # Use --foreground and set is_background: true on your shell tool call
 # so the process survives across turns
-${CLAUDE_PLUGIN_ROOT}/skills/brainstorming/scripts/start-server.sh --project-dir /path/to/project --foreground
+.claude/king-intelligence/brainstorming/scripts/start-server.sh --project-dir /path/to/project --foreground
 ```
 
 **Other environments:** The server must keep running in the background across conversation turns. If your environment reaps detached processes, use `--foreground` and launch the command with your platform's background execution mechanism.
@@ -83,7 +92,7 @@ ${CLAUDE_PLUGIN_ROOT}/skills/brainstorming/scripts/start-server.sh --project-dir
 If the URL is unreachable from your browser (common in remote/containerized setups), bind a non-loopback host:
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/brainstorming/scripts/start-server.sh \
+.claude/king-intelligence/brainstorming/scripts/start-server.sh \
   --project-dir /path/to/project \
   --host 0.0.0.0 \
   --url-host localhost
@@ -276,12 +285,12 @@ If `$STATE_DIR/events` doesn't exist, the user didn't interact with the browser 
 ## Cleaning Up
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/brainstorming/scripts/stop-server.sh $SESSION_DIR
+.claude/king-intelligence/brainstorming/scripts/stop-server.sh $SESSION_DIR
 ```
 
 If the session used `--project-dir`, mockup files persist in `.superpowers/brainstorm/` for later reference. Only `/tmp` sessions get deleted on stop.
 
 ## Reference
 
-- Frame template (CSS reference): `${CLAUDE_PLUGIN_ROOT}/skills/brainstorming/scripts/frame-template.html`
-- Helper script (client-side): `${CLAUDE_PLUGIN_ROOT}/skills/brainstorming/scripts/helper.js`
+- Frame template (CSS reference): `.claude/king-intelligence/brainstorming/scripts/frame-template.html`
+- Helper script (client-side): `.claude/king-intelligence/brainstorming/scripts/helper.js`

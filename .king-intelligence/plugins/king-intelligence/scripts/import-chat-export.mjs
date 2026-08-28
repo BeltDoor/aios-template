@@ -612,7 +612,7 @@ function cmdAssign(planPath, args) {
   if (!ledger) fail(`no ledger at ${archiveRel}/.import-ledger.json — run convert first`);
   const plan = loadJSON(path.resolve(planPath), null);
   if (!Array.isArray(plan)) fail(`plan file must be a JSON array: ${planPath}`);
-  const moved = [], kept = [], missing = [], alreadyMoved = [];
+  const moved = [], kept = [], missing = [], alreadyMoved = [], refused = [];
   for (const item of plan) {
     const entry = ledger[item.id];
     if (!entry) { missing.push(item.id); continue; }
@@ -622,7 +622,19 @@ function cmdAssign(planPath, args) {
     if (entry.destination && entry.movedAt) { alreadyMoved.push(item.id); continue; }
     const srcAbs = path.join(root, entry.file);
     if (!existsSync(srcAbs)) { missing.push(item.id); continue; }
-    const destDir = path.join(root, dest);
+    // THE DESTINATION IS NOT TRUSTED. It comes from a plan file, and stripping slashes off
+    // the ends does nothing about "../..": a plan naming `../../outside` MOVED a member's
+    // private conversation out of their repo entirely and left the archive empty. Proven on
+    // 8/28/26 by running this against a fixture. Same hole as the one found the same night in
+    // the command-stub sync, which is the tell that a path from a file is never a safe path.
+    //
+    // Resolved and compared against the repo root, so no arrangement of dots can leave it.
+    const destDir = path.resolve(root, dest);
+    const insideRepo = destDir === path.resolve(root) || destDir.startsWith(path.resolve(root) + path.sep);
+    if (!insideRepo) {
+      refused.push({ id: item.id, destination: item.destination });
+      continue;
+    }
     mkdirSync(destDir, { recursive: true });
     let destAbs = path.join(destDir, path.basename(entry.file));
     while (existsSync(destAbs)) destAbs = destAbs.replace(/\.md$/, "x.md");
@@ -633,7 +645,7 @@ function cmdAssign(planPath, args) {
     writeFileSync(ledgerPath, JSON.stringify(ledger, null, 2)); // per-move: interruption-safe
   }
   writeFileSync(ledgerPath, JSON.stringify(ledger, null, 2));
-  console.log(JSON.stringify({ moved: moved.length, keptInArchive: kept.length, alreadyMoved, missing, moves: moved }, null, 2));
+  console.log(JSON.stringify({ moved: moved.length, keptInArchive: kept.length, alreadyMoved, missing, refused, moves: moved }, null, 2));
 }
 
 function cmdMap(args) {

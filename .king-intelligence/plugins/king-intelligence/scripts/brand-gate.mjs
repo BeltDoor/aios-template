@@ -102,7 +102,20 @@ function hasLookedAtGuide(transcriptPath, cfg, required) {
     return null;
   }
   const dir = (cfg.snapshotDir || "").replace(/^[./]+|\/+$/g, "");
-  return required.every((f) => text.includes(`${dir}/${f}`));
+  // A MENTION IS NOT A LOOK (fixed 8/28/26). This was `text.includes(dir + "/" + f)`, and the
+  // thing that most reliably puts that exact string into a transcript is THIS GATE'S OWN
+  // REFUSAL, which lists the files it wants by path. So the sequence was: try to build
+  // something visual, get blocked, and the refusal itself satisfies the gate for every attempt
+  // afterwards. Triggering the gate was how you got past the gate. Confirmed by grepping a
+  // real transcript, where two of three occurrences of the required path were the refusal.
+  //
+  // Any other mention did it too: a search result, a line of a config file, a sentence about
+  // the brand guide. What counts now is a Read tool call naming the file, which is the only
+  // thing that means the picture actually reached the model's eyes.
+  return required.every((f) => {
+    const needle = `${dir}/${f}`.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`"file_path"\\s*:\\s*"[^"]*${needle}"`).test(text);
+  });
 }
 
 let input = "";

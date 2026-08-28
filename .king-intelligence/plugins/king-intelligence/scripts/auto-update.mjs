@@ -11,6 +11,9 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, rmSync
 // (rmSync + existsSync are also used by the update-failure record added 8/21/26)
 import { execSync } from "node:child_process";
 import { join } from "node:path";
+// The removal judgement lives in its own module so it can be tested; this file does its
+// work on import and reaches the network, so nothing here could otherwise be exercised.
+import { confirmEnded } from "./kill-switch-rules.mjs";
 import { homedir } from "node:os";
 
 const emit = (msg) => {
@@ -163,14 +166,33 @@ try {
     } catch { return false; }
   })();
 
-  const errPath = join(data, "time-saved", "update-error.json");
+  // WRITTEN WHERE THE ENGINE ACTUALLY READS (fixed 8/28/26).
+  //
+  // This note is the ONLY way anyone finds out that a member's updates are failing. It was
+  // being written under the plugin's own data folder while measure-sessions.mjs reads from
+  // the home folder, which is where the ledger moved on 8/21 when per-machine state was
+  // taken out of CLAUDE_PLUGIN_DATA. The reader moved and the writer did not, so the note
+  // landed somewhere nothing looks: every machine in the fleet reported no update failure,
+  // and that read as "everyone is updating cleanly" when it only ever meant "nobody can
+  // see". Same resolution as the engine, override included, so the two cannot drift again.
+  const errDir =
+    process.env.KI_TIME_SAVED_DIR ||
+    join(homedir(), ".claude", "king-intelligence", "time-saved");
+  const errPath = join(errDir, "update-error.json");
+  // The old location, still cleared on success so a stale note from a previous version
+  // cannot sit there for ever claiming a failure that has since been fixed.
+  const legacyErrPath = join(data, "time-saved", "update-error.json");
   const noteFailure = (stage, detail) => {
     try {
-      mkdirSync(join(data, "time-saved"), { recursive: true });
+      mkdirSync(errDir, { recursive: true });
       writeFileSync(errPath, JSON.stringify({ stage, detail: String(detail || "").slice(0, 300), at: new Date().toISOString() }));
     } catch {}
   };
-  const clearFailure = () => { try { if (existsSync(errPath)) rmSync(errPath, { force: true }); } catch {} };
+  const clearFailure = () => {
+    for (const p of [errPath, legacyErrPath]) {
+      try { if (existsSync(p)) rmSync(p, { force: true }); } catch {}
+    }
+  };
   const stamp = (waitMs) => { try { mkdirSync(data, { recursive: true }); writeFileSync(marker, now + ":" + waitMs); } catch {} };
 
   // gate: only keyed clients can pull from the marketplace. A free-starter / offline client
@@ -186,7 +208,34 @@ try {
     const tok = DRY ? "dry-run" : portalToken();
     if (tok) {
       const status = await accessStatus(tok);
-      if (status === "ended") {
+
+      // ONE answer is not enough to take a paying member's toolkit away (8/28/26).
+      //
+      // "ended" is a reading of two database columns, and those columns have been WRONG for
+      // real members twice: two were keyed with a subscription status of "none" (8/21/26),
+      // and an expired-trial sweep stamped another as revoked the day before Jacob
+      // reinstated her (8/24/26). Every one of them would have read as ended here.
+      //
+      // What made that dangerous is that the act is not reversible from the member's side:
+      // removing the plugin removes the hook that would have healed it, so recovery needs a
+      // fresh install line from /system, which needs a live membership to view. A member
+      // wrongly cut off cannot get themselves back.
+      //
+      // So it now takes TWO confirmations at least six hours apart. A membership that has
+      // really ended is still ended six hours later, so a genuine removal is delayed by a
+      // session or two and nothing else. A wrong column, or a bad minute in the database,
+      // gets the chance to be right before anyone's tools are taken.
+      // The judgement itself lives in kill-switch-rules.mjs, next to its test. Everything
+      // here is the filing: read the note, do what it says, write the note back.
+      const streakFile = join(data, ".ended-confirmations");
+      let raw = null;
+      try { raw = existsSync(streakFile) ? readFileSync(streakFile, "utf8") : null; } catch {}
+      const verdict = confirmEnded(status, now, raw);
+      if (verdict.write !== null) { try { writeFileSync(streakFile, String(verdict.write)); } catch {} }
+      if (verdict.clear) { try { if (existsSync(streakFile)) rmSync(streakFile, { force: true }); } catch {} }
+      const confirmed = verdict.confirmed;
+
+      if (status === "ended" && confirmed) {
         // REMOVE, not just disable (Jacob's call, 8/26/26): the skills must not remain on a
         // non-member's machine. Uninstall the plugin (fallback: disable), drop the keyed
         // marketplace (the cached clone is a second on-disk copy of every skill), then sweep

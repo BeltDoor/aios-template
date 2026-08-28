@@ -294,6 +294,52 @@ function conservation(sections, keptSet, archivedSet) {
   return { ok: missing.length === 0 && overlap.length === 0, missing, overlap, allCount: all.size, coveredCount: covered.size };
 }
 
+/**
+ * Save the CURRENT index before changing it. This is the rollback master and the baseline
+ * `--verify` compares against.
+ *
+ * IT WAS NEVER BEING WRITTEN. `latestSnapshot()` only ever read, so the newest snapshot on the
+ * real machine was from 2026-06-08 and `--verify` had been comparing three months of memory
+ * against a June baseline: every note written since was outside what it checked, while it
+ * still printed a clean line. The rollback master was equally stale, so a bad run could only
+ * be undone back to June. Found 8/28/26 by writing the first test this script has ever had.
+ *
+ * Only ever ADDS files. The newest ten are kept so this cannot grow without bound, and an
+ * older one is only removed once ten newer ones exist.
+ */
+function takeSnapshot() {
+  try {
+    if (!fs.existsSync(MEMORY_PATH)) return null;
+    const dir = path.join(MEM_DIR, '_snapshots');
+    fs.mkdirSync(dir, { recursive: true });
+    // SECONDS, not minutes: two runs in the same minute would otherwise write the same
+    // filename and the second would overwrite the first, quietly destroying the only copy of
+    // the state in between. A close and a re-run land in the same minute often enough.
+    const stamp = new Date().toISOString().slice(0, 19).replace('T', '-').replace(/:/g, '');
+    // NEVER overwrite an existing snapshot: even at second resolution two runs collide (a
+    // close followed by a re-run does it), and overwriting destroys the only copy of the state
+    // in between, which is the one thing a rollback master exists to hold.
+    //
+    // EVERY name carries the counter, including the first. An optional suffix looked tidier
+    // and broke the ordering `latestSnapshot()` depends on: "-2.md" sorts BEFORE ".md" because
+    // "-" is below "." in ASCII, so the newest snapshot would have been read as the older one.
+    let file = null;
+    for (let n = 0; n < 100; n++) {
+      const candidate = path.join(dir, `MEMORY.PRECONVEYOR.${stamp}-${String(n).padStart(2, '0')}.md`);
+      if (!fs.existsSync(candidate)) { file = candidate; break; }
+    }
+    if (!file) return null; // a hundred in one second is not a real situation
+    fs.writeFileSync(file, fs.readFileSync(MEMORY_PATH, 'utf8'));
+    const snaps = fs.readdirSync(dir).filter(f => /^MEMORY\.PRECONVEYOR\..*\.md$/.test(f)).sort();
+    for (const old of snaps.slice(0, Math.max(0, snaps.length - 10))) {
+      try { fs.unlinkSync(path.join(dir, old)); } catch { /* keeping it is no harm */ }
+    }
+    return file;
+  } catch {
+    return null; // never let bookkeeping stop the real work
+  }
+}
+
 function collapse() {
   const { preamble, sections } = readMemory();
   const r = build(sections, preamble);
@@ -314,6 +360,7 @@ function collapse() {
   let arcContent = arcHeader + '\n' + arcBlocks + '\n';
   if (fs.existsSync(arcPath)) arcContent = fs.readFileSync(arcPath, 'utf8').trimEnd() + '\n\n' + arcBlocks + '\n';
 
+  takeSnapshot(); // rollback master + the baseline --verify reads, taken BEFORE any write
   atomicWrite(MEMORY_PATH, r.body);
   atomicWrite(arcPath, arcContent);
 
@@ -349,7 +396,7 @@ function verify() {
   console.log(`Snapshot notes: ${origIds.size} · in MEMORY: ${memIds.size} · in archive: ${arcIds.size} · covered: ${covered.size}`);
   console.log(`MEMORY.md: ${memBytes} bytes (${memBytes <= HARD_CAP ? 'loads fully' : 'OVER CLIFF'}; budget ${BUDGET})`);
   if (missing.length) { console.error(`FAIL — ${missing.length} notes missing from both MEMORY and archive:`); missing.slice(0, 20).forEach(id => console.error('   ' + id)); process.exit(1); }
-  console.log('OK — every snapshot note is covered by MEMORY.md or the archive.');
+  console.log(`OK — every note in ${path.basename(snap)} is covered by MEMORY.md or the archive.`);
 }
 
 function enforce() {
@@ -365,6 +412,7 @@ function enforce() {
   let arcContent = fs.existsSync(arcPath)
     ? fs.readFileSync(arcPath, 'utf8').trimEnd() + '\n\n' + arcBlocks + '\n'
     : `# Memory archive (not auto-loaded)\n\n${arcBlocks}\n`;
+  takeSnapshot(); // rollback master + the baseline --verify reads, taken BEFORE any write
   atomicWrite(MEMORY_PATH, r.body);
   if (r.archivedSecs.length) atomicWrite(arcPath, arcContent);
   console.log(`Memory: kept ${r.pins.length + r.freshKept.length} loading, aged ${r.archivedSecs.length} older notes into ${path.basename(arcPath)} (nothing deleted).`);

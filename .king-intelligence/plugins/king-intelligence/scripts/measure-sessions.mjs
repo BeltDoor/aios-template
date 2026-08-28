@@ -47,9 +47,10 @@ import crypto from "node:crypto";
 import readline from "node:readline";
 
 // ---------- the price list (shipped, never invented locally) ----------
-export const MIN_CREATED = 20;
-export const MIN_CHANGED = 5;
-export const MIN_OUTWARD = 10;
+// One copy only, in rollup-rules.mjs, where it is tested. Two copies of a price list is two
+// answers to "what did this save me" and only one of them is ever read.
+export { MIN_CREATED, MIN_CHANGED, MIN_OUTWARD, rollup } from "./rollup-rules.mjs";
+import { rollup, MIN_CREATED, MIN_CHANGED, MIN_OUTWARD } from "./rollup-rules.mjs";
 const IDLE_CAP_MS = 5 * 60 * 1000;
 
 // ---------- where things live ----------
@@ -95,6 +96,23 @@ const arg = (i) => argv[i];
 
 // ---------- what counts as work ----------
 // A path that is scratch, machinery, or someone else's dependency is not a deliverable.
+// A document written through the TERMINAL rather than with the file-writing tools.
+//
+// Measured 8/28/26 on this machine: across 534 sessions in 14 days, 3,112 documents were
+// written with the tools and 5,610 through the terminal. After stripping scratch files,
+// temp paths and machinery, 626 DISTINCT real documents had been written this way and
+// earned the member nothing, which is about 52 hours at the engine's own changed-a-document
+// price. On one eight-hour session there were 1,657 terminal commands and not a single
+// Write or Edit, so its document credit was exactly zero.
+//
+// These are recorded SEPARATELY and are deliberately NOT priced into anyone's total. Turning
+// them on raises every member's hours at once, and that is a decision about what the number
+// means, not a bug fix. Recording them makes the size of the gap a fact instead of an
+// argument, and switching it on later is one line.
+const TERMINAL_WRITE = /(?:cat\s*>+\s*|tee\s+(?:-a\s+)?|>>?\s*)([A-Za-z0-9._\/~$-]+\.[A-Za-z0-9]{1,5})/g;
+// Only things a member would call a document. A script or a config is machinery.
+const DOCLIKE = /\.(md|txt|csv|json|html|docx|pptx|pdf|xlsx)$/i;
+
 const NOISE = /(^|\/)(node_modules|\.git|\.next|dist|build|coverage|__pycache__|\.venv)(\/|$)|(^\/tmp\/|^\/private\/tmp\/|\/scratchpad\/)|\.claude\/time-saved\//;
 
 // Outward artifacts: a thing produced for a person outside this session. Matched on the tool's
@@ -116,6 +134,7 @@ const lastSegment = (name) => String(name).split("__").pop();
 async function measureFile(file) {
   const ts = [];
   const touched = new Set();
+  const touchedViaTerminal = new Set();
   const skills = [];
   let drafts = 0;
   let cwd = null;
@@ -153,6 +172,16 @@ async function measureFile(file) {
         if (typeof p === "string" && p && !NOISE.test(p)) touched.add(shortHash(p));
         continue;
       }
+      if (name === "Bash") {
+        const cmd = String(input.command || "");
+        for (const m of cmd.matchAll(TERMINAL_WRITE)) {
+          const p = m[1];
+          if (!p || NOISE.test(p) || !DOCLIKE.test(p) || p.startsWith("/dev/")) continue;
+          // Not added to `touched`: this is a measurement, not a credit.
+          if (!touched.has(shortHash(p))) touchedViaTerminal.add(shortHash(p));
+        }
+        continue;
+      }
       // Two invocation paths, one counter (Skills Door migration, 8/27/26). The local
       // Skill tool, and the door's MCP tool that every synced command stub calls. Miss
       // the second and a member's "which tools you use" breakdown silently goes dark
@@ -188,6 +217,7 @@ async function measureFile(file) {
     end: new Date(ts[ts.length - 1]).toISOString(),
     activeMin: Math.round((activeMs / 60000) * 100) / 100,
     touched: [...touched],
+    touchedViaTerminal: [...touchedViaTerminal],
     drafts,
     skills: [...new Set(skills)],
     measuredAt: new Date().toISOString(),
@@ -231,53 +261,6 @@ function writeIndex(idx) {
 }
 
 // ---------- roll up (the ONLY place a total is computed) ----------
-export function rollup(rows) {
-  const sessions = [...rows.values()].sort((a, b) => String(a.start).localeCompare(String(b.start)));
-  const seen = new Set();
-  let created = 0, changed = 0, drafts = 0, activeMin = 0, creditMin = 0, working = 0;
-  const days = new Set();
-  const skillUses = {};
-
-  for (const s of sessions) {
-    let sCreated = 0, sChanged = 0;
-    for (const h of s.touched || []) {
-      if (seen.has(h)) sChanged += 1;
-      else { seen.add(h); sCreated += 1; }
-    }
-    const sDrafts = Number(s.drafts) || 0;
-    const sActive = Number(s.activeMin) || 0;
-    const byHand = sCreated * MIN_CREATED + sChanged * MIN_CHANGED + sDrafts * MIN_OUTWARD;
-
-    created += sCreated;
-    changed += sChanged;
-    drafts += sDrafts;
-    activeMin += sActive;
-    const credit = Math.max(sActive, byHand); // the machine's own working time is the floor
-    creditMin += credit;
-    // A session only COUNTS if it did something. A window opened and closed, or one of the
-    // automated loops that can open hundreds of them in a day, displaces no work and must not
-    // pad the figure the owner reads. On a real machine this was two thirds of all sessions.
-    if (credit >= 1) {
-      working += 1;
-      if (s.start) days.add(s.start.slice(0, 10));
-    }
-    for (const k of s.skills || []) skillUses[k] = (skillUses[k] || 0) + 1;
-  }
-
-  return {
-    hours: Math.round((creditMin / 60) * 100) / 100,
-    machineHours: Math.round((activeMin / 60) * 100) / 100,
-    sessions: working,
-    sessionsSeen: sessions.length,
-    activeDays: days.size,
-    docsCreated: created,
-    docsChanged: changed,
-    drafts,
-    skills: skillUses,
-    firstSession: sessions.length ? sessions[0].start : null,
-    lastSession: sessions.length ? sessions[sessions.length - 1].end : null,
-  };
-}
 
 // ---------- this machine ----------
 // A member can work on two machines. Each one reports its own ledger under its own id so the
@@ -296,14 +279,43 @@ function machineId() {
 // The version this machine ACTUALLY has. The portal used to show its own stale pointer back to
 // itself, so a member on v0.34.0 read as current. This is the first real version signal.
 function installedVersion() {
-  const root = process.env.CLAUDE_PLUGIN_ROOT;
-  if (!root) return null;
-  try { return JSON.parse(fs.readFileSync(path.join(root, ".claude-plugin", "plugin.json"), "utf8")).version || null; }
-  catch { return null; }
+  // CLAUDE_PLUGIN_ROOT is set when Claude Code runs this as a hook and UNSET when anything
+  // else runs it, including the detached sweep that sends most snapshots. So this returned
+  // null on live machines and the portal recorded no version at all: eleven members had
+  // never reported one, and Jacob's own active machine was blank while a machine that
+  // stopped a week earlier supplied his version instead (found 8/28/26).
+  //
+  // The fallback reads the marketplace clone, which is the copy `marketplace update` keeps
+  // current. Scoped to marketplaces/ on purpose: old versions live on under plugins/cache/
+  // and an unscoped search happily returns one of those, which is the pinned 8/21 trap.
+  const candidates = [];
+  if (process.env.CLAUDE_PLUGIN_ROOT) candidates.push(process.env.CLAUDE_PLUGIN_ROOT);
+  candidates.push(
+    path.join(os.homedir(), ".claude", "plugins", "marketplaces", "king-intelligence", "plugins", "king-intelligence"),
+    path.join(os.homedir(), ".claude", "plugins", "marketplaces", "king-intelligence-starter", "plugins", "king-intelligence")
+  );
+  for (const root of candidates) {
+    try {
+      const v = JSON.parse(fs.readFileSync(path.join(root, ".claude-plugin", "plugin.json"), "utf8")).version;
+      if (v) return v;
+    } catch { /* try the next one */ }
+  }
+  return null;
 }
 
 function lastUpdateError() {
-  try { return JSON.parse(fs.readFileSync(path.join(DATA, "update-error.json"), "utf8")); } catch { return null; }
+  // Reads the current location first, then the one older plugin versions wrote to, so a
+  // machine that has not updated yet still has its failure seen. That is exactly the
+  // machine this note is about, so leaving it unreadable would hide the cases that matter
+  // most (8/28/26).
+  const legacy = process.env.CLAUDE_PLUGIN_DATA
+    ? path.join(process.env.CLAUDE_PLUGIN_DATA, "time-saved", "update-error.json")
+    : null;
+  for (const p of [path.join(DATA, "update-error.json"), legacy]) {
+    if (!p) continue;
+    try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { /* try the next */ }
+  }
+  return null;
 }
 
 // token: --token | KI_MEMBER_TOKEN | the token baked into the marketplace URL this machine uses.
