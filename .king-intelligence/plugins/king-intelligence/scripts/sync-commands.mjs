@@ -5,7 +5,8 @@
  *
  * On each throttled session start, a machine connected to the door (a project
  * .mcp.json naming members.king-intelligence.com/api/mcp) asks the door for the
- * live skill list and mirrors it into .claude/commands/ as one stub per skill:
+ * live skill list and mirrors it into .claude/commands/king-intelligence/ as one
+ * stub per skill, so each is typed as /king-intelligence:<name>:
  * new skill published -> stub appears; skill retired -> stub removed;
  * membership ended -> the door lists nothing -> the stubs empty themselves.
  * Nothing is maintained by hand, which is the only kind of feature that lives.
@@ -34,7 +35,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, unlinkSync, existsSync } from "node:fs";
 // The delete rules live in their own module so they can be tested without a member machine.
-import { looksLikeOurStub, stubsToRemove } from "./stub-rules.mjs";
+import { looksLikeOurStub, stubsToRemove, shouldRetireFlatStub } from "./stub-rules.mjs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { spawnSync } from "node:child_process";
@@ -60,6 +61,20 @@ const DOOR_BASE = process.env.KI_DOOR_URL || `https://${DOOR_HOST}${DOOR_PATH}`;
  */
 const THROTTLE_MS = 5 * 60 * 1000;
 const STATE_REL = join(".claude", "commands", ".ki-stubs.json");
+
+/**
+ * EVERY COMMAND IS NAMESPACED `king-intelligence:` (Jacob, 8/28/26).
+ *
+ * A member types `/king-intelligence:email`, not `/email`, so they can tell at a glance
+ * which commands came from their membership and which they wrote themselves. Claude Code
+ * namespaces a project command by the FOLDER it sits in, so the whole change is this
+ * directory. Verified against a real command: `/king-intelligence:x` resolves, and the
+ * bare `/x` answers "Unknown command", so a member is never offered the same thing twice.
+ *
+ * The manifest deliberately stays in the PARENT folder: it is this script's bookkeeping,
+ * not a command, and moving it would reset every existing machine's ownership record.
+ */
+const COMMAND_NS = "king-intelligence";
 
 function doorToken(root) {
   try {
@@ -428,7 +443,8 @@ async function main() {
   const prompts = await fetchSkillList(token);
   if (prompts === null) return; // could not check: change nothing
 
-  const dir = join(root, ".claude", "commands");
+  const flatDir = join(root, ".claude", "commands");
+  const dir = join(flatDir, COMMAND_NS);
   mkdirSync(dir, { recursive: true });
 
   // A skill the member has turned OFF (8/27/26). `disabledSkills` used to work by
@@ -472,6 +488,15 @@ async function main() {
       const ours = existing === null || (tracked.has(name) && looksLikeOurStub(existing));
       if (!ours) { kept.push(name); continue; }
       if (existing !== body) writeFileSync(file, body);
+
+      // The namespaced file now exists, so the old flat copy is a duplicate command.
+      // Retire it ONLY if it is still ours, and only AFTER the replacement is on disk,
+      // so a crash between the two leaves the member with a working command either way.
+      const oldFile = join(flatDir, `${name}.md`);
+      if (existsSync(oldFile)) {
+        const oldText = readFileSync(oldFile, "utf8");
+        if (shouldRetireFlatStub(name, tracked, oldText)) unlinkSync(oldFile);
+      }
     } catch {}
   }
 
@@ -493,12 +518,25 @@ async function main() {
   //    on the door never having a bug, and one shrunken response is one wiped machine.
   //    A real retirement removes a skill or two; it does not remove thirty.
   // Every rule that decides this lives in stub-rules.mjs, next to its test.
+  // A retired skill's stub can be in EITHER place while machines are still moving to the
+  // namespaced folder: the new one if this machine has synced since the move, the old flat
+  // one if the skill was retired in the same breath. Judge on whichever copy is there, and
+  // sweep both, or a skill retired mid-migration leaves a dead command behind for ever.
+  const stubPaths = (n) => [join(dir, `${n}.md`), join(flatDir, `${n}.md`)];
   const readStub = (n) => {
-    const f = join(dir, `${n}.md`);
-    return existsSync(f) ? readFileSync(f, "utf8") : null;
+    for (const f of stubPaths(n)) if (existsSync(f)) return readFileSync(f, "utf8");
+    return null;
   };
   for (const name of stubsToRemove(state.managed, desired, readStub)) {
-    try { unlinkSync(join(dir, `${name}.md`)); } catch {}
+    for (const f of stubPaths(name)) {
+      // Re-check ownership per FILE. The two copies can differ: a member may have edited
+      // the flat one, which makes it theirs, while the namespaced one is still ours.
+      try {
+        if (!existsSync(f)) continue;
+        if (!looksLikeOurStub(readFileSync(f, "utf8"))) continue;
+        unlinkSync(f);
+      } catch {}
+    }
   }
 
   // A name we left alone is NOT ours, so it must not enter the tracked list: doing so

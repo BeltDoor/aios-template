@@ -25,6 +25,34 @@ export function looksLikeOurStub(text) {
 }
 
 /**
+ * Should the OLD un-namespaced copy of a stub be retired? (8/28/26)
+ *
+ * Commands moved from `.claude/commands/<name>.md` to
+ * `.claude/commands/king-intelligence/<name>.md`, so every one of ours now reads as
+ * `/king-intelligence:<name>`. Nothing in `stubsToRemove` can clean up after that move:
+ * it only removes names the door has STOPPED listing, and every name here is still
+ * listed. Left alone, the flat file stays for ever and the member has both `/email` and
+ * `/king-intelligence:email` doing the same thing, which is worse than the problem the
+ * namespace was for.
+ *
+ * The same three questions as every other delete here, and all three must hold:
+ *   1. the name is safe (this list comes out of a JSON file in the member's own repo);
+ *   2. we are already tracking the name, so this is a file we created;
+ *   3. the file on disk still LOOKS like a stub we wrote.
+ * A member who edited that file, or wrote their own command at that name, keeps it. They
+ * then have their `/email` beside our `/king-intelligence:email`, which is exactly right.
+ *
+ * No floor is needed here, unlike `stubsToRemove`: this never runs off a shrunken door
+ * response. Each retirement is paired with a namespaced file just written in its place,
+ * so the command survives the move under its new name.
+ */
+export function shouldRetireFlatStub(name, tracked, text) {
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(String(name))) return false;
+  if (!tracked.has(name)) return false;
+  return looksLikeOurStub(text);
+}
+
+/**
  * Which of our stubs should be deleted?
  *
  * `readStub(name)` returns the file's current text, or null when it is not on disk.
