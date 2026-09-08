@@ -127,7 +127,10 @@ function apply(pluginRoot, projectDir, id) {
   const destScripts = path.join(projectDir, ".claude", "scripts");
   fs.mkdirSync(destScripts, { recursive: true });
   const copied = [];
-  for (const name of ["org-check.mjs", "memory-conveyor.mjs", "time-saved-sync.mjs"]) {
+  // endless.mjs rides here too: /endless arms the Stop hook by shelling out to it, and the guard
+  // itself stays at the plugin path (hooks CAN resolve ${CLAUDE_PLUGIN_ROOT}; a skill's shell call
+  // cannot), so only the arming half needs a copy the skill can name in plain text.
+  for (const name of ["org-check.mjs", "memory-conveyor.mjs", "time-saved-sync.mjs", "endless.mjs"]) {
     const src = path.join(pluginRoot, "scripts", name);
     if (fs.existsSync(src)) { fs.copyFileSync(src, path.join(destScripts, name)); copied.push(name); }
   }
