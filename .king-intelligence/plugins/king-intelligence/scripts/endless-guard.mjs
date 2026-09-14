@@ -20,6 +20,28 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execSync } from 'node:child_process';
+
+// 09/2/26 - 09:35 EDT: each cycle now carries two deterministic checks, so the run cannot drift on either
+// of the two failures the Aug 2026 usage report counted most: unsaved work a concurrent window
+// wipes, and fixes the loop graded itself. Both read disk, never memory. Both fail open.
+function unsavedUnder(folder, cwd) {
+  try {
+    const raw = execSync(`git status --porcelain -- "${folder}"`, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    return raw.split('\n').filter(Boolean);
+  } catch { return []; }
+}
+function evidenceCounts(file) {
+  const out = { entries: 0, proven: 0, unproven: 0, ambiguous: 0, missing_verdict: 0 };
+  if (!file || !fs.existsSync(file)) return out;
+  let text = ''; try { text = fs.readFileSync(file, 'utf8'); } catch { return out; }
+  for (const b of text.split(/^## +Cycle\b/im).slice(1)) {
+    out.entries++;
+    const m = b.match(/^\s*Verdict:\s*(PROVEN|UNPROVEN|AMBIGUOUS)\b/im);
+    if (!m) out.missing_verdict++; else out[m[1].toLowerCase()]++;
+  }
+  return out;
+}
 
 // Marker on every message we inject, so the stop-word scan can never match our
 // own text and report the opposite of the truth.
@@ -193,6 +215,15 @@ function main() {
   const next = iterations + 1;
   state.iterations = next;
   state.last_continue_at = new Date().toISOString();
+
+  // Disk truth for the two checks. `evidence_seen` is the ledger size at the previous continue,
+  // so "no new verdict since last cycle" is a comparison, not a memory.
+  const unsaved = unsavedUnder(state.folder, projectDir);
+  const evidenceFile = state.evidence_file || path.join(state.folder || projectDir, 'EVIDENCE.md');
+  const ev = evidenceCounts(evidenceFile);
+  const newVerdicts = (ev.proven + ev.unproven + ev.ambiguous) - Number(state.evidence_seen || 0);
+  state.evidence_seen = ev.proven + ev.unproven + ev.ambiguous;
+  const relFolder = path.relative(projectDir, state.folder || projectDir) || '.';
   try { fs.writeFileSync(stateFile, JSON.stringify(state, null, 2)); } catch { allowStop(); }
   log(stateDir, sid, `continue -> cycle ${next}`);
 
@@ -204,15 +235,26 @@ function main() {
     ? '\nThis cycle is an IDEA SWEEP: write ten fresh, ranked improvement ideas into PROGRESS.md, then start number one.'
     : '';
 
+  const saveLine = unsaved.length
+    ? `0. SAVE FIRST: ${unsaved.length} file(s) under ${relFolder} are unsaved and another window can wipe them. Run: bash scripts/repo-sync.sh "${state.label || 'endless'}: cycle ${next}" ${relFolder}`
+    : `0. Saved: nothing unsaved under ${relFolder}.`;
+  const proveLine = next === 1 || ev.entries === 0
+    ? `PROVE rule: every fix ends with a loop-prover verdict logged in ${evidenceFile} before you pick the next task.`
+    : newVerdicts > 0
+      ? `Evidence so far: ${ev.proven} PROVEN, ${ev.unproven} UNPROVEN${ev.ambiguous ? `, ${ev.ambiguous} AMBIGUOUS` : ''}${ev.missing_verdict ? `, ${ev.missing_verdict} entries missing a Verdict line (fix those)` : ''}.`
+      : `NO NEW VERDICT since the last cycle. The last fix is unproven until the loop-prover rules on it: dispatch it now, log the entry in ${evidenceFile}, and revert the fix if it comes back UNPROVEN. Only then pick the next task.`;
+
   const reason = [
     `${SENTINEL} Cycle ${next}. This window is on an endless run and is not finished.`,
     ``,
     `Do this now, in this turn:`,
+    saveLine,
     `1. If you do not have them in context (a context reset or compaction may have wiped them), read these two files in full first:`,
     `   - ${state.loop_prompt}`,
     `   - ${state.progress_file}`,
     `2. Update ${state.progress_file} with what you just did.`,
-    `3. Pick the single highest-value next task yourself and START it in this same turn.`,
+    `3. ${proveLine}`,
+    `4. Pick the single highest-value next task yourself and START it in this same turn: FIND one defect, FIX it, PROVE it through the loop-prover, SAVE through repo-sync.sh.`,
     ``,
     `Rules that still hold: do not declare the job done, do not post a wrap-up, do not go idle, do not ask whether to continue. Proceed on reasonable assumptions and log them under "Assumptions" in PROGRESS.md. Guardrails in ${state.loop_prompt} still apply.${ritual}`,
     ``,

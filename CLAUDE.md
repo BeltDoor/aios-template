@@ -142,6 +142,16 @@ Get the time with `date '+%m/%d/%y - %H:%M %Z'` → e.g. `05/24/26 - 13:42 EDT`.
 
 Skip this for the preloaded template files (this `CLAUDE.md`, `README.md`, `SKILLS.md`, `CONNECTIONS.md`, `TIME-SAVED.md`, `/references/*`) — except when you regenerate one post-onboarding, in which case add an `updated:` line.
 
+## 7b. Write documents with your file tools, not the terminal
+
+When you create or change a document for me, use your Write and Edit tools. Do not build it with a shell command (`cat > file`, a heredoc, `echo >>`, `sed -i`), even when the shell would be quicker, and even when you are running without permission prompts.
+
+Two reasons, both mine:
+- The brand check that runs after every document only watches your file tools. A document written through the terminal skips it, so something off-brand ships without a word.
+- My hours are measured from the documents you create and change. A document written through the terminal is invisible to that, so real work reads as nothing.
+
+The shell is still right for what it is for: running commands, moving and finding files, installing things. It is the wrong tool for authoring a document.
+
 ## 8. If something frustrates you
 
 Just say "this is broken" or "this is frustrating." I'll log what went wrong and ask what would have worked better. Your second brain gets sharper by hearing where it lets you down.

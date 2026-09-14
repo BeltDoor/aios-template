@@ -35,13 +35,13 @@ Read the result and decide:
    - `claude plugin update king-intelligence@king-intelligence`
 2. If this repo already has the local maintenance scripts (a sign the org migration has run), refresh them to the current plugin version so they never drift. This is a no-op for a client who hasn't run the migration yet:
 
-   !`[ -d "${CLAUDE_PROJECT_DIR}/.claude/scripts" ] && cp -f "${CLAUDE_PLUGIN_ROOT}/scripts/org-check.mjs" "${CLAUDE_PLUGIN_ROOT}/scripts/memory-conveyor.mjs" "${CLAUDE_PLUGIN_ROOT}/scripts/time-saved-sync.mjs" "${CLAUDE_PROJECT_DIR}/.claude/scripts/" 2>/dev/null && echo "refreshed local maintenance scripts" || echo "no local maintenance scripts yet (the org setup migration installs them)"`
+   !`node "${CLAUDE_PLUGIN_ROOT}/scripts/local-scripts.mjs" refresh "${CLAUDE_PROJECT_DIR}"`
 
-   (`time-saved-sync.mjs` was MISSING from this list until v0.31.0. The one-time org migration installed all three, but the migration only ever runs once, so every client who set up before the time-saved tracker shipped never received that script and their member page silently stayed empty. Keep all three names here: this refresh is the only thing that heals an already-migrated repo.)
+   (This used to be a plain copy out of `CLAUDE_PLUGIN_ROOT`, which is the folder of the version this SESSION started on, so right after step 1 pulled a new version it still copied the OLD scripts. On 9/13/26 a member on the newest toolkit was still running a memory tidy from two releases back. The refresh script above finds the newest toolkit folder on the machine itself, and the same refresh now also runs on its own at every session start, so the copies can no longer fall behind. A copy the member changed by hand is parked in `.claude/scripts/_replaced-<date>/`, never deleted.)
 
 3. Tell the user, in plain non-technical language, what changed and that they need to restart Claude Code for a new VERSION to fully take effect. Reassure them their saved settings were not touched.
 
-(Note: if Part 1 just pulled a brand-new version, the very latest patterns and this command's own newest instructions only load after a restart. That's normal: re-run `/king-intelligence:update` after restarting to sync against the newest set.)
+(Note: if Part 1 just pulled a brand-new version, the very latest patterns and this command's own newest instructions only load after a restart. That's normal: re-run `/king-intelligence:update` after restarting to sync against the newest set. The maintenance scripts are already current either way.)
 
 ## Part 2: One-time setup migrations (run before the audit)
 

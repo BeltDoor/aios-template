@@ -66,13 +66,20 @@ function findEngine() {
   return null;
 }
 
+// If the engine printed parseable JSON, that JSON is the truth, whatever its exit code says.
+// On Node 24 / Windows a hard process.exit() right after a fetch() aborts the process (a libuv
+// assertion) AFTER the measurement printed and the send succeeded; trusting the exit code there
+// recorded "measured: false" at every close for six weeks on one member's machine (9/11/26).
 function run(engine, args) {
-  const out = execFileSync(process.execPath, [engine, ...args], {
-    encoding: "utf8",
-    timeout: 120000,
-    maxBuffer: 32 * 1024 * 1024,
-  });
-  return JSON.parse(out);
+  const opts = { encoding: "utf8", timeout: 120000, maxBuffer: 32 * 1024 * 1024 };
+  try {
+    return JSON.parse(execFileSync(process.execPath, [engine, ...args], opts));
+  } catch (e) {
+    const out = e && e.stdout ? String(e.stdout) : "";
+    const i = out.indexOf("{");
+    if (i >= 0) { try { return JSON.parse(out.slice(i)); } catch { /* fall through */ } }
+    throw e;
+  }
 }
 
 try {

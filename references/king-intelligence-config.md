@@ -40,7 +40,9 @@ Tune the session close-out. The memory folder and your git branch are found auto
 - registries: SKILLS.md, CONNECTIONS.md, TIME-SAVED.md   # root files to refresh; blank = skip
 - registryPreserveSections:         # any hand-maintained "## " headings inside SKILLS.md to never regenerate
 - knowledgeGraph:                   # an in-repo knowledge folder to update, e.g. knowledge/  (blank = skip)
-- conveyorScript:                   # path to a memory-pruning script, if you have one  (blank = manual hygiene)
+- conveyorScript: .claude/scripts/memory-conveyor.mjs      # fallback only: the toolkit's newest copy is found automatically
+- orgCheckScript: .claude/scripts/org-check.mjs            # fallback only, same rule
+- timeSavedSyncScript: .claude/scripts/time-saved-sync.mjs  # fallback only, same rule
 - folderLayoutDoc:                  # a folder-map doc to update when top-level folders change, if any
 - memoryIndexFormat: newest-first   # how your memory index is ordered: pin-band | newest-first
 

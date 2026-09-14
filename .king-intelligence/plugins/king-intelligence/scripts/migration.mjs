@@ -23,6 +23,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { refreshLocalScripts, newestPluginRoot, readVersion } from "./local-scripts.mjs";
 
 const [cmd, ...rest] = process.argv.slice(2);
 
@@ -124,17 +125,13 @@ function apply(pluginRoot, projectDir, id) {
 
   // 2. copy the repo-maintenance scripts into the client repo (.claude/scripts/) so /end-session can
   //    run them with a plain repo-relative path (a skill's shell call can't resolve the plugin folder)
+  //    (endless.mjs rides here too: /endless arms the Stop hook by shelling out to it.) Since
+  //    9/14/26 the copy comes from the NEWEST toolkit on the machine and the session-start hook
+  //    keeps it level from then on; this one-time step only guarantees the copies exist today.
   const destScripts = path.join(projectDir, ".claude", "scripts");
   fs.mkdirSync(destScripts, { recursive: true });
-  const copied = [];
-  // endless.mjs rides here too: /endless arms the Stop hook by shelling out to it, and the guard
-  // itself stays at the plugin path (hooks CAN resolve ${CLAUDE_PLUGIN_ROOT}; a skill's shell call
-  // cannot), so only the arming half needs a copy the skill can name in plain text.
-  for (const name of ["org-check.mjs", "memory-conveyor.mjs", "time-saved-sync.mjs", "endless.mjs"]) {
-    const src = path.join(pluginRoot, "scripts", name);
-    if (fs.existsSync(src)) { fs.copyFileSync(src, path.join(destScripts, name)); copied.push(name); }
-  }
-  steps.push({ step: "copy-scripts", copied });
+  const rl = refreshLocalScripts(projectDir, newestPluginRoot(projectDir) || { root: pluginRoot, version: readVersion(pluginRoot) || "0.0.0" });
+  steps.push({ step: "copy-scripts", copied: rl.copied, version: rl.version, skipped: rl.skipped });
 
   // 3. folder coverage + the map (org-check reads layoutDoc/containers from the config we just merged)
   let orgOut = "";

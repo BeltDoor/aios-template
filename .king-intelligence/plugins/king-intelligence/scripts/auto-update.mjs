@@ -14,6 +14,9 @@ import { join } from "node:path";
 // The removal judgement lives in its own module so it can be tested; this file does its
 // work on import and reaches the network, so nothing here could otherwise be exercised.
 import { confirmEnded } from "./kill-switch-rules.mjs";
+// The repo's own copies of the maintenance scripts refresh from the NEWEST installed toolkit
+// on every session start (9/14/26): a plugin update on its own never reached them before.
+import { refreshLocalScripts, semverGt } from "./local-scripts.mjs";
 import { homedir } from "node:os";
 
 const emit = (msg) => {
@@ -22,13 +25,6 @@ const emit = (msg) => {
       hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: msg },
     }));
   } catch {}
-};
-
-const semverGt = (a, b) => {
-  const pa = String(a).split(".").map((n) => parseInt(n, 10) || 0);
-  const pb = String(b).split(".").map((n) => parseInt(n, 10) || 0);
-  for (let i = 0; i < 3; i++) { if ((pa[i] || 0) > (pb[i] || 0)) return true; if ((pa[i] || 0) < (pb[i] || 0)) return false; }
-  return false;
 };
 
 const readVersion = (p) => { try { return JSON.parse(readFileSync(p, "utf8")).version || null; } catch { return null; } };
@@ -129,14 +125,24 @@ function unseenPatternCount(root, data) {
   } catch { return 0; }
 }
 
+// Leaving early is a thrown sentinel the outer catch swallows, never a hard process.exit(): on
+// Node 24 / Windows a hard exit right after the access-status fetch() aborts the process with a
+// libuv assertion while the connection is still closing (9/11/26). A natural exit is safe.
+class Done extends Error {}
 try {
   const data = process.env.CLAUDE_PLUGIN_DATA;
   const root = process.env.CLAUDE_PLUGIN_ROOT;
-  if (!data || !root) process.exit(0);
+  if (!data || !root) throw new Done();
 
   // enforce the client's per-skill opt-out on EVERY session start, before the throttle can exit —
   // cheap, and it guarantees a disabled skill stays gone no matter when the last update landed.
   pruneDisabledSkills(root, data);
+
+  // Level the repo's own script copies with the newest installed toolkit, EVERY session start,
+  // before the throttle: a member whose plugin updated in the background last night runs the
+  // new memory tidy this morning, not the one she migrated on. Cheap: one stat per script.
+  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  refreshLocalScripts(projectDir);
 
   // throttle
   const marker = join(data, ".last-autocheck");
@@ -152,7 +158,7 @@ try {
     last = parseInt(raw[0], 10) || 0;
     if (raw[1]) wait = parseInt(raw[1], 10) || TWENTY_H;
   } catch {}
-  if (now - last < wait) process.exit(0);
+  if (now - last < wait) throw new Done();
 
   // Whatever happens below, leave a record of it. It rides up to the portal on the next snapshot,
   // which is the only way the owner ever finds out a client's updates are failing.
@@ -265,7 +271,7 @@ try {
           "IMPORTANT: tell the user the line above in your own first reply, then carry on with whatever they asked."
         );
         stamp(ONE_H); // if the disable didn't stick, try again within the hour
-        process.exit(0);
+        throw new Done();
       }
       if (status === "unknown") {
         emit(
@@ -274,7 +280,7 @@ try {
           "https://members.king-intelligence.com/system and paste it here. Mention this once, briefly, then carry on."
         );
         stamp(TWENTY_H); // don't nag every session; tools keep working locally meanwhile
-        process.exit(0);
+        throw new Done();
       }
       // "live" or null (couldn't check) -> carry on to the normal update path.
     }
@@ -303,6 +309,9 @@ try {
 
       // the fresh update just restored every skill folder — re-apply the client's opt-out now
       if (applied && !DRY) pruneDisabledSkills(root, data);
+      // and level the repo's script copies with the version that just landed (the cache now
+      // holds it, even though this session's CLAUDE_PLUGIN_ROOT still points at the old one)
+      if (applied) refreshLocalScripts(projectDir);
 
       const n = unseenPatternCount(root, data); // file-level "ways of working" not yet seen
       const whatsNew = latestWhatsNew();
@@ -344,4 +353,4 @@ try {
     stamp(catalogRefreshed || !onKeyedRail ? TWENTY_H : ONE_H);
   }
 } catch {}
-process.exit(0);
+process.exitCode = 0;

@@ -605,4 +605,8 @@ try {
 } finally {
   try { dropLock(); } catch { /* ignore */ }
 }
-process.exit(0);
+// A natural exit, never a hard process.exit(): on Node 24 / Windows a hard exit right after the
+// fetch() above aborts the process ("Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)")
+// while undici is still closing the connection. The work is done by then; only the exit code was
+// wrong, and the caller read it as "not measured" (9/11/26).
+process.exitCode = 0;

@@ -1,20 +1,25 @@
 #!/usr/bin/env node
-// King Intelligence — deterministic skill counting (Rail B).
-// Wired as a PostToolUse hook on the Skill tool in hooks.json. Every skill invocation bumps that
-// skill's row in the repo's TIME-SAVED.md: uses+1, total = baseline minutes x uses, last used today.
+// King Intelligence — deterministic skill counting.
+// Wired as a PostToolUse hook on skill invocations in hooks.json. Every skill invocation bumps
+// that skill's row in the repo's TIME-SAVED.md: uses+1, last used today.
 //
-// Honesty rules (from the 8/4/26 spec, non-negotiable):
-//   - Baselines come ONLY from defaults/skill-minutes.json, shipped by King Intelligence at the
-//     defensible floor (competent-peer estimate, x0.2 calibration, rounded DOWN to 5). A skill
-//     with no baseline counts uses and adds 0 minutes. The model never invents a number.
-//   - A row that already carries a real manual-minutes figure keeps it verbatim (it was set
-//     deliberately); only uses / total / last-used move.
-//   - No network here. The updated ledger rides the wire at session close (Rail A) and at
-//     /end-session, via skillsFromLedger() in time-saved-sync.mjs.
+// WHAT THIS FILE NO LONGER DOES (decided 9/14/26): it no longer turns uses into minutes.
+// Until 8/21/26 the hours on a member's page were built from this ledger (uses x a baseline
+// minutes figure, an ESTIMATE). Since then the hours are MEASURED by measure-sessions.mjs from
+// the machine's own record of every session and sent to the members page, and this ledger fed
+// nothing. But it kept writing an hours column, so a member's Claude saw two different hours
+// numbers (195.96 on the page, 18.67 in the file) and called it a discrepancy. It was two
+// counters that measure different things. There is one hours number now, the measured one.
+// This ledger counts WHICH skills ran and how often, which the scoreboard shows as "tasks run".
 //
-// Known limitation, documented on purpose: only invocations that go through the Skill TOOL are
-// counted (the current invocation path, including typed slash commands). Any bypass path
-// undercounts — which errs on the honest side.
+// Honesty rules:
+//   - A row's minutes cells are written as "see members page" the next time the row is
+//     touched, so an old estimate ages out of the file on its own. Nothing here invents a minute.
+//   - No network here. The measured hours ride up at session close (session-close.mjs) and at
+//     /end-session (time-saved-sync.mjs).
+//
+// Known limitation, documented on purpose: only invocations that go through the Skill tool or
+// the Skills Door are counted. Any bypass path undercounts, which errs on the honest side.
 //
 // Discipline mirrors backup.mjs: self-gates hard (git repo + Snowball markers + kill file),
 // swallows every failure, ALWAYS exits 0. Never blocks or slows a turn.
@@ -42,7 +47,7 @@ function run() {
   if (!isSnowball) return; // not a managed brain -> no-op
   if (existsSync(join(root, ".no-autobackup"))) return; // same kill switch as backup
 
-  bumpLedger(join(root, "TIME-SAVED.md"), skill, baselineFor(skill));
+  bumpLedger(join(root, "TIME-SAVED.md"), skill);
 }
 
 // Two invocation paths, one counter (Skills Door migration, 8/27/26):
@@ -69,30 +74,22 @@ function normalizeSkill(raw) {
   return clean && clean.length <= 64 ? clean : null;
 }
 
-function baselineFor(skill) {
-  try {
-    const table = JSON.parse(
-      readFileSync(join(SCRIPT_DIR, "..", "defaults", "skill-minutes.json"), "utf8")
-    );
-    const n = Number(table[skill]);
-    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
-  } catch {
-    return 0;
-  }
-}
 
-const LEDGER_HEADER = `# Time saved
+const MEASURED = "see members page";
+
+const LEDGER_HEADER = `# Tasks run
 
 _created automatically by the King Intelligence plugin_
 
-Running tally of the time your tracked tools hand back. "Manual time per use" is a deliberately
-low baseline set by King Intelligence: deterministic counting, never an estimate made up on the spot.
+Which of your tools ran, and how often. Your HOURS are not in this file: they are measured from
+your computer's own record of every session and shown on your members page, which is the one
+number to quote.
 
 | Skill | Manual time per use | Total uses | Total saved (cumulative) | Last used |
 |-------|--------------------|-----------|--------------------------|-----------|
 `;
 
-function bumpLedger(ledgerPath, skill, baseline) {
+function bumpLedger(ledgerPath, skill) {
   const today = fmtToday();
   let text = existsSync(ledgerPath) ? readFileSync(ledgerPath, "utf8") : LEDGER_HEADER;
 
@@ -123,25 +120,16 @@ function bumpLedger(ledgerPath, skill, baseline) {
     const rowSkill = first.replace(/^\//, "").toLowerCase();
     if (rowSkill !== skill) continue;
 
-    // Found the row. Keep cell 0 and a real manual-minutes cell verbatim; only fill the
-    // manual cell from the shipped baseline when it is still pending/zero.
+    // Found the row. Keep cell 0, bump uses, and retire any minutes estimate the row still
+    // carries: the hours live on the members page now (9/14/26).
     found = true;
-    const manualMin = parseInt((cells[1].match(/-?\d+/) || [])[0], 10);
-    const pending = /pending/i.test(cells[1]) || !(manualMin > 0);
-    let manualCell = cells[1];
-    let effMin = pending ? 0 : manualMin;
-    if (pending && baseline > 0) {
-      manualCell = `${baseline} min`;
-      effMin = baseline;
-    }
     const uses = (parseInt((cells[2].match(/-?\d+/) || [])[0], 10) || 0) + 1;
-    lines[i] = `| ${cells[0]} | ${manualCell} | ${uses} | ${effMin > 0 ? effMin * uses : 0} min | ${today} |`;
+    lines[i] = `| ${cells[0]} | ${MEASURED} | ${uses} | ${MEASURED} | ${today} |`;
     break;
   }
 
   if (!found) {
-    const manualCell = baseline > 0 ? `${baseline} min` : "(pending - baseline not set)";
-    const newRow = `| \`/${skill}\` | ${manualCell} | 1 | ${baseline > 0 ? baseline : 0} min | ${today} |`;
+    const newRow = `| \`/${skill}\` | ${MEASURED} | 1 | ${MEASURED} | ${today} |`;
     if (headerIdx >= 0 && lastRowIdx >= headerIdx) {
       lines.splice(lastRowIdx + 1, 0, newRow);
     } else {

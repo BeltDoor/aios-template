@@ -330,7 +330,13 @@ function nowStamp() {
   const yy = String(d.getFullYear()).slice(2);
   const hh = String(d.getHours()).padStart(2, '0');
   const mi = String(d.getMinutes()).padStart(2, '0');
-  return `${mm}/${dd}/${yy} - ${hh}:${mi} ET`;
+  // the host's real zone label (a non-Eastern machine used to get the right clock stamped "ET")
+  let tz = 'ET';
+  try {
+    const part = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).formatToParts(d).find(p => p.type === 'timeZoneName');
+    if (part && part.value) tz = part.value;
+  } catch { /* keep the fallback */ }
+  return `${mm}/${dd}/${yy} - ${hh}:${mi} ${tz}`;
 }
 
 /** Humanize a folder name for the title (kebab/snake → Title Case-ish). */
@@ -467,35 +473,46 @@ function checkExpiry() {
  *  `## YYYY-MM-DD` heading in their CLAUDE.md. Skips silently if git is unavailable. */
 function checkFreshness(nodes) {
   const stale = [];
+  // Every folder this cannot judge is COUNTED, not silently dropped (8/28/26). It compares a
+  // dated heading inside the note against the folder's last commit, so a note with no dated
+  // heading is unjudgeable — and 93 of this repo's 218 required folders are in exactly that
+  // state, while the line below spoke for "folder docs" as a whole. The measurement is fine;
+  // the sentence was wider than it.
+  let uncomparable = 0;
   for (const n of nodes) {
     if (!n.hasMd) continue;
     let gitDate;
     try {
       gitDate = execSync(`git log -1 --format=%cs -- "${n.rel}"`, { cwd: REPO_ROOT, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
-    } catch { continue; }
-    if (!gitDate) continue;
+    } catch { uncomparable++; continue; }
+    if (!gitDate) { uncomparable++; continue; }
     let text;
-    try { text = fs.readFileSync(path.join(n.abs, 'CLAUDE.md'), 'utf8'); } catch { continue; }
+    try { text = fs.readFileSync(path.join(n.abs, 'CLAUDE.md'), 'utf8'); } catch { uncomparable++; continue; }
     const dates = [...text.matchAll(/^##+\s*(\d{4})-(\d{2})-(\d{2})/gm)].map(m => `${m[1]}-${m[2]}-${m[3]}`).sort();
     const docDate = dates[dates.length - 1] || null;
-    if (!docDate) continue; // no dated entries — nothing to compare
+    if (!docDate) { uncomparable++; continue; } // no dated entries — nothing to compare here
     const gap = (new Date(gitDate) - new Date(docDate)) / 86400000;
     if (gap >= 14) stale.push({ rel: n.rel, gitDate, docDate, gapDays: Math.round(gap) });
   }
-  return stale.sort((a, b) => b.gapDays - a.gapDays);
+  stale.sort((a, b) => b.gapDays - a.gapDays);
+  stale.uncomparable = uncomparable;
+  return stale;
 }
 
 /** (--health) Every CLAUDE.md past the size budget, largest first. Reuses the rot
  *  walk (which already skips vendored/mirrored/archived trees), so any CLAUDE.md at
  *  any depth is weighed — the worst offenders live below the required-folder level. */
 const SIZE_BUDGET = 25 * 1024;
+const SKILL_BUDGET = 20 * 1024; // SKILL.md files: a 49KB skill is how prose phases got skipped (8/24/26)
 function checkSize() {
   const over = [];
   for (const rel of rotTargets()) {
-    if (path.basename(rel) !== 'CLAUDE.md') continue;
+    const base = path.basename(rel);
+    if (base !== 'CLAUDE.md' && base !== 'SKILL.md') continue;
+    const budget = base === 'SKILL.md' ? SKILL_BUDGET : SIZE_BUDGET;
     let bytes;
     try { bytes = fs.statSync(path.join(REPO_ROOT, rel)).size; } catch { continue; }
-    if (bytes > SIZE_BUDGET) over.push({ rel, bytes });
+    if (bytes > budget) over.push({ rel, bytes });
   }
   return over.sort((a, b) => b.bytes - a.bytes);
 }
@@ -515,15 +532,18 @@ function printRot({ deep, nodes }) {
   for (const u of upcoming) console.log(`  ⏳ rot: ${u.file} — rule expires ${u.date} (${u.note})`);
   if (deep) {
     const stale = checkFreshness(nodes);
+    const scope = stale.uncomparable
+      ? ` (${stale.uncomparable} folder(s) carry no dated heading, so this cannot judge them — scripts/stale-notes.mjs can)`
+      : '';
     console.log(stale.length
-      ? `  ✗ rot: ${stale.length} folder(s) worked on ≥14 days after their CLAUDE.md was last updated:`
-      : '  ✓ rot: folder docs keep pace with folder activity');
+      ? `  ✗ rot: ${stale.length} folder(s) worked on ≥14 days after their CLAUDE.md was last updated:${scope}`
+      : `  ✓ rot: every folder doc this can date keeps pace with its folder${scope}`);
     for (const s of stale.slice(0, 20)) console.log(`      ${s.rel}/ — last commit ${s.gitDate}, doc last dated ${s.docDate} (${s.gapDays}d behind)`);
     const oversized = checkSize();
     const budgetKB = Math.round(SIZE_BUDGET / 1024);
     console.log(oversized.length
-      ? `  ✗ rot: ${oversized.length} CLAUDE.md over the ${budgetKB}KB size budget — largest first:`
-      : `  ✓ rot: every CLAUDE.md fits the ${budgetKB}KB size budget`);
+      ? `  ✗ rot: ${oversized.length} doc(s) over their size budget (CLAUDE.md ${budgetKB}KB, SKILL.md ${Math.round(SKILL_BUDGET / 1024)}KB) — largest first:`
+      : `  ✓ rot: every CLAUDE.md and SKILL.md fits its size budget`);
     for (const o of oversized.slice(0, 15)) console.log(`      ${o.rel} — ${Math.round(o.bytes / 1024)}KB`);
     if (oversized.length > 15) console.log(`      …and ${oversized.length - 15} more`);
   }

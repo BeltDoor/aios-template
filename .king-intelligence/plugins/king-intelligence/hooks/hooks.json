@@ -1,5 +1,6 @@
 {
   "_comment_SessionStart": "Two blocks on purpose (8/27/26). Claude Code fires SessionStart with one of four sources: startup, resume, clear, compact (confirmed in the claude binary's strings). A block matched to 'startup' runs ONLY on a cold open, so a member who lives in resumed sessions never got their plugin update, never got an unsent session swept, and would never pick up a newly published skill's command. auto-update, session-sweep and sync-commands are each internally throttled (20h / 1h / 1h), so running them on every source costs nothing and closes that hole. seed-config and the backup pull stay startup-only deliberately.",
+  "_comment_memory_tidy": "memory-tidy (9/14/26) keeps MEMORY.md under the 25 KB load cliff even when nobody runs /end-session: read-only report every session start (1h throttle), the conveyor's own --enforce only when the index is at or past the tidy line, under a lock, from the newest installed toolkit. Nothing is deleted; overflow ages into the dated archive.",
   "_comment_Stop": "endless-guard is what makes /endless endless: it refuses the stop and feeds the run its next instruction. It is INERT unless that window armed itself (node .claude/scripts/endless.mjs arm), and it fails open on any error, missing state, unreadable file or bad input - a loop that cannot be stopped is the worse failure. It runs after backup.mjs so the cycle's work is always saved before the window is pushed on.",
   "hooks": {
     "SessionStart": [
@@ -29,6 +30,11 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/sync-commands.mjs\"",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/memory-tidy.mjs\"",
             "timeout": 15
           }
         ]
