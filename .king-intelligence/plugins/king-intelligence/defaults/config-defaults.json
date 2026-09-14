@@ -11,6 +11,15 @@
     "org-check": {
       "containers": "clients, projects",
       "layoutDoc": "references/folder-layout.md"
+    },
+    "housekeeping": {
+      "folder": "housekeeping/",
+      "guard": "on",
+      "guardHours": "2",
+      "checks": "",
+      "retiredTerms": "",
+      "staleDraftDays": "7",
+      "topCards": "10"
     }
   }
 }

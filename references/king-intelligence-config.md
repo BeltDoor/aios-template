@@ -57,3 +57,13 @@ Tune the calendar-filling networking skill.
 - icpProfile:                       # the buyer/peer mix you want, in your words
 - metroCarveOut:                    # any exception to the radius (e.g. "nearby big city only if AI-focused")
 - anchorsFile: references/networking-anchors.md   # where YOUR recurring rooms are defined (create as you add them)
+
+## housekeeping
+Tune the weekly repo-weeding pass. Blank = the built-in behaviour.
+- folder: housekeeping/            # where the run keeps its state, log, attic and pages
+- guard: on                        # on | off. on = the run arms the stop-guard so it cannot end early
+- guardHours: 2                    # 1 to 72, a ceiling not a target
+- checks:                          # extra read-only commands to run in the wide scan, comma separated
+- retiredTerms:                    # tools or people you retired, comma separated; the sweep hunts each one named as still live
+- staleDraftDays: 7                # an unsent email draft older than this is a finding
+- topCards: 10                     # how many decisions go on the page; the rest queue
