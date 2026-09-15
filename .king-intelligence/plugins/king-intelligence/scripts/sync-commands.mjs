@@ -145,6 +145,11 @@ function sanitize(text) {
   return s;
 }
 
+// The fail line says the truth (9/15/26): a door outage is the LIBRARY not answering, never the
+// member's machine, and it must not tell Claude to stop. The old line ("your toolkit connection
+// needs refreshing ... and stop") sent a member to rotate a key for a 502 and fought the weekly
+// health-check prompt's own by-hand fallback. Ownership is judged by the first sentence
+// (stub-rules.mjs), so every stub carrying the old line is still ours and gets rewritten.
 function stubBody(name, description) {
   const desc = sanitize(description) || `The King Intelligence ${name} skill.`;
   return [
@@ -152,7 +157,7 @@ function stubBody(name, description) {
     `description: ${JSON.stringify(desc)}`,
     "---",
     "",
-    `Call the king-intelligence MCP tool use_skill with name "${name}" and follow the returned instructions exactly for the rest of this conversation. If it returns a message about membership instead, relay it to me and stop. If the king-intelligence tool is not available at all, do not guess at what this command does: tell me my toolkit connection needs refreshing, that the fresh block is on my Your System page at members.king-intelligence.com/system, and stop. My input: $ARGUMENTS`,
+    `Call the king-intelligence MCP tool use_skill with name "${name}" and follow the returned instructions exactly for the rest of this conversation. If it returns a message about membership instead, relay it to me and stop. If the king-intelligence tool is missing, errors, or times out, do not guess at what this command does. Tell me the King Intelligence library did not answer just now, that nothing on my machine is wrong, and to try again in a few minutes. If it keeps happening, the fresh connection block is on my Your System page at members.king-intelligence.com/system. My input: $ARGUMENTS`,
     "",
   ].join("\n");
 }
