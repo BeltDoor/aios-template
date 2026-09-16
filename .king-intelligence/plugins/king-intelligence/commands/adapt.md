@@ -15,7 +15,9 @@ Skill the user wants to wire: **$ARGUMENTS**
 
 The block below runs first. It prints the absolute config path you must write to, this client's current saved wiring (if any), and the swap-point manifest for every shipped skill.
 
-!`node "${CLAUDE_PLUGIN_ROOT}/scripts/adapt-context.mjs" "${CLAUDE_PLUGIN_ROOT}" "${CLAUDE_PLUGIN_DATA}"`
+!`node "${CLAUDE_PLUGIN_ROOT}/scripts/ki-run.mjs" adapt-context.mjs ROOT "${CLAUDE_PLUGIN_DATA}" 2>&1 || echo "KI_STEP_FAILED: the toolkit folder this window opened on is gone (${CLAUDE_PLUGIN_ROOT})"`
+
+If the block above printed a line starting with `KI_STEP_FAILED`, this window is holding a toolkit copy that has since been replaced. Say so in plain words (nothing on their computer is wrong), tell them to type /reload-plugins and run this command again, and stop.
 
 ## Steps
 

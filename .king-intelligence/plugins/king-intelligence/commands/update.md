@@ -9,6 +9,16 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 
 Four parts: pull the latest shipped skills, run any one-time setup migrations this repo still needs, then AUDIT the client's whole setup (folders, Claude Code config, connections, skills), and from that audit show them a plain pick list of what changed since their last sync so they choose what to pull in. The client's saved wiring is never touched, and nothing about their setup changes without their yes.
 
+## Before anything: did a setup line above print `KI_STEP_FAILED`?
+
+The setup lines in this command run from the toolkit folder this window opened on. When the toolkit updates itself while a window is open, that folder is the OLD version, and on some computers a file the command needs is no longer there. Until 9/16/26 that killed the whole command with a raw "Shell command failed for pattern" error and the member saw nothing else. Now the lines run from the newest toolkit on the computer and never abort; a line that could not run prints `KI_STEP_FAILED` instead.
+
+Scan the output above. **If any line starts with `KI_STEP_FAILED`, stop here and say this, in plain words, nothing technical:**
+
+> Your toolkit updated itself while this window was open, so this window is still holding the old copy. Nothing on your computer is wrong and nothing was lost. Type /reload-plugins, then run /king-intelligence:update again. If it happens a second time, quit Claude Code completely, open it again, and run it once more.
+
+Do not go on to Part 0. Nothing below can be trusted when a setup line did not run. If no line printed `KI_STEP_FAILED`, continue.
+
 ## Part 0: Do you have your key yet? (gate — run this FIRST)
 
 Updates are the part that stays personal to a paying client. Before pulling anything, check how this toolkit is installed:
@@ -35,7 +45,7 @@ Read the result and decide:
    - `claude plugin update king-intelligence@king-intelligence`
 2. If this repo already has the local maintenance scripts (a sign the org migration has run), refresh them to the current plugin version so they never drift. This is a no-op for a client who hasn't run the migration yet:
 
-   !`node "${CLAUDE_PLUGIN_ROOT}/scripts/local-scripts.mjs" refresh "${CLAUDE_PROJECT_DIR}"`
+   !`node "${CLAUDE_PLUGIN_ROOT}/scripts/ki-run.mjs" local-scripts.mjs refresh "${CLAUDE_PROJECT_DIR}" 2>&1 || echo "KI_STEP_FAILED: the toolkit folder this window opened on is gone (${CLAUDE_PLUGIN_ROOT})"`
 
    (This used to be a plain copy out of `CLAUDE_PLUGIN_ROOT`, which is the folder of the version this SESSION started on, so right after step 1 pulled a new version it still copied the OLD scripts. On 9/13/26 a member on the newest toolkit was still running a memory tidy from two releases back. The refresh script above finds the newest toolkit folder on the machine itself, and the same refresh now also runs on its own at every session start, so the copies can no longer fall behind. A copy the member changed by hand is parked in `.claude/scripts/_replaced-<date>/`, never deleted.)
 
@@ -47,7 +57,7 @@ Read the result and decide:
 
 Some upgrades need a one-time setup of THIS repo (new conventions your existing files predate), not just a new skill. Gather what's outstanding in one shot:
 
-!`node "${CLAUDE_PLUGIN_ROOT}/scripts/migration.mjs" status "${CLAUDE_PLUGIN_ROOT}" "${CLAUDE_PROJECT_DIR}" "${CLAUDE_PLUGIN_DATA}"`
+!`node "${CLAUDE_PLUGIN_ROOT}/scripts/ki-run.mjs" migration.mjs status ROOT "${CLAUDE_PROJECT_DIR}" "${CLAUDE_PLUGIN_DATA}" 2>&1 || echo "KI_STEP_FAILED: the toolkit folder this window opened on is gone (${CLAUDE_PLUGIN_ROOT})"`
 
 This prints the resolved `PLUGIN_ROOT` / `PROJECT_DIR` / `PLUGIN_DATA` paths (use these real paths in the brief's commands), the ledger, every shipped migration with its state (done / in-progress / absent), the outstanding ids in order, and the full brief for each outstanding one.
 
@@ -67,7 +77,7 @@ This is the part Josh asked for: instead of pulling quietly and leaving the clie
 
 Gather everything in one read-only shot. This inspects four things (their folders, their Claude Code config, their connections, their skills), works out what's new or changed since their last sync, and prints one JSON report:
 
-!`node "${CLAUDE_PLUGIN_ROOT}/scripts/audit.mjs" "${CLAUDE_PLUGIN_ROOT}" "${CLAUDE_PLUGIN_DATA}" "${CLAUDE_PROJECT_DIR}"`
+!`node "${CLAUDE_PLUGIN_ROOT}/scripts/ki-run.mjs" audit.mjs ROOT "${CLAUDE_PLUGIN_DATA}" "${CLAUDE_PROJECT_DIR}" 2>&1 || echo "KI_STEP_FAILED: the toolkit folder this window opened on is gone (${CLAUDE_PLUGIN_ROOT})"`
 
 The report has: `version` (installed vs last-synced), `changelog` (what shipped since), `pillars` (folders / config / connections / skills, all read-only), `rules` (unseen + changed operating rules), `actionable` (exactly what to offer), and `migrations.outstanding`. The config path to write to is `${CLAUDE_PLUGIN_DATA}/config.json`.
 
