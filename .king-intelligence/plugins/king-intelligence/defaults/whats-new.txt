@@ -1,3 +1,5 @@
+Fixed: your toolkit now updates itself two independent ways, so a hiccup on one route no longer leaves you stuck on an old version for weeks. If an update ever does fail, the reason is recorded, so it gets fixed without anyone asking you to check anything.
+
 Fixed: /king-intelligence:update and /king-intelligence:adapt no longer die with a raw "Shell command failed" error when the toolkit updated itself while your window was open. Their setup lines now run from the newest toolkit on your computer, and if one still cannot run you get a plain sentence telling you to type /reload-plugins and run the command again.
 
 Fixed: when the online library that serves your commands is briefly unreachable, every /king-intelligence command now says exactly that (the library did not answer, nothing on your machine is wrong, try again in a few minutes) instead of telling you to refresh your connection and stop. The health-check paste prompt on the members page and in the weekly call now finishes the check by hand in that case, hours step included, so you always get a receipt.

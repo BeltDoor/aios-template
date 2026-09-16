@@ -1,6 +1,7 @@
 {
   "_comment_SessionStart": "Two blocks on purpose (8/27/26). Claude Code fires SessionStart with one of four sources: startup, resume, clear, compact (confirmed in the claude binary's strings). A block matched to 'startup' runs ONLY on a cold open, so a member who lives in resumed sessions never got their plugin update, never got an unsent session swept, and would never pick up a newly published skill's command. auto-update, session-sweep and sync-commands are each internally throttled (20h / 1h / 1h), so running them on every source costs nothing and closes that hole. seed-config and the backup pull stay startup-only deliberately.",
   "_comment_memory_tidy": "memory-tidy (9/14/26) keeps MEMORY.md under the 25 KB load cliff even when nobody runs /end-session: read-only report every session start (1h throttle), the conveyor's own --enforce only when the index is at or past the tidy line, under a lock, from the newest installed toolkit. Nothing is deleted; overflow ages into the dated archive.",
+  "_comment_auto_update": "auto-update carries an explicit 90s timeout (9/16/26). It had none, so it inherited the 60s default while its own internal worst case was 98s: a genuinely slow update was killed before it could write down WHY it failed, which is the whole reason three member machines sat weeks behind with an unreadable error. Its per-step caps (8 + 40 + 35, plus a 10s reserve) are inside the script and every one is overridable, so the sandbox runs the same code in about a second per step. On what 'internally throttled' means for it now: the command-line work and the suggestion nudge are both behind the 20h throttle, so running it on every source costs nothing; the one line it can say on any source is 'your tools updated themselves', which latches on the version it wrote down and so cannot repeat. native-autoupdate has its OWN entry on purpose: it is also called from inside auto-update, and two entries mean one rail cannot take the other down. It is a single settings read, so 10s is generous.",
   "_comment_Stop": "endless-guard is what makes /endless endless: it refuses the stop and feeds the run its next instruction. It is INERT unless that window armed itself (node .claude/scripts/endless.mjs arm), and it fails open on any error, missing state, unreadable file or bad input - a loop that cannot be stopped is the worse failure. It runs after backup.mjs so the cycle's work is always saved before the window is pushed on.",
   "hooks": {
     "SessionStart": [
@@ -21,7 +22,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/auto-update.mjs\""
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/auto-update.mjs\"",
+            "timeout": 90
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/native-autoupdate.mjs\"",
+            "timeout": 10
           },
           {
             "type": "command",
