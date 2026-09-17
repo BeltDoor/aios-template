@@ -276,6 +276,67 @@ function machineId() {
   return id;
 }
 
+/** Claude Code's config folder, the same two lines every sibling uses. */
+function cfgDir() {
+  return process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude");
+}
+
+// EVERY STAGE A TOOLKIT CAN BE AT, READ FROM FILES, NEVER GUESSED (9/17/26). The fleet report used
+// to get ONE number from this machine, and that number was the loaded version from a hook but the
+// CATALOG version from the detached sweep, so "0.54.0" could mean loaded, fetched-but-not-
+// installed, or installed-but-not-relaunched. Three numbers and the two switches end that:
+//   installed         <config>/plugins/installed_plugins.json, what Claude Code has on disk
+//   catalog           the marketplace clone's plugin.json, what the library currently offers
+//   loaded            <config>/king-intelligence/loaded.json, written by the session hook
+//   native_autoupdate Claude Code's own per-marketplace updater flag in settings.json
+//   recorded_bin      how the claude address was found and written down (claude-bin.json)
+//   repair            the last run of repair.mjs
+// Every miss is null. An older toolkit sends nothing, and the portal treats absence as "unknown".
+function toolkitState() {
+  const cfg = cfgDir();
+  const rj = (p) => { try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return null; } };
+  const isV = (v) => typeof v === "string" && /^\d+\.\d+\.\d+/.test(v);
+  const reg = rj(path.join(cfg, "plugins", "known_marketplaces.json"));
+  const set = rj(path.join(cfg, "settings.json"));
+  const pick = (o, name) => {
+    if (!o || typeof o !== "object") return null;
+    if (o[name] && typeof o[name] === "object") return o[name];
+    for (const k of ["extraKnownMarketplaces", "knownMarketplaces", "marketplaces"]) {
+      const c = o[k];
+      if (c && typeof c === "object" && c[name] && typeof c[name] === "object") return c[name];
+    }
+    return null;
+  };
+  const entry = pick(reg, "king-intelligence") || pick(set, "king-intelligence");
+  const url = entry && entry.source && typeof entry.source === "object" ? String(entry.source.url || "") : "";
+  const starter = !!(pick(reg, "king-intelligence-starter") || pick(set, "king-intelligence-starter"));
+  const rail = entry
+    ? (/^https:\/\/[^@/]+@members\.king-intelligence\.com\/marketplace\.git$/.test(url) ? "portal" : /github\.com/i.test(url) ? "github" : "none")
+    : starter ? "starter" : "none";
+  const cat = rj(path.join(cfg, "plugins", "marketplaces", "king-intelligence", "plugins", "king-intelligence", ".claude-plugin", "plugin.json"));
+  const ip = rj(path.join(cfg, "plugins", "installed_plugins.json"));
+  const m = ip && ip.plugins && typeof ip.plugins === "object" ? ip.plugins : ip;
+  let e = m && typeof m === "object" ? m["king-intelligence@king-intelligence"] : null;
+  if (Array.isArray(e)) e = e[0];
+  const installed = e && typeof e === "object" && isV(e.version) && (!e.installPath || fs.existsSync(e.installPath)) ? e.version : null;
+  const ld = rj(path.join(cfg, "king-intelligence", "loaded.json"));
+  const sEntry = pick(set, "king-intelligence");
+  const native = sEntry ? (sEntry.autoUpdate === true ? true : sEntry.autoUpdate === false ? false : null) : null;
+  const bin = rj(path.join(cfg, "king-intelligence", "claude-bin.json"));
+  const rep = rj(path.join(cfg, "king-intelligence", "repair.json"));
+  return {
+    at: new Date().toISOString(),
+    rail,
+    installed,
+    catalog: cat && isV(cat.version) ? cat.version : null,
+    loaded: ld && isV(ld.version) ? ld.version : null,
+    loaded_at: ld && typeof ld.at === "string" ? ld.at : null,
+    native_autoupdate: native,
+    recorded_bin: bin && typeof bin.how === "string" ? bin.how : null,
+    repair: rep && typeof rep.verdict === "string" ? { at: String(rep.at || ""), verdict: rep.verdict } : null,
+  };
+}
+
 // The version this machine ACTUALLY has. The portal used to show its own stale pointer back to
 // itself, so a member on v0.34.0 read as current. This is the first real version signal.
 function installedVersion() {
@@ -290,9 +351,10 @@ function installedVersion() {
   // and an unscoped search happily returns one of those, which is the pinned 8/21 trap.
   const candidates = [];
   if (process.env.CLAUDE_PLUGIN_ROOT) candidates.push(process.env.CLAUDE_PLUGIN_ROOT);
+  // Config-dir aware since 9/17/26: a CLAUDE_CONFIG_DIR machine used to report no version at all.
   candidates.push(
-    path.join(os.homedir(), ".claude", "plugins", "marketplaces", "king-intelligence", "plugins", "king-intelligence"),
-    path.join(os.homedir(), ".claude", "plugins", "marketplaces", "king-intelligence-starter", "plugins", "king-intelligence")
+    path.join(cfgDir(), "plugins", "marketplaces", "king-intelligence", "plugins", "king-intelligence"),
+    path.join(cfgDir(), "plugins", "marketplaces", "king-intelligence-starter", "plugins", "king-intelligence")
   );
   for (const root of candidates) {
     try {
@@ -337,7 +399,7 @@ function resolveTarget() {
   let host = null;
   if (!token) {
     try {
-      const km = JSON.parse(fs.readFileSync(path.join(os.homedir(), ".claude", "plugins", "known_marketplaces.json"), "utf8"));
+      const km = JSON.parse(fs.readFileSync(path.join(cfgDir(), "plugins", "known_marketplaces.json"), "utf8"));
       const findUrl = (obj) => {
         for (const v of Object.values(obj || {})) {
           if (v && typeof v === "object") {
@@ -360,12 +422,17 @@ function resolveTarget() {
 }
 
 function snapshotOf(r) {
+  const toolkit = toolkitState();
   return {
     schema_version: 3, // v3 = measured, not estimated
     snapshot_at: new Date().toISOString(),
     machine_id: machineId(),
     machine_host: os.hostname(),
-    plugin_version: installedVersion(),
+    // INSTALLED is the honest number (9/17/26). The older chain (loaded in a hook, else the
+    // catalog clone) stays only as the fallback for a machine whose installed_plugins.json
+    // cannot be read, because a blank is worse than the old ambiguity.
+    plugin_version: toolkit.installed || installedVersion(),
+    toolkit,
     update_error: lastUpdateError(),
     hours_saved: r.hours,
     machine_hours: r.machineHours,

@@ -26,7 +26,7 @@
 //     timeout, and a step skipped for want of budget says so rather than dying anonymously;
 //   - the member's line asks only whether the version MOVED since we last looked, so an update
 //     that landed through Claude Code's own rail is narrated too.
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, rmSync, copyFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, rmSync, copyFileSync, renameSync } from "node:fs";
 // (rmSync + existsSync are also used by the update-failure record added 8/21/26)
 import { join } from "node:path";
 // The removal judgement lives in its own module so it can be tested; this file does its
@@ -210,6 +210,19 @@ try {
   const data = process.env.CLAUDE_PLUGIN_DATA;
   const root = process.env.CLAUDE_PLUGIN_ROOT;
   if (!data || !root) throw new Done();
+
+  // WHAT IS RUNNING RIGHT NOW, WRITTEN DOWN BY THE ONE PROCESS THAT KNOWS (9/17/26). Only a
+  // hook sees CLAUDE_PLUGIN_ROOT; a pasted command and the detached sweep never do, so before
+  // this line "loaded" was a guess on every fleet row. The repair script and the heartbeat read
+  // this file. Temp plus rename, never throws, never blocks the hook.
+  try {
+    const lf = join(configDir(), "king-intelligence", "loaded.json");
+    mkdirSync(join(configDir(), "king-intelligence"), { recursive: true });
+    const lv = readVersion(join(root, ".claude-plugin", "plugin.json"));
+    const lt = `${lf}.${process.pid}.tmp`;
+    writeFileSync(lt, JSON.stringify({ version: lv, root, at: new Date().toISOString() }) + "\n", { mode: 0o600 });
+    renameSync(lt, lf);
+  } catch { /* a note that could not be written is not a hook failure */ }
 
   // HELPERS LOAD HERE, NOT AT THE TOP OF THE FILE. A top-level import of a new module is the
   // highest-blast-radius line in this release: if it throws or is missing for any reason (a bad
