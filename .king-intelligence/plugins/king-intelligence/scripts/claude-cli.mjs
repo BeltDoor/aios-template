@@ -23,9 +23,10 @@
 // Nothing here ever throws out of an export, and nothing here reaches the network by itself.
 
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, renameSync, readdirSync, readlinkSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const IS_WIN = process.platform === "win32";
 
@@ -74,12 +75,156 @@ function windowsCandidates() {
   ];
 }
 
+// ---------------------------------------------------------------------------------------------
+// THE REMEMBERED ADDRESS (9/17/26). The one file this module writes. Once any rung has found the
+// command line for real, its path is written here, so the next session start does not have to
+// search again, and a rung that only works from inside Claude Code (the pasted repair, the health
+// check) can leave the answer for the hook, which runs with a thin PATH and no way to ask.
+//
+// Same fixed home as the hours ledger, on purpose: it must survive a plugin reinstall, a version
+// folder sweep and a config folder move, and it must be findable by a one-line command that has
+// no access to this module. It is validated on every read (the file may name a version folder
+// that Claude Code has since replaced), so a stale address costs one search, never a failure.
+// ---------------------------------------------------------------------------------------------
+function rememberedFile() {
+  const cfg = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude");
+  return path.join(cfg, "king-intelligence", "claude-bin.json");
+}
+
+function readRemembered() {
+  try {
+    const j = JSON.parse(readFileSync(rememberedFile(), "utf8"));
+    const p = j && typeof j.path === "string" ? j.path : "";
+    if (p && path.isAbsolute(p) && existsSync(p)) return p;
+  } catch { /* nothing remembered, or it moved */ }
+  return null;
+}
+
+/**
+ * Write the address down. Only a real, absolute, existing path is ever stored, and only when it
+ * was found by a rung worth remembering: the bare word is not an address, and the remembered
+ * rung itself would just rewrite what it read. Temp plus rename, mode 0600, never throws.
+ */
+export function rememberClaudeBin(binPath, how) {
+  try {
+    if (!binPath || !path.isAbsolute(binPath) || !existsSync(binPath)) return false;
+    if (how === "bare" || how === "remembered") return false;
+    const f = rememberedFile();
+    mkdirSync(path.dirname(f), { recursive: true });
+    const t = `${f}.${process.pid}.tmp`;
+    writeFileSync(t, JSON.stringify({ path: binPath, how: how || "unknown", at: new Date().toISOString() }) + "\n", { mode: 0o600 });
+    renameSync(t, f);
+    return true;
+  } catch { return false; }
+}
+
+/**
+ * The editor extensions bundle their own copy of Claude Code inside a versioned folder, and that
+ * folder is where a member who lives in VS Code actually runs it from (proven on 9/17/26: a Mac
+ * whose command line lived nowhere else than
+ * ~/.vscode/extensions/anthropic.claude-code-<version>-<platform>/resources/native-binary/claude).
+ * The folder name moves with every extension update, so this is a search, not a fixed address.
+ * Newest folder wins, by name, which sorts by version.
+ */
+function editorExtensionCandidates() {
+  const home = process.env.USERPROFILE && IS_WIN ? process.env.USERPROFILE : os.homedir();
+  const exe = IS_WIN ? "claude.exe" : "claude";
+  const roots = [".vscode", ".vscode-insiders", ".vscode-server", ".cursor", ".windsurf"].map((d) => path.join(home, d, "extensions"));
+  const out = [];
+  for (const root of roots) {
+    let names = [];
+    try { names = readdirSync(root).filter((n) => /^anthropic\.claude-code-/i.test(n)); } catch { continue; }
+    names.sort().reverse();
+    for (const n of names) out.push(path.join(root, n, "resources", "native-binary", exe));
+  }
+  return out;
+}
+
+/**
+ * Ask the operating system which program started us. The session-start hook is a child of Claude
+ * Code (usually through one shell), so walking up the parents finds the exact binary that is
+ * running right now, wherever it was installed and whatever PATH this hook was given. This is the
+ * rung that needs no guessing at all. Capped at eight generations and a few seconds, and it only
+ * runs when every cheaper rung has already missed.
+ *
+ * On Windows it is ONE PowerShell call that walks the chain in-process (one call per generation
+ * would cost a second each). On a Mac `ps` prints the full executable path; on Linux `comm` is
+ * truncated, so /proc/<pid>/exe is read first where it exists.
+ */
+export function ancestorClaudeBin(timeoutMs = 6000) {
+  const isClaude = (p) => /^claude(\.exe)?$/i.test(path.basename(String(p || "")));
+  try {
+    if (IS_WIN) {
+      const script =
+        `$p=${process.ppid};for($i=0;$i -lt 8 -and $p;$i++){` +
+        `$x=Get-CimInstance Win32_Process -Filter ('ProcessId=' + $p) -ErrorAction SilentlyContinue;` +
+        `if(-not $x){break};if($x.ExecutablePath){Write-Output $x.ExecutablePath};$p=$x.ParentProcessId}`;
+      const r = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script], {
+        timeout: timeoutMs, encoding: "utf8", windowsHide: true, stdio: ["ignore", "pipe", "ignore"],
+      });
+      for (const line of String(r.stdout || "").split(/\r?\n/)) {
+        const p = line.trim();
+        if (p && isClaude(p) && existsSync(p)) return p;
+      }
+      return null;
+    }
+    let pid = process.ppid;
+    for (let i = 0; i < 8 && pid && pid > 1; i++) {
+      let exe = null, ppid = null;
+      try { exe = readlinkSync(`/proc/${pid}/exe`); } catch { /* not Linux, or no permission */ }
+      const r = spawnSync("ps", ["-o", "ppid=", "-o", "comm=", "-p", String(pid)], {
+        timeout: Math.max(1000, Math.floor(timeoutMs / 4)), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
+      });
+      const m = String(r.stdout || "").trim().match(/^(\d+)\s+(.*)$/);
+      if (m) { ppid = parseInt(m[1], 10); if (!exe) exe = m[2].trim(); }
+      if (exe && isClaude(exe) && path.isAbsolute(exe) && existsSync(exe)) return exe;
+      if (!ppid || ppid === pid) break;
+      pid = ppid;
+    }
+  } catch { /* the walk is best effort */ }
+  return null;
+}
+
+/**
+ * Windows keeps the member's real PATH in the registry, and a hook subprocess often gets a thinner
+ * one. `reg query` is on every Windows since XP. This reads the user's PATH and the machine's,
+ * expands %VAR% pieces with what we have, and looks for the command line in each folder. It is
+ * what turns "'claude' is not recognized" (David Russo's PC, 9/17/26) into an address.
+ */
+export function registryPathClaudeBin(timeoutMs = 4000) {
+  if (!IS_WIN) return null;
+  const keys = [
+    ["HKCU\\Environment", "Path"],
+    ["HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment", "Path"],
+  ];
+  const dirs = [];
+  for (const [key, name] of keys) {
+    try {
+      const r = spawnSync("reg", ["query", key, "/v", name], {
+        timeout: timeoutMs, encoding: "utf8", windowsHide: true, stdio: ["ignore", "pipe", "ignore"],
+      });
+      const m = String(r.stdout || "").match(/\bPath\s+REG_(?:EXPAND_)?SZ\s+(.+)$/im);
+      if (!m) continue;
+      const expanded = m[1].trim().replace(/%([^%]+)%/g, (_, v) => process.env[v] || process.env[v.toUpperCase()] || "");
+      for (const d of expanded.split(";")) if (d.trim()) dirs.push(d.trim());
+    } catch { /* next key */ }
+  }
+  for (const d of dirs) {
+    for (const name of ["claude.exe", "claude.cmd"]) {
+      const p = path.join(d, name);
+      try { if (existsSync(p)) return p; } catch { /* next */ }
+    }
+  }
+  return null;
+}
+
 /**
  * Where is the Claude Code command line on this computer? First rung that actually exists.
  * Never returns null: the last rung is the bare word, which is what the old code always used.
  *
  * `how` is recorded in every failure note, so the fleet finally learns which rung real member
- * machines land on instead of us guessing.
+ * machines land on instead of us guessing. The order is cheapest first; the two rungs that ask
+ * the operating system run only when everything before them has missed.
  */
 export function resolveClaudeBin() {
   try {
@@ -91,12 +236,25 @@ export function resolveClaudeBin() {
     //    moves with every extension update.
     const exec = process.env.CLAUDE_CODE_EXECPATH;
     if (exec && existsSync(exec)) return { path: exec, how: "execpath" };
-    // 3. the places the installers put it
+    // 3. what a previous run, the pasted repair or the health check wrote down
+    const remembered = readRemembered();
+    if (remembered) return { path: remembered, how: "remembered" };
+    // 4. the places the installers put it
     for (const c of IS_WIN ? windowsCandidates() : posixCandidates()) {
       if (existsSync(c)) return { path: c, how: "known" };
     }
+    // 5. inside an editor extension (VS Code, Cursor, Windsurf), newest first
+    for (const c of editorExtensionCandidates()) {
+      if (existsSync(c)) return { path: c, how: "extension" };
+    }
+    // 6. the program that started this hook, asked of the operating system
+    const anc = process.env.KI_NO_ANCESTOR_WALK === "1" ? null : ancestorClaudeBin();
+    if (anc) return { path: anc, how: "ancestor" };
+    // 7. the member's real PATH, read from the Windows registry
+    const reg = registryPathClaudeBin();
+    if (reg) return { path: reg, how: "registry" };
   } catch { /* fall through to the bare word */ }
-  // 4. whatever the shell can find
+  // 8. whatever the shell can find
   return { path: "claude", how: "bare" };
 }
 
@@ -224,3 +382,43 @@ export function gitFfPull(dir, timeoutMs = 15000) {
     ms: Date.now() - startedAt,
   };
 }
+
+/**
+ * FROM INSIDE CLAUDE CODE, WHERE THE ANSWER IS EASY (9/17/26). The Bash tool runs with the member's
+ * full shell, so `command -v claude` (or `where claude` on Windows) simply works there, and so does
+ * CLAUDE_CODE_EXECPATH. This is the search the pasted repair and the health check run, and it
+ * writes the address down for the hook, which has neither. Prefers an .exe over a .cmd shim on
+ * Windows, because an .exe spawns without a shell. Never throws; returns what it found.
+ */
+export function discoverClaudeBin() {
+  const found = [];
+  try {
+    const exec = process.env.CLAUDE_CODE_EXECPATH;
+    if (exec && existsSync(exec)) found.push({ path: exec, how: "execpath" });
+  } catch { /* keep looking */ }
+  try {
+    const r = spawnSync(IS_WIN ? "where" : "sh", IS_WIN ? ["claude"] : ["-c", "command -v claude"], {
+      timeout: 5000, encoding: "utf8", windowsHide: true, stdio: ["ignore", "pipe", "ignore"],
+    });
+    const lines = String(r.stdout || "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    lines.sort((a, b) => (/\.exe$/i.test(b) ? 1 : 0) - (/\.exe$/i.test(a) ? 1 : 0));
+    for (const p of lines) if (path.isAbsolute(p) && existsSync(p)) found.push({ path: p, how: "shell" });
+  } catch { /* keep looking */ }
+  const r = resolveClaudeBin();
+  if (r.how !== "bare") found.push(r);
+  return found[0] || null;
+}
+
+// `node claude-cli.mjs --record` : find the command line from here and write the address down.
+// Prints exactly one plain sentence and always exits 0, so it can sit inside a repair prompt.
+try {
+  const self = fileURLToPath(import.meta.url);
+  const invoked = process.argv[1] ? path.resolve(process.argv[1]) : "";
+  if (invoked && path.resolve(self) === invoked && process.argv.includes("--record")) {
+    const hit = discoverClaudeBin();
+    if (!hit) console.log("Could not find where Claude Code is installed from here, nothing was written.");
+    else if (hit.how === "remembered") console.log("The background updater already knows where Claude Code lives.");
+    else if (rememberClaudeBin(hit.path, hit.how)) console.log("Recorded where Claude Code lives, so the background updater can always find it.");
+    else console.log("Found Claude Code but could not write the address down (the settings folder would not take the file).");
+  }
+} catch { /* a diagnostic that fails must not fail anything else */ }

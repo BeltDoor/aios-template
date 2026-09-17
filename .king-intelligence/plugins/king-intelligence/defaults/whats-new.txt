@@ -1,3 +1,5 @@
+Fixed: the background updater now finds Claude Code wherever it is installed, by asking your computer instead of guessing folders, and it writes that address down the first time it works so it never has to look again. If an update ever fails anyway, you now see one plain line about it on screen (your tools keep working, the retry is automatic, and Jacob is told), instead of finding out weeks later. Found on a member's Windows PC where every guess missed.
+
 Fixed: your toolkit now updates itself two independent ways, so a hiccup on one route no longer leaves you stuck on an old version for weeks. If an update ever does fail, the reason is recorded, so it gets fixed without anyone asking you to check anything.
 
 Fixed: /king-intelligence:update and /king-intelligence:adapt no longer die with a raw "Shell command failed" error when the toolkit updated itself while your window was open. Their setup lines now run from the newest toolkit on your computer, and if one still cannot run you get a plain sentence telling you to type /reload-plugins and run the command again.

@@ -227,8 +227,31 @@ try {
   };
   const runCli = (args, ms) => {
     if (!cli || !cli.runClaude) return { ok: false, status: null, signal: null, code: "KI_NO_RUNNER", tail: "", bin: null, how: null, ms: 0 };
-    try { return cli.runClaude(args, ms); }
+    try {
+      const r = cli.runClaude(args, ms);
+      // THE ADDRESS IS WRITTEN DOWN THE FIRST TIME IT WORKS (9/17/26). A rung that had to ask the
+      // operating system, or search the editor's extension folders, answers once and is then
+      // remembered, so every later session start finds the command line in one file read. A path
+      // that has since moved is caught on the read, never trusted blind.
+      if (r && r.ok && cli.rememberClaudeBin && r.how !== "bare" && r.how !== "remembered") {
+        try { cli.rememberClaudeBin(r.bin, r.how); } catch { /* remembering is a convenience */ }
+      }
+      return r;
+    }
     catch (e) { return { ok: false, status: null, signal: null, code: String((e && e.code) || (e && e.message) || "throw"), tail: "", bin: null, how: null, ms: 0 }; }
+  };
+
+  // IS THE SECOND ROUTE SWITCHED ON? Read, never written here. It rides in every failure note so
+  // the fleet report can tell "one route down, the other covering" from "this machine has no
+  // working way to update at all", which are two different urgencies.
+  const nativeFlagState = () => {
+    try {
+      const s = JSON.parse(readFileSync(join(configDir(), "settings.json"), "utf8"));
+      const k = s.extraKnownMarketplaces ? "extraKnownMarketplaces" : s.knownMarketplaces ? "knownMarketplaces" : null;
+      const e = k && s[k] ? s[k]["king-intelligence"] : null;
+      if (!e) return null;
+      return e.autoUpdate === true ? true : e.autoUpdate === false ? false : null;
+    } catch { return null; }
   };
 
   // ---- TIME BUDGET ----
@@ -367,6 +390,9 @@ try {
         bin: (r && r.how) || null,
         gitOk: r && r.gitOk !== undefined ? r.gitOk : null,
         cc: (r && r.cc) || null,
+        // true: Claude Code's own updater is switched on for this library, so a dead hook rail is
+        // covered. false: the member switched it off. null: no entry or unreadable (not switched).
+        native: nativeFlagState(),
         recent: [{ stage, at, exit: r && r.status !== undefined ? r.status : null }, ...(Array.isArray(prev) ? prev : [])].slice(0, 3),
       }));
     } catch {}
@@ -649,6 +675,33 @@ try {
       ? msg + ` I also have ${unseen} suggestion${unseen === 1 ? "" : "s"} for how your own setup works. Want me to walk you through ${unseen === 1 ? "it" : "them"}? Nothing changes without your yes.`
       : `King Intelligence: I have ${unseen} new way${unseen === 1 ? "" : "s"} of working to suggest for your setup. Want to hear ${unseen === 1 ? "it" : "them"}? I never overwrite what you already have, and nothing changes without your yes.`;
   }
+
+  // THE MEMBER IS TOLD WHEN THEIR OWN UPDATES FAIL (9/17/26, David Russo's point). Until now a
+  // failed update was written to a file nobody on that computer would ever open and sent to the
+  // owner, and the member sat three versions behind with no visible sign. One quiet line, at most
+  // once a day, only for a failure of the update itself (a membership ending and a budget squeeze
+  // have their own lines or none), and never a command to type: the retry is automatic.
+  try {
+    const REAL_FAILURES = new Set(["marketplace-refresh", "marketplace-refresh-unreachable", "apply-update"]);
+    if (failedStage && REAL_FAILURES.has(failedStage) && !DRY) {
+      const toldFile = join(data, ".last-failure-told");
+      let toldAt = 0;
+      try { toldAt = parseInt(readFileSync(toldFile, "utf8"), 10) || 0; } catch {}
+      if (now - toldAt > TWENTY_H) {
+        try { mkdirSync(data, { recursive: true }); writeFileSync(toldFile, String(now)); } catch {}
+        const covered = nativeFlagState() === true;
+        const line =
+          "King Intelligence: your toolkit could not update itself just now" +
+          (installed ? ` (you are on version ${installed})` : "") +
+          ". Your tools still work and nothing on your computer is broken. " +
+          (covered
+            ? "Claude Code's own updater is also switched on for it, so the update should still arrive on its own, and this is reported to Jacob automatically. "
+            : "It will try again within the hour, and this is reported to Jacob automatically. ") +
+          "If you see this line more than a couple of times, tell Jacob.";
+        msg = msg ? msg + " " + line : line;
+      }
+    }
+  } catch { /* a line we could not compose is not worth a crash */ }
 
   if (msg) emit(msg + " " + MODEL_INSTRUCTION);
 
