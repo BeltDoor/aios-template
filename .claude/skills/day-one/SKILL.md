@@ -20,6 +20,8 @@ The on-ramp. Its one deliverable: a CLAUDE.md § 1 that makes every future sessi
    ```
 
    Then have them close VS Code completely and reopen (that's what registers the `/king-intelligence:` commands), and re-confirm with `claude plugin list`. Bundle folder absent (old clone): *"Part of your toolkit didn't come through — re-download from your Get Started page, or text Jacob."* Don't continue until the toolkit shows.
+
+   **If a command here is refused outright, with no box to click, hand it over instead of retrying.** Some machines are set up so you may not add a library or write outside this folder, and there is nothing to approve. Show the commands as one block, one per line, nothing joined, and say: *"Your computer won't let me run these for me. Click the Terminal panel at the bottom of this window, paste this in, press enter."* Wait for them, then carry on.
 3. **Document tools, best-effort.** Run `claude plugin marketplace add anthropics/skills` then `claude plugin install document-skills@anthropic-agent-skills`. If either errors, skip silently — nice-to-have, not a gate.
 4. **Setup bundle.** The first message should carry a `SETUP_BUNDLE v1` HTML-comment block with an `APIFY_TOKEN=` line. Hold the token in working memory for this session only — never `setx`, never `.env`, never committed. If it's missing: *"Looks like part of your setup line didn't come through — go back to your Get Started page, use the copy button on the last step, and paste the whole thing here."* If they can't get it, carry on; LinkedIn is not a gate.
 
