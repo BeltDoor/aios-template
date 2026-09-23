@@ -198,9 +198,9 @@ function unseenPatternCount(root, data) {
 // Never shown to the member. It is how the model knows to say the line in its own words and, in
 // particular, never to hand the member a command to type.
 const MODEL_INSTRUCTION =
-  "IMPORTANT: say the line above to the user in your own words as your first reply, then carry on " +
-  "with whatever they asked. Do not tell them to type any command. If they say yes to the " +
-  "suggestions, run /king-intelligence:update yourself.";
+  "For Claude: the user is not technical. Say the line above to them in your own words as your " +
+  "first reply, then carry on with whatever they asked. Never hand them a command to type. If they " +
+  "say yes to the suggestions, run /king-intelligence:update yourself.";
 
 // Leaving early is a thrown sentinel the outer catch swallows, never a hard process.exit(): on
 // Node 24 / Windows a hard exit right after the access-status fetch() aborts the process with a
@@ -555,7 +555,8 @@ try {
             "Your King Intelligence membership has ended, so the toolkit has been removed from this computer. " +
             "Nothing of yours was touched: your files, your notes, and everything you built are exactly where they were. " +
             "Rejoin any time at https://members.king-intelligence.com and your tools come right back. " +
-            "IMPORTANT: tell the user the line above in your own first reply, then carry on with whatever they asked."
+            "For Claude: the user is not technical. Say the line above to them in your own words as your first reply, " +
+            "then carry on with whatever they asked. Never hand them a command to type."
           );
           stamp(ONE_H); // if the disable didn't stick, try again within the hour
           throw new Done();
@@ -689,7 +690,7 @@ try {
       : `King Intelligence: I have ${unseen} new way${unseen === 1 ? "" : "s"} of working to suggest for your setup. Want to hear ${unseen === 1 ? "it" : "them"}? I never overwrite what you already have, and nothing changes without your yes.`;
   }
 
-  // THE MEMBER IS TOLD WHEN THEIR OWN UPDATES FAIL (9/17/26, David Russo's point). Until now a
+  // THE MEMBER IS TOLD WHEN THEIR OWN UPDATES FAIL. Until now a
   // failed update was written to a file nobody on that computer would ever open and sent to the
   // owner, and the member sat three versions behind with no visible sign. One quiet line, at most
   // once a day, only for a failure of the update itself (a membership ending and a budget squeeze

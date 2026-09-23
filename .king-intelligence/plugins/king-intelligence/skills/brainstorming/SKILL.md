@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: "Use this before creative or build work — a new feature or tool, a client offer or deliverable, a workflow or automation, a piece of content, or any meaningful change. Explores intent, requirements, and design before building or acting. If this setup has its own tailored brainstorming skill, prefer that one."
+description: "Explore intent, requirements and design before building something new whose shape isn't settled: a feature or tool, a client offer or deliverable, a workflow or automation, a content series, or a multi-part change. Not for one-off tasks with an obvious right move, and not for emails (those go through /email). If this setup has its own tailored version of this skill, prefer that one."
 ---
 
 # Brainstorming Ideas Into Designs
@@ -11,24 +11,18 @@ Help turn ideas into fully formed designs and specs through natural collaborativ
 
 Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design and get user approval.
 
-<HARD-GATE>
-Do NOT start building, write any code, send anything out, or take any concrete action until you have presented a design and the user has approved it. This applies to EVERY project regardless of perceived simplicity.
-</HARD-GATE>
-
-## Anti-Pattern: "This Is Too Simple To Need A Design"
-
-Every project goes through this process. A quick client email, a one-page offer, a small workflow tweak — all of them. "Simple" projects are where unexamined assumptions cause the most wasted work. The design can be short (a few sentences for truly simple projects), but you MUST present it and get approval.
+Once this skill is running, nothing gets built or sent until the user has approved a design. Size the design to the work: a few sentences for a small change, sections for a real build. Work that looks simple is where unexamined assumptions cost the most, so even a short design gets their yes.
 
 ## Checklist
 
-You MUST create a task for each of these items and complete them in order:
+Work through these in order, tracking each as a task:
 
 1. **Explore context** — check relevant files, the folder's CLAUDE.md, recent work
 2. **Offer visual companion** (if topic will involve visual questions) — this is its own message, not combined with a clarifying question. See the Visual Companion section below.
 3. **Ask clarifying questions** — one at a time, until you can state the purpose, constraints, and success criteria back and the user confirms them
 4. **Propose 2-3 approaches** — with trade-offs and your recommendation
 5. **Present design** — in sections scaled to their complexity, get user approval after each section
-6. **Write design doc** — save to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit
+6. **Write design doc** — save to `docs-internal/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit
 7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
 8. **User reviews written spec** — ask user to review the spec file before proceeding
 9. **Transition to execution** — capture the approved design as a short PLAN.md in the relevant project folder (per the root CLAUDE.md), then begin the work
@@ -42,7 +36,7 @@ You MUST create a task for each of these items and complete them in order:
 - If the project is too large for a single spec, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then brainstorm the first sub-project through the normal design flow. Each sub-project gets its own spec → plan → execution cycle.
 - For appropriately-scoped projects, ask questions one at a time to refine the idea
 - Prefer multiple choice questions when possible, but open-ended is fine too
-- Only one question per message - if a topic needs more exploration, break it into multiple questions
+- One decision per question. A round is one `AskUserQuestion` call holding up to 4 questions that are all answerable now; a question that depends on an open answer waits for the next round
 - Focus on understanding: purpose, constraints, success criteria
 
 **Exploring approaches:**
@@ -77,7 +71,7 @@ You MUST create a task for each of these items and complete them in order:
 
 **Documentation:**
 
-- Write the validated design (spec) to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`
+- Write the validated design (spec) to `docs-internal/superpowers/specs/YYYY-MM-DD-<topic>-design.md`
   - (User preferences for spec location override this default)
 - Commit the design document to git
 
@@ -114,5 +108,4 @@ A browser-based companion for showing mockups, diagrams, and visual options duri
 
 Even after acceptance, decide browser vs terminal per question — the guide covers how.
 
-If they agree to the companion, read the detailed guide before proceeding:
-call `get_skill_file` with name `brainstorming` and path `visual-companion.md`.
+If they agree to the companion, read the detailed guide before proceeding: call `get_skill_file` with name `brainstorming` and path `visual-companion.md`.

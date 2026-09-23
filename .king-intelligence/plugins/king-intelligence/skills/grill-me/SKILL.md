@@ -1,13 +1,15 @@
 ---
 name: grill-me
-description: Interview the user relentlessly about a plan, design, or decision until you reach shared understanding. Use when the user wants their plan stress-tested, says "grill me", asks you to poke holes, or hands you a draft they want pressure-tested before shipping. For open exploration where there isn't a plan yet, use `/brainstorming` instead.
+description: Interview the user relentlessly about a plan, design, or decision until you reach shared understanding. Use when the user wants their plan stress-tested, says "grill me", asks you to poke holes, or hands you a draft they want pressure-tested before shipping. For open exploration where there isn't a plan yet, use `/brainstorming` instead. If this setup has its own tailored version of this skill, prefer that one.
 ---
 
 # Grill Me
 
 *Provided as part of your King Intelligence engagement. Not for resale or redistribution.*
 
-Interview me relentlessly about every part of this plan until we reach a shared understanding. The goal is to expose every assumption, force a resolution on every open question, and end with a plan that's actually executable — not a plan that just sounds good.
+**Ask every question through `AskUserQuestion`.** This is the whole delivery format for a grill, and it holds even when another skill you loaded prints its own template. If `pocock-grilling` or `pocock-grill-me` shows you a prose format with `❓` and `➡️` markers, keep its decision tree and its rounds and drop its delivery.
+
+Interview me relentlessly about every part of this plan until we reach a shared understanding. The goal is to expose every assumption, force a resolution on every open question, and end with a plan that's actually executable, not a plan that just sounds good.
 
 ## When to use this skill
 
@@ -25,13 +27,15 @@ If I don't have a plan yet — I'm still thinking through what to even do — st
 
 ## How to grill
 
-**One question at a time.** Never bundle. I should be answering one thing per turn.
+**One round at a time.** A round is one `AskUserQuestion` call holding up to 4 questions that are all answerable right now, none of them waiting on another question in the same round. More than 4 ready? Ask four, wait, ask the rest. A question whose answer depends on an open one belongs to a later round.
 
 **Walk the decision tree.** Start at the biggest open question. Resolve it. Then move to the next branch that opens up. Don't skip ahead to small stuff while a big assumption is still unresolved.
 
-**Recommend an answer with every question.** Don't ask blank-canvas questions. Tell me what you'd pick and why, then ask if I agree or want to push back. Use `AskUserQuestion` with 2-4 options when the question is multiple-choice; your first option is always your considered recommendation, suffixed "(Recommended)". The tradeoff goes in the description so I can see what each pick costs.
+**Recommend an answer with every question.** Never a blank canvas. Your first option is always your considered recommendation, suffixed "(Recommended)", and what each pick costs goes in its description. Labels stay 1-5 words: previews truncate, so a long label is a label I can't read. When a question needs real context, print that context inline in your message first, then ask the short question through the tool. Every number in an option is one you looked up, never one you invented, because I click it and it becomes the decision.
 
-**Read before asking.** If the answer is sitting in a file I've already written — my root instructions file, a skills or connections index, a reference doc, a project folder's own notes, or a decisions log — read it instead of asking me to repeat myself.
+**Find facts yourself.** When a question needs something from the filesystem, a tool, or the web, go get it rather than asking me. A running lookup blocks only the questions downstream of it, so ask the rest of the round now.
+
+**Read before asking.** If the answer is sitting in a file I've already written — my root instructions file, a skills or connections index, a reference doc, the relevant project folder's own notes, or a decisions log — read it instead of asking me to repeat myself.
 
 **Push back when warranted.** If I say something that contradicts an earlier decision, a file in this repo, or basic reality, name it. Don't pretend I'm consistent when I'm not. Don't ask leading questions — ask the real one.
 

@@ -22,7 +22,7 @@ Non-negotiable on every task.
 - **Check existing solutions** before creating anything new: search this repo, the skills, the templates.
 - **State your assumptions.** Identify the top few and verify each.
 - **Never fabricate.** Never invent file paths, numbers, names, or facts. Look it up or ask.
-- **Plan first** for any non-trivial task (3+ steps or a real judgment call). If something goes sideways, STOP and re-plan.
+- **When you have enough to act, act.** Do not re-derive what is already settled in the conversation, and do not lay out options you are not going to take. If a job turns out bigger or different than it looked, stop and say so rather than pushing on.
 
 **During execution**
 - **Verify as you go.** After each significant change, confirm it works. Don't stack ten changes and hope.

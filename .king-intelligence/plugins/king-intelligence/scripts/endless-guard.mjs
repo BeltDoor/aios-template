@@ -43,6 +43,39 @@ function evidenceCounts(file) {
   return out;
 }
 
+// 09/23/26: the next three read disk too, so the cycle instruction names only tools this project
+// really has and leaves a loop file's own task list alone. All fail open.
+function hasFile(projectDir, rel) {
+  try { return fs.existsSync(path.join(projectDir, rel)); } catch { return false; }
+}
+
+// Does the loop file leave the choice of next task to the model? Matched on the wording the
+// endless template uses for that ("choose the next one yourself", "ten fresh ranked improvement
+// ideas", "highest-value improvement"). An unreadable file keeps the sweep on, the old behaviour.
+const SELF_DIRECTED = /choose the next (?:one|task) yourself|pick the (?:single )?highest-value|highest-value (?:next )?(?:task|improvement)|ten fresh,? ranked (?:improvement )?ideas/i;
+function leavesNextTaskToModel(file) {
+  try { return SELF_DIRECTED.test(fs.readFileSync(file, 'utf8')); } catch { return true; }
+}
+
+// The exact unsaved paths, quoted and re-based on the project folder: `git status --porcelain`
+// prints them relative to the repository root, which is not always where this hook runs.
+function unsavedPaths(lines, cwd) {
+  // git prints the RESOLVED top folder, so compare it with the resolved project folder: on a
+  // Mac /tmp and /var are links into /private, and an unresolved pair yields ../../private/... paths.
+  let here = cwd;
+  try { here = fs.realpathSync(cwd); } catch {}
+  let top = here;
+  try {
+    top = execSync('git rev-parse --show-toplevel', { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || here;
+  } catch {}
+  return lines.map((l) => {
+    let p = l.slice(3);
+    if (p.includes(' -> ')) p = p.split(' -> ').pop();
+    if (p.startsWith('"')) return p;               // git already quoted it
+    return `"${path.relative(here, path.join(top, p)) || '.'}"`;
+  });
+}
+
 // Marker on every message we inject, so the stop-word scan can never match our
 // own text and report the opposite of the truth.
 const SENTINEL = '​[endless-run]';
@@ -230,19 +263,39 @@ function main() {
   const msLeft = state.expires_at ? Date.parse(state.expires_at) - Date.now() : null;
   const hoursLeft = msLeft != null ? Math.max(0, msLeft / 3600000).toFixed(1) : '?';
 
-  // Every 5th cycle, force a fresh idea sweep so the run cannot rut.
-  const ritual = next % 5 === 0
+  // Every 5th cycle, force a fresh idea sweep so the run cannot rut. Only when the loop file
+  // leaves the next task to the model: a file that lays out its own work would otherwise be
+  // pulled off its list every fifth cycle.
+  const ritual = next % 5 === 0 && leavesNextTaskToModel(state.loop_prompt)
     ? '\nThis cycle is an IDEA SWEEP: write ten fresh, ranked improvement ideas into PROGRESS.md, then start number one.'
     : '';
 
+  // The save script and the prover agent are named only when this project has them. This hook
+  // also ships to members, whose projects carry neither, and naming a missing tool sends the run
+  // hunting for it instead of working.
+  const hasRepoSync = hasFile(projectDir, path.join('scripts', 'repo-sync.sh'));
+  const prover = hasFile(projectDir, path.join('.claude', 'agents', 'loop-prover.md'))
+    ? 'the loop-prover agent'
+    : 'an independent prover subagent that sees only the defect, never the diff';
+  const saveMsg = `${state.label || 'endless'}: cycle ${next}`;
+  let saveCmd;
+  if (hasRepoSync) {
+    saveCmd = `bash scripts/repo-sync.sh "${saveMsg}" ${relFolder}`;
+  } else {
+    const paths = unsavedPaths(unsaved, projectDir);
+    const list = paths.length && paths.length <= 15 ? paths.join(' ') : `<the exact paths git status lists under ${relFolder}>`;
+    saveCmd = `git add -- ${list} && git commit -m "${saveMsg}" -- ${list}`;
+  }
+  const saveShort = hasRepoSync ? 'through scripts/repo-sync.sh' : 'with git add and git commit on the exact paths you changed';
+
   const saveLine = unsaved.length
-    ? `0. SAVE FIRST: ${unsaved.length} file(s) under ${relFolder} are unsaved and another window can wipe them. Run: bash scripts/repo-sync.sh "${state.label || 'endless'}: cycle ${next}" ${relFolder}`
+    ? `0. SAVE FIRST: ${unsaved.length} file(s) under ${relFolder} are unsaved and another window can wipe them. Run: ${saveCmd}`
     : `0. Saved: nothing unsaved under ${relFolder}.`;
   const proveLine = next === 1 || ev.entries === 0
-    ? `PROVE rule: every fix ends with a loop-prover verdict logged in ${evidenceFile} before you pick the next task.`
+    ? `PROVE rule: every fix ends with a verdict from ${prover}, logged in ${evidenceFile}, before you pick the next task.`
     : newVerdicts > 0
       ? `Evidence so far: ${ev.proven} PROVEN, ${ev.unproven} UNPROVEN${ev.ambiguous ? `, ${ev.ambiguous} AMBIGUOUS` : ''}${ev.missing_verdict ? `, ${ev.missing_verdict} entries missing a Verdict line (fix those)` : ''}.`
-      : `NO NEW VERDICT since the last cycle. The last fix is unproven until the loop-prover rules on it: dispatch it now, log the entry in ${evidenceFile}, and revert the fix if it comes back UNPROVEN. Only then pick the next task.`;
+      : `NO NEW VERDICT since the last cycle. The last fix is unproven until ${prover} rules on it: dispatch it now, log the entry in ${evidenceFile}, and revert the fix if it comes back UNPROVEN. Only then pick the next task.`;
 
   const reason = [
     `${SENTINEL} Cycle ${next}. This window is on an endless run and is not finished.`,
@@ -254,7 +307,7 @@ function main() {
     `   - ${state.progress_file}`,
     `2. Update ${state.progress_file} with what you just did.`,
     `3. ${proveLine}`,
-    `4. Pick the single highest-value next task yourself and START it in this same turn: FIND one defect, FIX it, PROVE it through the loop-prover, SAVE through repo-sync.sh.`,
+    `4. Continue the work ${state.loop_prompt} lays out; where it leaves the next task to you, pick the single highest-value one. START it in this same turn: FIND one defect, FIX it, PROVE it through ${prover}, SAVE ${saveShort}.`,
     ``,
     `Rules that still hold: do not declare the job done, do not post a wrap-up, do not go idle, do not ask whether to continue. Proceed on reasonable assumptions and log them under "Assumptions" in PROGRESS.md. Guardrails in ${state.loop_prompt} still apply.${ritual}`,
     ``,

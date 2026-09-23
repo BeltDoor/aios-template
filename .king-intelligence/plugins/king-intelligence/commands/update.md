@@ -11,7 +11,7 @@ Four parts: pull the latest shipped skills, run any one-time setup migrations th
 
 ## Before anything: did a setup line above print `KI_STEP_FAILED`?
 
-Each setup line in this command looks for its runner in three places in turn: this folder's own copy, the toolkit's own data folder, then the toolkit folder this window opened on. When the toolkit updates itself while a window is open, that last folder is the OLD version, and on some computers a file the command needs is no longer there. Until 9/16/26 that killed the whole command with a raw "Shell command failed for pattern" error and the member saw nothing else. Now the first place that answers wins, the lines run from the newest toolkit on the computer, and they never abort; a line that could not run anywhere prints `KI_STEP_FAILED` instead.
+Each setup line in this command looks for its runner in three places in turn: this folder's own copy, the toolkit's own data folder, then the toolkit folder this window opened on. When the toolkit updates itself while a window is open, that last folder is the OLD version, and on some computers a file the command needs is no longer there. The first place that answers wins, the lines run from the newest toolkit on the computer, and they never abort; a line that could not run anywhere prints `KI_STEP_FAILED` instead.
 
 Scan the output above. **If any line starts with `KI_STEP_FAILED`, stop here and say this, in plain words, nothing technical:**
 
@@ -27,18 +27,20 @@ Updates are the part that stays personal to a paying client. Before pulling anyt
 
 ```!
 echo "--- installed ---"; claude plugin list 2>/dev/null | grep -i "king-intelligence@" || echo "(none)"
-echo "--- marketplaces ---"; claude plugin marketplace list 2>/dev/null | grep -iB1 -A2 "king-intelligence" || echo "(none)"
+echo "--- marketplaces ---"; node -e 'const fs=require("fs"),p=require("path"),os=require("os");const f=p.join(process.env.CLAUDE_CONFIG_DIR||p.join(os.homedir(),".claude"),"plugins","known_marketplaces.json");let j={};try{j=JSON.parse(fs.readFileSync(f,"utf8"))}catch(e){}const rows=Object.entries(j).filter(([n])=>/king-intelligence/i.test(n)).map(([n,v])=>{const s=(v&&v.source)||{};let h=s.repo?"github.com":"";if(h==""&&s.url){try{h=new URL(s.url).host}catch(e){h=(String(s.url).match(/@([^:/]+)/)||[])[1]||"(unreadable)"}}if(h==""&&s.path)h="(a folder on this computer)";return n+"  "+(h||"(unknown source)")});console.log(rows.length?rows.join("\n"):"(none)")'
 ```
 
 Read the result and decide:
 
-- **If the King Intelligence plugin is installed from `king-intelligence-starter`** (the free starter toolkit that ships inside the clone) **AND there is no marketplace whose source is the GitHub repo `BeltDoor/king-intelligence-marketplace`**, then this person is on the free starter and does **not** have their personal key yet. **Stop here.** Do not pull, do not error, do not touch anything. Say it plainly, no jargon:
+The marketplaces line prints each King Intelligence marketplace's name and the host its updates come from, never the full address (a member's address carries their personal key).
+
+- **If the King Intelligence plugin is installed from `king-intelligence-starter`** (the free starter toolkit that ships inside the clone) **AND there is no `king-intelligence` marketplace whose source is the members library (`members.king-intelligence.com`) or, on older computers, the GitHub repo (`github.com`)**, then this person is on the free starter and does **not** have their personal key yet. **Stop here.** Do not pull, do not error, do not touch anything. Say it plainly, no jargon:
 
   > You're on the free starter toolkit. That's a snapshot of Jacob's skills from when you set up, and it works great. What it doesn't do yet is grow on its own. To switch on live updates, so your tools keep getting better every time Jacob ships something new, you need your own personal key. Message Jacob and he'll send you two quick setup lines. Paste those in, reopen, then run /king-intelligence:update again and it'll pull everything current.
 
   Then stop. Nothing else runs.
 
-- **If the plugin is installed from the `king-intelligence` marketplace whose source is the GitHub repo** (they've pasted their personal key), they're a current client. Continue to Part 1.
+- **If the plugin is installed from the `king-intelligence` marketplace whose source is the members library (`members.king-intelligence.com`) or, on older computers, the GitHub repo (`github.com`)** (they've pasted their personal key), they're a current client. Continue to Part 1.
 
 ## Part 1: Pull the latest version
 
@@ -49,7 +51,7 @@ Read the result and decide:
 
    !`node "${CLAUDE_PROJECT_DIR}/.claude/scripts/ki-run.mjs" local-scripts.mjs refresh "${CLAUDE_PROJECT_DIR}" 2>/dev/null || node "${CLAUDE_PLUGIN_DATA}/scripts/ki-run.mjs" local-scripts.mjs refresh "${CLAUDE_PROJECT_DIR}" 2>/dev/null || node "${CLAUDE_PLUGIN_ROOT}/scripts/ki-run.mjs" local-scripts.mjs refresh "${CLAUDE_PROJECT_DIR}" 2>&1 || echo "KI_STEP_FAILED: no copy of the runner could be found in this folder, in the toolkit data folder, or in the toolkit folder this window opened on"`
 
-   (This used to be a plain copy out of `CLAUDE_PLUGIN_ROOT`, which is the folder of the version this SESSION started on, so right after step 1 pulled a new version it still copied the OLD scripts. On 9/13/26 a member on the newest toolkit was still running a memory tidy from two releases back. The refresh script above finds the newest toolkit folder on the machine itself, and the same refresh now also runs on its own at every session start, so the copies can no longer fall behind. A copy the member changed by hand is parked in `.claude/scripts/_replaced-<date>/`, never deleted.)
+   (A copy the member changed by hand is parked in `.claude/scripts/_replaced-<date>/`, never deleted.)
 
 3. Tell the user, in plain non-technical language, what changed and that they need to restart Claude Code for a new VERSION to fully take effect. Reassure them their saved settings were not touched.
 
@@ -75,7 +77,7 @@ This prints the resolved `PLUGIN_ROOT` / `PROJECT_DIR` / `PLUGIN_DATA` paths (us
 
 ## Part 3: Audit the setup, show what changed, let them pick
 
-This is the part Josh asked for: instead of pulling quietly and leaving the client to hunt for what's new, it reads across their whole setup, tells them plainly what changed since they last synced, and lets them CHOOSE what to pull in. It never changes anything they've personalized.
+Instead of pulling quietly and leaving the client to hunt for what's new, this part reads across their whole setup, tells them plainly what changed since they last synced, and lets them CHOOSE what to pull in. It never changes anything they've personalized.
 
 Gather everything in one read-only shot. This inspects four things (their folders, their Claude Code config, their connections, their skills), works out what's new or changed since their last sync, and prints one JSON report:
 

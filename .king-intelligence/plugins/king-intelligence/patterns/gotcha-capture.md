@@ -13,9 +13,9 @@ A habit that stops your setup from re-hitting the same wall twice. The moment Cl
 
 ### Log gotchas the moment they happen
 
-When you hit an error, blocker, or dead-end that took more than one attempt to resolve, OR that a future session could plausibly repeat, append a one-line `[GOTCHA]` to the session scratchpad (`.claude/session-scratch.md`) BEFORE continuing. It is a fast capture buffer: one line, no decision yet about where the lesson ultimately belongs.
+When you hit an error, blocker, or dead-end that took more than one attempt to resolve, OR that a future session could plausibly repeat, append a one-line `[GOTCHA]` to the session scratchpad (`.claude/session-scratch.md`) BEFORE continuing, following the line format the scratchpad's own header specifies (it is the single source for how lines are tagged and cleared). It is a fast capture buffer: one line, no decision yet about where the lesson ultimately belongs.
 
-`/king-intelligence:end-session` harvests each line into its permanent home (the relevant folder's `## Gotchas` section, the tool's reference file, or memory) and resets the scratchpad to empty. It starts every session empty.
+`/king-intelligence:end-session` harvests this window's lines into their permanent homes (the relevant folder's `## Gotchas` section, the tool's reference file, or memory). The scratchpad is shared across parallel sessions; a close never clears another window's lines.
 
 This exists because capturing failures only at session-end loses the thing that tripped you up early in a long session, so the next session re-hits the same wall.
 

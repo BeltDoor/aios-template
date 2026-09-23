@@ -7,7 +7,7 @@ allowed-tools: Bash, Read, Write, Glob, Grep
 
 # Adapt a skill to this client
 
-You are wiring a generic King Intelligence skill to THIS client's specific tools. You write CONFIG only. You NEVER edit any file under the plugin code folder (`CLAUDE_PLUGIN_ROOT`) — those are the shipped skills and they are overwritten on the next update. The only file you ever write is this client's config in the data folder.
+You are wiring a generic King Intelligence skill to THIS client's specific tools. You write CONFIG only. You never edit any file under the plugin code folder: every update replaces that folder, so an edit there is lost. The only file you ever write is this client's config in the data folder.
 
 Skill the user wants to wire: **$ARGUMENTS**
 

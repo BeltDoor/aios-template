@@ -198,9 +198,14 @@ function check() {
   if (!/TO START THIS LOOP/i.test(head)) problems.push('The first 25 lines are missing the "TO START THIS LOOP" launch block. It must be the very first thing in the file.');
   if (!/endless\.mjs arm/.test(text)) problems.push('The file never arms the stop-guard (node scripts/endless.mjs arm --folder ...). Without it the window will quietly stop on its own.');
   if (!/\bstop\b/i.test(text)) problems.push('The file never states the stop word.');
-  if (!/repo-sync\.sh/.test(text)) problems.push('The file never saves through scripts/repo-sync.sh. Every cycle must end with a save on the locked path, or a concurrent window can wipe the work.');
-  if (!/EVIDENCE\.md/.test(text)) problems.push('The file never mentions EVIDENCE.md. Every fix needs a PROVEN entry from the loop-prover before the loop moves on.');
-  if (!/loop-prover/.test(text)) problems.push('The file never dispatches the loop-prover agent. The PROVE phase is what stops self-graded false findings.');
+  // The save script and the prover agent are required by name only where this project has them
+  // (09/23/26): this file also ships to members, whose projects carry neither.
+  const hasRepoSync = fs.existsSync(path.join(ROOT, 'scripts', 'repo-sync.sh'));
+  const hasProver = fs.existsSync(path.join(ROOT, '.claude', 'agents', 'loop-prover.md'));
+  if (hasRepoSync && !/repo-sync\.sh/.test(text)) problems.push('The file never saves through scripts/repo-sync.sh. Every cycle must end with a save on the locked path, or a concurrent window can wipe the work.');
+  if (!hasRepoSync && !/repo-sync\.sh|\bcommit\b/i.test(text)) problems.push('The file never says how each cycle is saved. Every cycle must end with a commit of the exact files it changed, or a concurrent window can wipe the work.');
+  if (!/EVIDENCE\.md/.test(text)) problems.push('The file never mentions EVIDENCE.md. Every fix needs a PROVEN entry from an independent prover before the loop moves on.');
+  if (hasProver && !/loop-prover/.test(text)) problems.push('The file never dispatches the loop-prover agent. The PROVE phase is what stops self-graded false findings.');
 
   // The one line the user actually types.
   const folder = path.dirname(file);
