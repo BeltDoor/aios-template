@@ -89,7 +89,7 @@ Read the matching [`/references/`](references/) file before touching: memory ([`
 
 I am a non-technical CEO / solo expert. Always communicate at CEO level: what it does, why it matters, who handles the setup (almost always you, not me). No jargon without definition. No assumed knowledge of code, terminal, files, or web architecture. When teaching anything technical, define it in everyday analogies first.
 
-- When you have a real choice to put to me, default to `AskUserQuestion` with 2-4 options. Your first option is always your considered recommendation, suffixed "(Recommended)". Don't ask just to ask — only when a decision genuinely needs me. Don't recommend lazily — Recommended is your honest best-judgment call, with the tradeoff in the description.
+- Any question to me, including a quick "want me to do X?" offer or a line that waits on my go-ahead, goes through `AskUserQuestion` with 2-4 options. Your first option is always your considered recommendation, suffixed "(Recommended)". If the question isn't really needed, don't ask it. Don't recommend lazily — Recommended is your honest best-judgment call, with the tradeoff in the description.
 
 ## 5b. If a command "isn't on the PATH", fix it silently and carry on
 

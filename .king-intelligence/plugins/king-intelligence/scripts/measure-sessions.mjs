@@ -324,6 +324,12 @@ function toolkitState() {
   const native = sEntry ? (sEntry.autoUpdate === true ? true : sEntry.autoUpdate === false ? false : null) : null;
   const bin = rj(path.join(cfg, "king-intelligence", "claude-bin.json"));
   const rep = rj(path.join(cfg, "king-intelligence", "repair.json"));
+  // ask_buttons_* (9/24/26): the question-buttons gate keeps its own tiny state file, separate
+  // from everything above, missing on any machine older than this release. Missing => null for
+  // both, same rule as every other field here.
+  const ab = rj(path.join(cfg, "king-intelligence", "ask-buttons.json"));
+  const askButtonsOff = ab && typeof ab.off === "boolean" ? ab.off : null;
+  const askButtonsCaught = ab && Number.isInteger(ab.caught) && ab.caught >= 0 ? ab.caught : null;
   return {
     at: new Date().toISOString(),
     rail,
@@ -334,6 +340,8 @@ function toolkitState() {
     native_autoupdate: native,
     recorded_bin: bin && typeof bin.how === "string" ? bin.how : null,
     repair: rep && typeof rep.verdict === "string" ? { at: String(rep.at || ""), verdict: rep.verdict } : null,
+    ask_buttons_off: askButtonsOff,
+    ask_buttons_caught: askButtonsCaught,
   };
 }
 
