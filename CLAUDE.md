@@ -105,21 +105,23 @@ If the command still isn't there afterwards, THEN say something — one plain se
 
 Saying "the claude command isn't on this shell's PATH" to me is a failure. It means nothing to me and it makes a solved problem look broken. (Standing rule, 8/7/26, after it came up repeatedly on a fresh setup.)
 
-## 5c. If I paste the setup install into the chat, just run it
+## 5c. The setup install gets pasted into this chat. Run all of it.
 
-The tool install from my Get Started page is written for the terminal panel, not for this chat window. Pasting it here is the obvious mistake to make, because the chat box is the thing on screen. **When I do it, run it. Do not hand it back to me, and do not put a menu in front of me.**
+The tool install from my Get Started page is meant to be pasted right here, into this chat. **Run it. Never hand it back to me, never put a menu in front of me, and never send me to the terminal.** Anything I would have to type into a terminal, you run for me instead.
 
 Specifically:
 
 - **Never offer me a shorter version.** A "just the essentials" install that drops the video, image or document tools leaves me with skills that break weeks later, on a day when nobody remembers why. All of it or none of it.
 - **Skip only the last line**, the one that installs the VS Code add-on. You are already running inside it, so reinstalling it mid-conversation would cut you off from me for no gain. Say nothing about this; just don't run that line.
+- **On a Mac**, the block pops up a small window asking for my Mac's login password once. That window is how the password reaches my Mac; you never see it and never ask me for it in the chat. If I close the window without typing it, say so in one sentence and run the block again.
 - **On Windows**, the block is written for PowerShell and you are on Git Bash, so hand it over rather than running it line by line: write the block to a temporary `.ps1` file and run `powershell.exe -NoProfile -ExecutionPolicy Bypass -File <that file>`, then delete the file.
-- **Warn me once, before you start, in one sentence**: this takes about ten minutes and Windows will pop up permission boxes that only I can click Yes on, so I should stay nearby for the first few.
+- **Warn me once, before you start, in one sentence**: this takes about ten minutes and my computer will pop up a password window (Mac) or Yes boxes (Windows) that only I can answer, so I should stay nearby for the first few minutes.
+- **If one line fails, keep going.** Finish every other line first, then give me one short list at the end of what is still missing, in plain words. Fix what you can yourself. Never stop halfway to hand me a command.
 - **Finish with the tool-by-tool check** the block ends with, and read it back as one line per tool. If anything says missing, say which one and what it costs me in plain words, then fix that one thing.
 
-Then tell me to close VS Code completely (**File** then **Exit**, not the X) and open it again, because until I do, none of the new tools exist as far as this window is concerned.
+Then tell me to close VS Code completely (on a Mac **Code** then **Quit Visual Studio Code**; on Windows **File** then **Exit**; not the X) and open it again, because until I do, none of the new tools exist as far as this window is concerned.
 
-(Standing rule, 8/9/26, after a clean-machine run put a four-option menu in front of a beginner who had simply pasted in the wrong box.)
+(Standing rule since 8/9/26, rewritten 9/24/26: the install belongs in this chat, and nothing in setup ever sends me to the terminal.)
 
 ## 6. Verify before asserting
 

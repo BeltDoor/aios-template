@@ -1,6 +1,6 @@
 ---
 name: day-one
-description: First-touch on-ramp inside this second brain. Two steps in front of the user — a fast website + LinkedIn look at their business, then switching on backup — with the real deliverable in between; CLAUDE.md § 1 populated with their identity and a business snapshot. Use when the user pastes the kickoff line from members.king-intelligence.com, says "set me up", "first time", "I just opened this", "walk me through Day One", or when you spot the SETUP_BUNDLE marker in their first message. One-shot per client.
+description: First-touch on-ramp inside this second brain. Two steps in front of the user — a fast website + LinkedIn look at their business, then switching on backup — with the real deliverable in between; CLAUDE.md § 1 populated with their identity and a business snapshot. Use when the user pastes the kickoff line from members.king-intelligence.com, says "set me up", "first time", "I just opened this", or "walk me through Day One". One-shot per client.
 ---
 
 # /day-one
@@ -21,9 +21,8 @@ The on-ramp. Its one deliverable: a CLAUDE.md § 1 that makes every future sessi
 
    Then have them close VS Code completely and reopen (that's what registers the `/king-intelligence:` commands), and re-confirm with `claude plugin list`. Bundle folder absent (old clone): *"Part of your toolkit didn't come through — re-download from your Get Started page, or text Jacob."* Don't continue until the toolkit shows.
 
-   **If a command here is refused outright, with no box to click, hand it over instead of retrying.** Some machines are set up so you may not add a library or write outside this folder, and there is nothing to approve. Show the commands as one block, one per line, nothing joined, and say: *"Your computer won't let me run these for me. Click the Terminal panel at the bottom of this window, paste this in, press enter."* Wait for them, then carry on.
+   **If a command here is refused outright, with no box to click, do not retry it and do not hand it to them.** Never send them to the terminal. Carry on with Day One and, at the very end, say in one plain line: *"One part of your toolkit didn't switch on by itself. Jacob will finish it with you; nothing you've done today is lost."*
 3. **Document tools, best-effort.** Run `claude plugin marketplace add anthropics/skills` then `claude plugin install document-skills@anthropic-agent-skills`. If either errors, skip silently — nice-to-have, not a gate.
-4. **Setup bundle.** The first message should carry a `SETUP_BUNDLE v1` HTML-comment block with an `APIFY_TOKEN=` line. Hold the token in working memory for this session only — never `setx`, never `.env`, never committed. If it's missing: *"Looks like part of your setup line didn't come through — go back to your Get Started page, use the copy button on the last step, and paste the whole thing here."* If they can't get it, carry on; LinkedIn is not a gate.
 
 ## Greeting
 
@@ -42,15 +41,7 @@ Between steps: `Day One — Step <N> of 2`. "Type **next**" gates between steps;
 > Drop me two links: your website and your LinkedIn profile. Paste both and hit enter. If you don't have one of them, just say so.
 
 - **Website:** `WebFetch` the homepage; if thin, fetch the About or Services page it links to. Two fetches max, no crawling. Pull: what they sell, who they serve, tone, any signature phrasing.
-- **LinkedIn:** validate the URL matches `linkedin.com/in/<username>` (ask once if not). Then, token inline in curl, never via env var:
-
-  ```bash
-  curl -sS -X POST "https://api.apify.com/v2/acts/harvestapi~linkedin-profile-scraper/run-sync-get-dataset-items?token=<TOKEN_FROM_BUNDLE>" \
-    -H "Content-Type: application/json" \
-    -d '{"queries":["<LINKEDIN_URL>"]}'
-  ```
-
-  Pull `headline`, `about`, `experience`, `location`. No valid URL or no token → skip, don't block.
+- **LinkedIn:** call the `linkedin_lookup` tool on the King Intelligence connection (it shows as `mcp__king-intelligence__linkedin_lookup`) with the profile address. It returns their headline, about, location and recent roles. The lookup runs on King Intelligence's side; there is no key to find, paste or pass. If the address isn't a `linkedin.com/in/<name>` profile, ask once. If the tool is missing or answers that the lookup did not come through, skip LinkedIn without comment and carry on with the website; never try to scrape LinkedIn any other way.
 - **Neither link:** *"No problem — tell me in your own words: what do you do, who do you serve, and how long have you been doing it?"*
 
 No intermediate files. Findings go straight into the synthesis below.
@@ -106,10 +97,9 @@ The folder arrives as a zip with no history — `git init` on an existing repo i
 
 ## Notes for whoever is guiding this session
 
-- **Pre-flight** (all on the member's Get Started page, before /day-one): Mac or Windows laptop (Chromebook = hard no) · VS Code installed · the one-paste tool install run in a real terminal, then VS Code fully reopened · signed into Claude in the extension · Windows: `uname` says `MINGW`/`MSYS` · second brain downloaded and opened via File → Open Folder · voice tool set up from the page's own step · the three prompts run side by side in separate windows (updates key / this one / the computer map).
+- **Pre-flight** (all on the member's Get Started page, before /day-one): Mac or Windows laptop (Chromebook = hard no) · VS Code installed · the one-paste tool install pasted into the Claude chat and run by Claude, then VS Code fully reopened · signed into Claude in the extension · Windows: `uname` says `MINGW`/`MSYS` · second brain downloaded and opened via File → Open Folder · voice tool set up from the page's own step · the three prompts run side by side in separate windows (updates key / this one / the computer map).
 - **30-minute soft cap.** The temptation is to start interviewing — don't. Two confirm questions, not a survey; depth is /skill-builder's and /capture-voice's job. But if the § 1 write-up looks subtly wrong, push for the correction NOW — it's locked-in context and fixing it later costs more.
 - **Never launch or wait on `/map-my-work`.** It's its own prompt in its own window; it asks its own consent. Read its output if it exists at synthesis time, otherwise write without it.
-- **Bundle missing?** Have them use the copy button on the page's last step, never retype. Don't teach what a token is.
 
 ## Self-ping (end of every invocation)
 

@@ -27,7 +27,6 @@ Three skills that used to live in this folder now live there: `/king-intelligenc
 - "first time"
 - "I just opened this"
 - "walk me through Day One"
-- or you spot a `SETUP_BUNDLE` marker in my first message (the kickoff line from members.king-intelligence.com)
 
 ---
 

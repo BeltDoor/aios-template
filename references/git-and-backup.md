@@ -47,7 +47,7 @@ Both are listed in `.gitignore`, which is git's "don't ever back this up" file. 
 Backed up by a cloud drive (Option A)? Restoring is simplest: install the same cloud app (OneDrive / iCloud / Dropbox) on the new laptop, sign in, and let it sync your second brain folder back down. Then open it in VS Code and run `/day-one`. The steps below are for a GitHub backup (Option B).
 
 1. **Install Git, VS Code, and the Claude Code extension** — same as your first setup.
-2. **Clone your repo.** In VS Code: **Source Control → Clone Repository → pick your `secondbrain` repo** (or run `git clone <your-repo-url>` in the terminal). This downloads your whole second brain.
+2. **Clone your repo.** In VS Code: **Source Control → Clone Repository → pick your `secondbrain` repo** (or ask Claude in the chat to clone it for you). This downloads your whole second brain.
 3. **Open it in VS Code, then run `/day-one`.** Claude notices you're on a fresh machine, walks you through re-adding your API keys to local env vars, and (when needed) re-creates your browser profile so Claude can log in as you again.
 
 When `/day-one` finishes, you're back where you left off — same identity, same skills, same history.
