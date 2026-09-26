@@ -12,16 +12,29 @@ The on-ramp. Its one deliverable: a CLAUDE.md § 1 that makes every future sessi
 ## Silent pre-checks (before saying anything)
 
 1. **Shell.** Run `uname`. `Darwin` = Mac, proceed. `MINGW`/`MSYS` = Windows on Git Bash, proceed. Anything else (or Bash errors entirely) = PowerShell, and every command below dies on it. Say plainly: *"One quick setup thing — your computer's using its built-in command line, but your second brain needs the one that comes free with Git."* Then: install Git if missing (`winget install --id Git.Git -e --source winget`), have them fully close and reopen VS Code, re-run `uname`. Still wrong (rare): set the Windows env var `CLAUDE_CODE_GIT_BASH_PATH` to the full path of `bash.exe` (typically `C:\Program Files\Git\bin\bash.exe`), reopen. Plain-English explainers for every install live in [`references/whats-getting-installed.md`](../../../references/whats-getting-installed.md) — read from it if they ask.
-2. **Toolkit.** Run `claude plugin list`. If `king-intelligence` shows, say one visible line: *"Your King Intelligence toolkit is confirmed and ready."* If missing, install from the bundle that shipped in the clone (confirm `pwd` is the second brain folder and `ls .king-intelligence/.claude-plugin/marketplace.json` succeeds first):
+2. **Toolkit.** From the second brain folder, run this with a 10-minute Bash timeout (the first download of the library can take a few minutes):
 
    ```
-   claude plugin marketplace add "$(pwd)/.king-intelligence"
-   claude plugin install king-intelligence@king-intelligence-starter
+   node .king-intelligence/plugins/king-intelligence/scripts/connect-live.mjs
    ```
 
-   Then have them close VS Code completely and reopen (that's what registers the `/king-intelligence:` commands), and re-confirm with `claude plugin list`. Bundle folder absent (old clone): *"Part of your toolkit didn't come through — re-download from your Get Started page, or text Jacob."* Don't continue until the toolkit shows.
+   It reads the member's personal key out of the folder itself, connects their live library, installs the toolkit from it, proves where the toolkit came from, and only then removes the frozen starter copy. The key stays inside the script: leave `.claude/settings.local.json` and `.mcp.json` unopened, and never put either file's contents on screen. The first line of its output is the verdict; the lines after it are plain sentences to relay.
 
-   **If a command here is refused outright, with no box to click, do not retry it and do not hand it to them.** Never send them to the terminal. Carry on with Day One and, at the very end, say in one plain line: *"One part of your toolkit didn't switch on by itself. Jacob will finish it with you; nothing you've done today is lost."*
+   - `KI_CONNECT=live`: say one visible line, *"Your King Intelligence toolkit is connected to your personal library, and it keeps itself current."* If a "One thing to do" line came back, save it for the Handoff; reopening now would end this conversation.
+   - `KI_CONNECT=starter`: this download carries no personal key. Say plainly: *"You're on the free starter copy of the toolkit. It works, and it doesn't update by itself."*
+   - `KI_CONNECT=live-failed`: the live toolkit did NOT switch on. Say: *"Your toolkit didn't connect to your personal library yet"*, then the script's reason line in plain words, then *"you still have the starter tools today, and Jacob will finish the connection with you."* Carry on with Day One and repeat it in the end list.
+   - `KI_CONNECT=starter-failed` or `KI_CONNECT=no-cli`, or `node` is not found: say in one plain line that part of the toolkit didn't come through and Jacob will sort it out, then carry on.
+
+   **If that script is not in the folder** (`No such file`, or `Cannot find module`: an older download), use the older path, and never say "confirmed" or "ready" on it:
+   - First run `ls .claude/ki-connect-missing.json`. If it exists, this is a member's download whose personal key could not be included: treat the toolkit as a FAILED personal connection, never as the free starter. Install the starter below so they have tools today, and at the Handoff say: *"Your download should have carried your personal key and didn't. To fix it, open members.king-intelligence.com/system, copy the Connect this computer message, and paste it into this chat."* Skip the other bullets' wording.
+   - Run `claude plugin list --json`. If it lists `king-intelligence@king-intelligence` with `"enabled": true`, say *"Your King Intelligence toolkit is installed. Jacob will confirm it's connected to your personal library."* and put that check on the end list.
+   - Otherwise, if it lists `king-intelligence@king-intelligence-starter`, it is the frozen starter copy: say so, as for `KI_CONNECT=starter`.
+   - Otherwise install the starter from the bundle (confirm `ls .king-intelligence/.claude-plugin/marketplace.json` succeeds first): `claude plugin marketplace add "$(pwd)/.king-intelligence"`, then `claude plugin install king-intelligence@king-intelligence-starter`, and say it is the frozen starter copy.
+   - If `ls .claude/settings.local.json` shows the file exists (a member's download), add: *"Your personal toolkit didn't switch on by itself yet; Jacob will finish it with you."* Check only that it exists; leave its contents unread.
+
+   "Confirmed" and "ready" are words for `KI_CONNECT=live` only. A `king-intelligence` line in `claude plugin list` proves nothing on its own, because the frozen starter copy carries the same name.
+
+   **If the command is refused outright, with no box to click, do not retry it and do not hand it to them.** Never send them to the terminal. Carry on with Day One and, at the very end, say in one plain line: *"One part of your toolkit didn't switch on by itself. Jacob will finish it with you; nothing you've done today is lost."*
 3. **Document tools, best-effort.** Run `claude plugin marketplace add anthropics/skills` then `claude plugin install document-skills@anthropic-agent-skills`. If either errors, skip silently — nice-to-have, not a gate.
 
 ## Greeting
@@ -83,7 +96,12 @@ The folder arrives as a zip with no history — `git init` on an existing repo i
 
 ## Handoff
 
-> One more thing: your full King Intelligence toolkit is already installed. Type `/king-intelligence:` any time to see every command, and `/king-intelligence:adapt <skill>` wires one up to your own tools.
+Say the line that matches the toolkit verdict from the pre-checks:
+
+- `live`: *"One more thing: your full King Intelligence toolkit is installed from your personal library. Type `/king-intelligence:` any time to see every command, and `/king-intelligence:adapt <skill>` wires one up to your own tools."* If the check asked for a reopen, add: *"Close VS Code completely and open it again when we're done here, so the new toolkit loads."*
+- `starter`: *"You're on the free starter toolkit, a frozen copy. Your personal key switches on the live one, which keeps itself current."*
+- `.claude/ki-connect-missing.json` was found, or `live-failed`: repeat the recovery line from the pre-check (for the marker: copy the Connect this computer message from members.king-intelligence.com/system and paste it into this chat).
+- anything else: repeat the one plain line from the pre-check, that Jacob will finish the toolkit connection with you.
 
 (A few skills tune themselves from [`references/king-intelligence-config.md`](../../../references/king-intelligence-config.md) — mention it exists, don't walk it now.)
 

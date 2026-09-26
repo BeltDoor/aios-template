@@ -396,13 +396,46 @@ function lastUpdateError() {
 // data. The written warning about this already existed and was not enough, so the guard is now
 // in the code: pass --token at all (even empty) or set KI_NO_SEND=1 and this NEVER reaches for
 // the machine's real credential.
+// THE MEMBER'S OWN FOLDER IS A KEY SOURCE TOO (9/26/26). A keyed download carries the key in
+// `.claude/settings.local.json` and `.mcp.json`. On a computer where the toolkit switch never
+// registered (a member's fresh Windows install, 9/25/26) the registry below was empty, so the
+// sender found nothing and the member's hours never arrived, silently. These are read AFTER
+// the registry and the environment, only when neither produced a key, and the key is used
+// only with the members portal (project-key.mjs refuses any other address).
+//
+// Which folder: --project-dir (the hooks pass it), else CLAUDE_PROJECT_DIR, else the working
+// folder, else the folder a previous run found a key in. Only the folder's PATH is remembered
+// (key-source.json), never the key, so a session opened in some other folder still reports.
+const KEY_SOURCE = path.join(DATA, "key-source.json");
+let projectKeyModule = null;
+try { projectKeyModule = await import("./project-key.mjs"); } catch { /* an older copy without it: registry only */ }
+
+function projectKey() {
+  if (!projectKeyModule) return null;
+  const pi = argv.indexOf("--project-dir");
+  const remembered = (() => {
+    try { const j = JSON.parse(fs.readFileSync(KEY_SOURCE, "utf8")); return typeof j.dir === "string" ? j.dir : null; } catch { return null; }
+  })();
+  const dirs = [pi >= 0 ? argv[pi + 1] : null, process.env.CLAUDE_PROJECT_DIR, process.cwd(), remembered];
+  let hit = null;
+  try { hit = projectKeyModule.findProjectKey(dirs); } catch { hit = null; }
+  if (hit && hit.dir && hit.dir !== remembered) {
+    try {
+      fs.mkdirSync(DATA, { recursive: true });
+      fs.writeFileSync(KEY_SOURCE, JSON.stringify({ dir: hit.dir, via: hit.via, at: new Date().toISOString() }));
+    } catch { /* remembering is a convenience, never a failure */ }
+  }
+  return hit;
+}
+
 function resolveTarget() {
   if (process.env.KI_NO_SEND === "1") return { token: null, portal: null, isGithub: false, blocked: "KI_NO_SEND=1" };
   let token = null;
   const ti = argv.indexOf("--token");
   const tokenWasNamed = ti >= 0;
-  if (tokenWasNamed) token = argv[ti + 1] || null;
-  if (!token && !tokenWasNamed) token = process.env.KI_MEMBER_TOKEN || null;
+  let via = null;
+  if (tokenWasNamed) { token = argv[ti + 1] || null; via = "flag"; }
+  if (!token && !tokenWasNamed) { token = process.env.KI_MEMBER_TOKEN || null; if (token) via = "environment"; }
   if (!token && tokenWasNamed) return { token: null, portal: null, isGithub: false, blocked: "--token was given but empty" };
   let host = null;
   if (!token) {
@@ -420,13 +453,42 @@ function resolveTarget() {
         return null;
       };
       const url = findUrl(km);
-      if (url) { const m = url.match(/^https?:\/\/([^@/]+)@([^/]+)\//); if (m) { token = m[1]; host = m[2]; } }
+      if (url) {
+        // parsed, never pattern-matched: the user part is the key, the hostname is where it lives
+        try {
+          const u = new URL(String(url).trim());
+          if (u.username && !u.password) { token = decodeURIComponent(u.username); host = u.hostname.toLowerCase(); via = "marketplace"; }
+        } catch { /* an address that does not parse carries no usable key */ }
+      }
     } catch { /* no marketplace config -> nothing to send with */ }
+  }
+  // A registry that only knows the retired GitHub connection yields a key the portal cannot use,
+  // so the folder's portal key wins over it.
+  if (!token || (via === "marketplace" && /github\.com/i.test(host || ""))) {
+    const hit = projectKey();
+    if (hit) { token = hit.token; host = hit.host; via = hit.via; }
   }
   const pi = argv.indexOf("--portal");
   let portal = (pi >= 0 && argv[pi + 1]) || process.env.PORTAL_BASE || null;
-  if (!portal) portal = host ? "https://" + host : "https://members.king-intelligence.com";
-  return { token, portal, isGithub: /github\.com/i.test(host || portal) };
+  if (!portal) portal = host ? "https://" + host : PORTAL_ORIGIN;
+  const isGithub = /github\.com/i.test(host || portal);
+  // A DISCOVERED KEY ONLY EVER GOES TO THE MEMBERS SITE (9/26/26 review). A key this script found
+  // on its own (Claude Code's registry, the member's folder) is the member's credential, and
+  // --portal or PORTAL_BASE could otherwise point it at any server. Only a key the caller handed
+  // over explicitly (--token, KI_MEMBER_TOKEN) may be sent somewhere else, which is what tests do.
+  const discovered = via === "marketplace" || via === "project-settings" || via === "project-connection";
+  if (token && discovered && !isGithub && !isPortalOrigin(portal)) {
+    return { token: null, portal: null, isGithub: false, via, blocked: "the report address is not the members site, so this computer's key was not sent", offOrigin: true };
+  }
+  return { token, portal, isGithub, via };
+}
+
+const PORTAL_ORIGIN = "https://members.king-intelligence.com";
+function isPortalOrigin(portal) {
+  try {
+    const u = new URL(String(portal));
+    return u.origin === PORTAL_ORIGIN && u.username === "" && u.password === "";
+  } catch { return false; }
 }
 
 function snapshotOf(r) {
@@ -458,23 +520,102 @@ function snapshotOf(r) {
 
 async function send(r) {
   if (has("--dry-run")) return { sent: false, reason: "dry run", wouldSend: snapshotOf(r) };
-  const { token, portal, isGithub, blocked } = resolveTarget();
-  if (blocked) return { sent: false, reason: blocked };
-  if (!token || isGithub) return { sent: false, reason: token ? "legacy host, kept local" : "no member token on this machine" };
+  const result = await sendOnce(r);
+  noteReport(result);
+  return result;
+}
+
+async function sendOnce(r) {
+  const { token, portal, isGithub, blocked, via, offOrigin } = resolveTarget();
+  if (blocked) return offOrigin ? { sent: false, reason: blocked, via } : { sent: false, reason: blocked, quiet: true };
+  if (!token) return { sent: false, reason: "no member token on this machine", noKey: true };
+  if (isGithub) return { sent: false, reason: "legacy host, kept local", via };
   const ti = argv.indexOf("--send-timeout-ms");
   const timeoutMs = (ti >= 0 && parseInt(argv[ti + 1], 10)) || 0;
+  const url = portal.replace(/\/$/, "") + "/api/time-saved/ingest";
+  const body = JSON.stringify(snapshotOf(r));
   try {
-    const res = await fetch(portal.replace(/\/$/, "") + "/api/time-saved/ingest", {
+    const res = await transport(url, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: "Bearer " + token },
-      body: JSON.stringify(snapshotOf(r)),
+      body,
+      // A redirect is never followed with the key attached (9/26/26 review): the answer is read
+      // as a refusal and the key stays on this computer.
+      redirect: "manual",
       ...(timeoutMs > 0 ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
     });
-    if (!res.ok) return { sent: false, reason: "HTTP " + res.status, status: res.status };
-    return { sent: true };
+    if (res.status >= 300 && res.status < 400) return { sent: false, reason: "HTTP " + res.status + " (a redirect was refused, so the key stayed on this computer)", status: res.status, via };
+    if (!res.ok) return { sent: false, reason: "HTTP " + res.status, status: res.status, via };
+    return { sent: true, via };
   } catch (e) {
-    return { sent: false, reason: (e && e.message) || String(e) };
+    // an error message can echo a URL; strip any credential before it goes anywhere
+    const msg = String((e && e.message) || e).replace(/https?:\/\/[^@\s/]+@/gi, "https://TOKEN@").replace(/Bearer\s+\S+/gi, "Bearer TOKEN");
+    return { sent: false, reason: msg.slice(0, 200), via };
   }
+}
+
+/**
+ * The network call, swappable for tests only. With KI_SEND_TRANSPORT set to a file path nothing
+ * leaves the computer: the request is appended to that file as one JSON line carrying the address
+ * and a SHA-256 of the Authorization header (never the key itself), and the answer's status comes
+ * from KI_SEND_TRANSPORT_STATUS (default 200). The address rule above runs before this, so a test
+ * sees exactly what a member's machine would have sent, and where.
+ */
+async function transport(url, init) {
+  const file = process.env.KI_SEND_TRANSPORT;
+  if (!file) return fetch(url, init);
+  const auth = String((init.headers && init.headers.authorization) || "");
+  fs.appendFileSync(file, JSON.stringify({
+    url,
+    redirect: init.redirect || null,
+    auth_sha256: crypto.createHash("sha256").update(auth).digest("hex"),
+    body_bytes: Buffer.byteLength(String(init.body || "")),
+  }) + "\n");
+  const status = parseInt(process.env.KI_SEND_TRANSPORT_STATUS || "200", 10) || 200;
+  return { status, ok: status >= 200 && status < 300 };
+}
+
+/**
+ * THE ONE-LINE REPORT STATUS (9/26/26). Every send attempt, including the SessionEnd one whose
+ * output nobody sees, leaves one plain line on disk: reported, or not reported and why. The
+ * next session's start hook (session-sweep.mjs) reads it and says so when a report failed, so
+ * a machine whose hours never arrive is no longer silent. The key is never written here.
+ */
+const REPORT_STATUS = path.join(DATA, "last-report.json");
+function describeReport(result) {
+  if (result.sent) return "reported to your member page";
+  const why = result.noKey
+    ? "no member key was found on this computer"
+    : /not the members site/.test(result.reason || "")
+      ? result.reason
+    : result.quiet
+      ? "sending is switched off on this computer"
+      : /^HTTP 401|^HTTP 403/.test(result.reason || "")
+        ? "the members site did not accept this computer's key (" + result.reason + "); a fresh copy from members.king-intelligence.com/system fixes it"
+        : /^HTTP 5/.test(result.reason || "")
+          ? "the members site had a problem (" + result.reason + "); it retries by itself next session"
+          : "the members site could not be reached (" + String(result.reason || "unknown").slice(0, 120) + ")";
+  return "not reported: " + why;
+}
+function noteReport(result) {
+  try {
+    fs.mkdirSync(DATA, { recursive: true });
+    const line = describeReport(result);
+    fs.writeFileSync(
+      REPORT_STATUS,
+      JSON.stringify({
+        at: new Date().toISOString(),
+        cmd: cmd ?? null,
+        sent: !!result.sent,
+        noKey: !!result.noKey,
+        quiet: !!result.quiet,
+        reason: result.sent ? null : String(result.reason || "").slice(0, 200),
+        via: result.via || null,
+        line,
+      }) + "\n"
+    );
+    fs.writeFileSync(path.join(DATA, "last-report.txt"), `${new Date().toISOString()} ${line}\n`);
+  } catch { /* a status line is never worth an error of its own */ }
 }
 
 // ---------- commands ----------

@@ -160,9 +160,11 @@ Just say "this is broken" or "this is frustrating." I'll log what went wrong and
 
 ## 9. Getting updates
 
-Your toolkit came bundled with your second brain, so you started with my full current skill set. When I improve a skill or ship a new one, you pull it with `/king-intelligence:update`. That command also offers you my latest ways of working, one at a time, and never changes anything you've personalized without your yes.
+A member's download carries their personal key, and `/day-one` uses it to switch this folder onto the live toolkit: it connects your personal library, installs the toolkit from it, checks where it came from, and removes the frozen starter copy. From then on the toolkit keeps itself current in the background, and `/king-intelligence:update` offers my latest ways of working one at a time, never changing anything you've personalized without your yes.
 
-Live updates need your personal key. Until you have one, you're on the free starter set: it works, it just doesn't grow on its own. When you're ready to switch updates on, I'll send you two quick setup lines by email. Paste them in, reopen, and `/king-intelligence:update` keeps you current from then on.
+A download without a key runs the free starter set: it works, and it doesn't update by itself. To switch the live toolkit on later (a new laptop, a fresh key), open members.king-intelligence.com/system, copy the "Connect this computer" message and paste it into this chat. Once its two files are written, I run the connect check below, and then you close VS Code completely and open it again. Never paste setup lines into a terminal.
+
+The connect check is `node .king-intelligence/plugins/king-intelligence/scripts/connect-live.mjs`, run from this folder with a 10-minute timeout. It does the same switch-over Day One does and is safe to run any time: `KI_CONNECT=live` is the live toolkit; anything else says in plain words what is missing. It never shows the key, and neither do I. A `king-intelligence` entry in `claude plugin list` alone proves nothing, because the starter copy carries the same name.
 
 ## 10. Pointers
 

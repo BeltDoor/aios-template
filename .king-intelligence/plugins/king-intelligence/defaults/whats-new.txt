@@ -1,3 +1,5 @@
+Fixed: Day One now switches a new download onto your live toolkit, so you get every update from here on. It only says you're ready once it has checked. Your hours now reach your member page. If one ever doesn't arrive, Claude tells you why at the start of your next session.
+
 New: /brand-my-editor puts your brand colors on your code editor. It builds eight themes, bold to soft pastel in dark and light, and you flip through them next to five popular themes before keeping one. It removes the ones you skip. Run it again to tweak the colors or undo everything.
 
 New: Claude now asks you questions with buttons to click, so you type less. A short "Stop hook error" line may flash first. That wording comes from Claude Code, and nothing is broken. Say "stop the question buttons" any time to turn this off.

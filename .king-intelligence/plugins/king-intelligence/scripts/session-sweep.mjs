@@ -53,14 +53,41 @@ try {
 
     const engine = join(SCRIPT_DIR, "measure-sessions.mjs");
     if (existsSync(engine)) {
-      const child = spawn(process.execPath, [engine, "sweep", "--send", "--send-timeout-ms", "8000"], {
-        detached: true,
-        stdio: "ignore",
-      });
+      const projectDir = process.env.CLAUDE_PROJECT_DIR || "";
+      const child = spawn(
+        process.execPath,
+        [engine, "sweep", "--send", "--send-timeout-ms", "8000", ...(projectDir ? ["--project-dir", projectDir] : [])],
+        { detached: true, stdio: "ignore", windowsHide: true }
+      );
       child.unref(); // the session opens now; the sweep finishes on its own time
     }
   }
 } catch {
   /* never block a session opening */
+}
+
+// SAY WHEN THE LAST HOURS REPORT DID NOT ARRIVE (9/26/26). The send that runs as a session
+// closes has no one to tell, so measure-sessions.mjs writes its outcome to last-report.json and
+// this start hook reads it. Claude Code hands a SessionStart hook's output to Claude, so a
+// failed report is now something the member's Claude knows about instead of a silence.
+//
+// Quiet on purpose when: the report went through, sending is switched off, or there is no key
+// anywhere on the computer (the free starter, which has nothing to report to). Quiet too when
+// the note is older than two weeks, because a stale failure is history, not news.
+try {
+  const line = reportLine(DATA);
+  if (line) process.stdout.write(line + "\n");
+} catch {
+  /* a status line is never worth an error of its own */
+}
+
+function reportLine(dataDir, now = Date.now()) {
+  let j = null;
+  try { j = JSON.parse(readFileSync(join(dataDir, "last-report.json"), "utf8")); } catch { return null; }
+  if (!j || typeof j !== "object" || j.sent || j.quiet || j.noKey) return null;
+  const at = Date.parse(j.at);
+  if (Number.isNaN(at) || now - at > 14 * 86400000) return null;
+  const text = typeof j.line === "string" ? j.line.replace(/https?:\/\/[^@\s/]+@/gi, "https://TOKEN@").replace(/Bearer\s+\S+/gi, "Bearer TOKEN") : "not reported";
+  return `King Intelligence: the last hours report from this computer was ${text}. If the member asks about their hours or their member page, tell them this in one plain sentence.`;
 }
 process.exit(0);

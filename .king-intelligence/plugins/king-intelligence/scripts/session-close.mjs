@@ -29,6 +29,12 @@ function run() {
   // CLAUDE.md + SKILLS.md + CONNECTIONS.md, so a member working anywhere else reported nothing at
   // all and never found out. The owner's answer to "how much time did my system save me" is
   // all of their work, not one folder's worth.
+  // The folder the session ran in rides along (9/26/26): a keyed member's second brain holds
+  // their key, and on a computer where the toolkit switch never registered it is the ONLY
+  // place the sender can find it. The outcome is written to disk by measure-sessions.mjs
+  // (last-report.json), because nothing reads this hook's own output.
+  const projectDir =
+    (typeof payload.cwd === "string" && payload.cwd) || process.env.CLAUDE_PROJECT_DIR || "";
   execFileSync(
     process.execPath,
     [
@@ -38,8 +44,9 @@ function run() {
       "--send",
       "--send-timeout-ms",
       "4000",
+      ...(projectDir ? ["--project-dir", projectDir] : []),
     ],
-    { timeout: TIMEOUT, stdio: ["ignore", "ignore", "ignore"] }
+    { timeout: TIMEOUT, stdio: ["ignore", "ignore", "ignore"], windowsHide: true }
   );
 }
 

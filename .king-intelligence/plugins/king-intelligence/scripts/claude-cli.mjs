@@ -292,6 +292,83 @@ export function needsShell(binPath, how) {
   try { return /\.(cmd|bat)$/i.test(String(binPath || "")); } catch { return false; }
 }
 
+// ---------------------------------------------------------------------------------------------
+// HOW TO START THE PROGRAM WITHOUT A SHELL MANGLING IT (9/26/26 review).
+//
+// Node's `shell: true` joins the command and its arguments with plain spaces and hands the line to
+// /bin/sh or cmd.exe unquoted. So `C:\Users\Sam Member\AppData\Roaming\npm\claude.cmd`
+// ran as the program `C:\Users\Sam` and a folder argument with a space in it split in two
+// (on a Mac as well as on Windows). spawnPlan decides, per platform, a way that never needs that:
+//
+//   Mac/Linux, any path or the bare word   spawned directly; execvp searches PATH itself.
+//   Windows .exe                          spawned directly.
+//   Windows npm .cmd shim                 read the shim, run `node <cli.js>` (or the .exe it wraps)
+//                                         directly, so nothing goes through cmd.exe at all.
+//   Windows anything else needing cmd     cmd.exe /d /s /c "<line>" with EVERY part quoted and every
+//   (the bare word, an unreadable shim)   cmd metacharacter caret-escaped (cross-spawn's rules),
+//                                         passed verbatim so Node adds no quoting of its own.
+// ---------------------------------------------------------------------------------------------
+
+const CMD_META = /([()\][%!^"`<>&|;, *?])/g;
+
+/** Quote one argument for a cmd.exe command line. `doubleEscape` for a .cmd/.bat that re-parses %*. */
+export function quoteCmdArg(arg, doubleEscape = false) {
+  let a = String(arg == null ? "" : arg);
+  a = a.replace(/(\\*)"/g, '$1$1\\"'); // backslashes before a quote double, then the quote escapes
+  a = a.replace(/(\\*)$/, "$1$1");       // trailing backslashes double (they precede our closing quote)
+  a = `"${a}"`;
+  a = a.replace(CMD_META, "^$1");
+  if (doubleEscape) a = a.replace(CMD_META, "^$1");
+  return a;
+}
+
+/** Escape the program part of a cmd.exe command line. */
+export function quoteCmdCommand(cmd) {
+  return String(cmd == null ? "" : cmd).replace(CMD_META, "^$1");
+}
+
+/**
+ * What an npm-style .cmd shim really runs, or null. Recognises the cmd-shim line
+ *   ... "%_prog%"  "%dp0%\node_modules\@anthropic-ai\claude-code\cli.js" %*
+ * and the older  "%~dp0\node_modules\...\cli.js" %*  and a direct "%dp0%\...\claude.exe" %*.
+ */
+export function readShimTarget(shimPath, read = (f) => readFileSync(f, "utf8"), p = path.win32) {
+  let text;
+  try { text = String(read(shimPath)); } catch { return null; }
+  const dir = p.dirname(shimPath);
+  const m = text.match(/"%(?:~?dp0%?|dp0%)\\?([^"%]+?\.(?:js|cjs|mjs|exe))"\s+%\*/i);
+  if (!m) return null;
+  const target = p.join(dir, m[1].replace(/^[\\/]+/, ""));
+  return { target, kind: /\.exe$/i.test(target) ? "exe" : "js" };
+}
+
+/**
+ * spawnPlan(binPath, how, args, opts) -> { file, args, options }
+ * `opts.platform` and `opts.read` exist so every Windows branch can be tested on any machine.
+ */
+export function spawnPlan(binPath, how, args, opts = {}) {
+  const platform = opts.platform || process.platform;
+  const list = Array.isArray(args) ? args.map((a) => String(a)) : [];
+  if (platform !== "win32") return { file: binPath, args: list, options: { shell: false } };
+  const bin = String(binPath || "claude");
+  if (/\.(cmd|bat)$/i.test(bin) && how !== "bare") {
+    const hit = readShimTarget(bin, opts.read);
+    if (hit && hit.kind === "exe") return { file: hit.target, args: list, options: { shell: false } };
+    if (hit && hit.kind === "js") {
+      const nodeNext = path.win32.join(path.win32.dirname(bin), "node.exe");
+      const exists = opts.exists || existsSync;
+      const node = exists(nodeNext) ? nodeNext : opts.nodePath || process.execPath;
+      return { file: node, args: [hit.target, ...list], options: { shell: false } };
+    }
+  }
+  if (!/\.(cmd|bat)$/i.test(bin) && how !== "bare") return { file: bin, args: list, options: { shell: false } };
+  // cmd.exe is unavoidable (the bare word needs PATHEXT, or a shim we could not read)
+  const shim = /\.(cmd|bat)$/i.test(bin);
+  const line = [quoteCmdCommand(bin), ...list.map((a) => quoteCmdArg(a, shim))].join(" ");
+  const comspec = opts.comspec || process.env.ComSpec || process.env.COMSPEC || "cmd.exe";
+  return { file: comspec, args: ["/d", "/s", "/c", `"${line}"`], options: { shell: false, windowsVerbatimArguments: true } };
+}
+
 /**
  * Run the Claude Code command line and come back with a DESCRIBABLE result. Never throws.
  *
@@ -303,20 +380,25 @@ export function needsShell(binPath, how) {
  *   how     which rung of resolveClaudeBin() answered
  *
  * spawnSync takes an ARGUMENT ARRAY, never a command string, so an absolute Windows path with a
- * space in it cannot be mis-quoted. shell:true is used only where it is unavoidable: the bare
- * word, and a .cmd / .bat shim, which modern Node refuses to spawn any other way (see needsShell).
+ * space in it cannot be mis-quoted. No shell is ever used: spawnPlan (above) decides how each
+ * platform starts the program, and only on Windows, for the bare word or an unreadable shim,
+ * goes through cmd.exe with every part quoted by hand.
  */
-export function runClaude(args, timeoutMs) {
+export function runClaude(args, timeoutMs, opts = {}) {
   const bin = resolveClaudeBin();
   const startedAt = Date.now();
   let r;
   try {
-    r = spawnSync(bin.path, Array.isArray(args) ? args : [], {
+    const plan = spawnPlan(bin.path, bin.how, args);
+    r = spawnSync(plan.file, plan.args, {
       timeout: timeoutMs,
       encoding: "utf8",
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
-      shell: needsShell(bin.path, bin.how),
+      ...plan.options,
+      // Claude Code answers plugin questions for the folder it is run IN (project settings,
+      // enabled plugins), so a caller acting on another folder must say which (9/26/26 review).
+      ...(opts && opts.cwd ? { cwd: opts.cwd } : {}),
       env: { ...process.env, PATH: withBinDir(bin.path) },
     });
   } catch (e) {
