@@ -86,11 +86,9 @@ After writing the spec document, look at it with fresh eyes:
 Fix any issues inline. No need to re-review — just fix and move on.
 
 **User Review Gate:**
-After the spec review loop passes, ask the user to review the written spec before proceeding:
+After the spec review loop passes, tell the user in one line where the spec lives (`Spec written to <path>.`), then ask through the `AskUserQuestion` tool: "Approve the spec?" with options **Approve (Recommended)** / **Revise**. Never end the message on a prose question.
 
-> "Spec written and committed to `<path>`. Please review it and let me know if you want to make any changes before we start writing out the plan."
-
-Wait for the user's response. If they request changes, make them and re-run the spec review loop. Only proceed once the user approves.
+Wait for the answer. If they request changes, make them and re-run the spec review loop. Only proceed once the user approves.
 
 **Execution:**
 
@@ -101,10 +99,9 @@ Wait for the user's response. If they request changes, make them and re-run the 
 
 A browser-based companion for showing mockups, diagrams, and visual options during brainstorming. Available as a tool — not a mode. Accepting the companion means it's available for questions that benefit from visual treatment; it does NOT mean every question goes through the browser.
 
-**Offering the companion:** When you anticipate that upcoming questions will involve visual content (mockups, layouts, diagrams), offer it once for consent:
-> "Some of what we're working on might be easier to explain if I can show it to you in a web browser. I can put together mockups, diagrams, comparisons, and other visuals as we go. This feature is still new and can be token-intensive. Want to try it? (Requires opening a local URL)"
+**Offering the companion:** When you anticipate that upcoming questions will involve visual content (mockups, layouts, diagrams), offer it once for consent, through the `AskUserQuestion` tool: "Show visuals in a browser as we go?" with options **Yes, use the browser** (description: mockups, diagrams and comparisons on a local page; still new and uses more tokens) / **Text only**.
 
-**This offer MUST be its own message.** Do not combine it with clarifying questions, context summaries, or any other content. The message should contain ONLY the offer above and nothing else. Wait for the user's response before continuing. If they decline, proceed with text-only brainstorming.
+**This offer MUST be its own question.** Do not bundle it with clarifying questions or context summaries. Wait for the user's response before continuing. If they decline, proceed with text-only brainstorming.
 
 Even after acceptance, decide browser vs terminal per question — the guide covers how.
 
