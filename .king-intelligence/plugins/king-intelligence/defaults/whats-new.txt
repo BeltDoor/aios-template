@@ -1,3 +1,5 @@
+Updated: /codex-ready was rebuilt after the 9/30 members call. It asks whether you have ChatGPT, installs Codex for you right from the chat, and copies every CLAUDE.md into a matching AGENTS.md that stays in step as you edit. Claude can now hand ChatGPT a job in the background, and it asks you before any ChatGPT review. It is proven on Mac; Windows has not been tested yet.
+
 Removed: /post-social is out of the library. Jacob only ever switched it on by hand, for a few accounts.
 
 The end-of-session close now finishes with a ready-to-paste prompt in a copy box, so you can start the next window right where you left off.
