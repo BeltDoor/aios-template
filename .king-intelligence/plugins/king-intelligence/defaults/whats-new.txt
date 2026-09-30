@@ -1,3 +1,8 @@
+Removed: /post-social is out of the library. Jacob only ever switched it on by hand, for a few accounts.
+
+The end-of-session close now finishes with a ready-to-paste prompt in a copy box, so you can start the next window right where you left off.
+
+
 Fixed: brainstorming now asks its approval questions as buttons. Lessons from /teach open on a Mac as well as Windows. Money questions like "what do I make" go straight to your one true revenue source. The voice skill hands email and texts to your dedicated email or texting skill when you have one.
 
 Fixed: Day One now switches a new download onto your live toolkit, so you get every update from here on. It only says you're ready once it has checked. Your hours now reach your member page. If one ever doesn't arrive, Claude tells you why at the start of your next session.
