@@ -1,3 +1,5 @@
+Updated: /codex-ready now works on Windows with the VS Code extension, tested on a real Windows 11 computer. If you only have Codex in VS Code, it now asks before adding the Codex terminal version instead of installing it on its own. Trusting the safety checks is one click: in VS Code or the Codex app, open Codex's Settings, choose Hooks, and click Trust all. The terminal version on Windows has not been tested yet.
+
 Updated: /codex-ready was rebuilt after the 9/30 members call. It asks whether you have ChatGPT, installs Codex for you right from the chat, and copies every CLAUDE.md into a matching AGENTS.md that stays in step as you edit. Claude can now hand ChatGPT a job in the background, and it asks you before any ChatGPT review. It is proven on Mac; Windows has not been tested yet.
 
 Removed: /post-social is out of the library. Jacob only ever switched it on by hand, for a few accounts.
