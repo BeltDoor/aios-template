@@ -50,7 +50,11 @@ import readline from "node:readline";
 // One copy only, in rollup-rules.mjs, where it is tested. Two copies of a price list is two
 // answers to "what did this save me" and only one of them is ever read.
 export { MIN_CREATED, MIN_CHANGED, MIN_OUTWARD, rollup } from "./rollup-rules.mjs";
-import { rollup, MIN_CREATED, MIN_CHANGED, MIN_OUTWARD } from "./rollup-rules.mjs";
+import { rollup, MIN_CREATED, MIN_CHANGED, MIN_OUTWARD, isV2Row, v2Credit, legacyCredits } from "./rollup-rules.mjs";
+// Per-session rules, version 2 (10/7/26): true create versus change, Windows paths, failed and
+// retried actions, non-file signals as data only. Used for NEW rows only; see measureFile.
+import * as engineState from "./engine-state.mjs";
+import { createCollector, RULES_VERSION } from "./session-evidence.mjs";
 const IDLE_CAP_MS = 5 * 60 * 1000;
 
 // ---------- where things live ----------
@@ -131,7 +135,39 @@ const shortHash = (p) => crypto.createHash("sha1").update(p).digest("hex").slice
 const lastSegment = (name) => String(name).split("__").pop();
 
 // ---------- measure ONE transcript ----------
-async function measureFile(file) {
+//
+// `legacy: true` reproduces a row exactly as every toolkit before rules version 2 wrote it (only
+// `verify` uses it). "compat" is that row plus `eng` and `signals`, read the same streaming way.
+//
+// "v2" READS THE TRANSCRIPT ONCE (Codex round 8): the whole file is read into one buffer first, so
+// a line appended while the engine is working can never be half in and half out of the measure.
+function* bufferLines(buf) {
+  let at = 0;
+  while (at < buf.length) {
+    let nl = buf.indexOf(10, at);
+    if (nl === -1) nl = buf.length;
+    let end = nl;
+    if (end > at && buf[end - 1] === 13) end -= 1;
+    yield buf.toString("utf8", at, end);
+    at = nl + 1;
+  }
+}
+function readOnce(file) {
+  const fd = fs.openSync(file, "r");
+  try {
+    const size = fs.fstatSync(fd).size;
+    const buf = Buffer.allocUnsafe(size);
+    let got = 0;
+    while (got < size) { const n = fs.readSync(fd, buf, got, size - got, got); if (!n) break; got += n; }
+    return buf.subarray(0, got);
+  } finally { fs.closeSync(fd); }
+}
+// mode: "legacy" = exactly the v0.66.0 row; "compat" = that same row plus the engine marker and the
+// non-file signals (fields v0.66.0 ignores); "v2" = the version-2 row (only once activated).
+async function measureFile(file, { mode = "v2", legacy = false } = {}) {
+  if (legacy) mode = "legacy";
+  const collector = mode === "legacy" ? null : createCollector({ idleCapMs: IDLE_CAP_MS });
+  const buf = mode === "v2" ? readOnce(file) : null;
   const ts = [];
   const touched = new Set();
   const touchedViaTerminal = new Set();
@@ -139,7 +175,7 @@ async function measureFile(file) {
   let drafts = 0;
   let cwd = null;
 
-  const rl = readline.createInterface({
+  const rl = buf ? bufferLines(buf) : readline.createInterface({
     input: fs.createReadStream(file),
     crlfDelay: Infinity,
   });
@@ -147,18 +183,22 @@ async function measureFile(file) {
   for await (const line of rl) {
     if (!line) continue;
     const tm = line.match(/"timestamp":"([^"]+)"/);
-    if (tm) {
-      const t = Date.parse(tm[1]);
-      if (t) ts.push(t);
+    let rec = null;
+    const t = tm ? Date.parse(tm[1]) || 0 : 0;
+    if (collector) {
+      try { rec = JSON.parse(line); } catch { rec = null; }
+      if (rec) {
+        try { collector.add(rec); } catch { /* one odd record never stops a measure */ }
+      }
     }
+    if (t) ts.push(t);
     if (!cwd) {
       const cm = line.match(/"cwd":"((?:[^"\\]|\\.)*)"/);
       if (cm) { try { cwd = JSON.parse('"' + cm[1] + '"'); } catch { /* leave null */ } }
     }
     if (line.indexOf('"tool_use"') === -1) continue;
 
-    let rec;
-    try { rec = JSON.parse(line); } catch { continue; }
+    if (!rec) { try { rec = JSON.parse(line); } catch { continue; } }
     const content = rec && rec.message && rec.message.content;
     if (!Array.isArray(content)) continue;
 
@@ -210,7 +250,7 @@ async function measureFile(file) {
     if (gap > 0 && gap <= IDLE_CAP_MS) activeMs += gap;
   }
 
-  return {
+  const row = {
     id: path.basename(file, ".jsonl"),
     folder: cwd || path.basename(path.dirname(file)),
     start: new Date(ts[0]).toISOString(),
@@ -222,42 +262,261 @@ async function measureFile(file) {
     skills: [...new Set(skills)],
     measuredAt: new Date().toISOString(),
   };
+  if (!collector) return row;
+  const ev = collector.finish();
+  if (mode === "compat") return { ...row, eng: ENGINE_MARK, signals: ev.signals };
+
+  // Rules version 2: the price comes from this session's own evidence (created / changed), only
+  // successful actions count, retries count once.
+  // `touched` IS EMPTY ON PURPOSE (Codex round 6). v0.66.0 prices `touched` through its own file
+  // history (first seen = created) and SENDS that figure, so publishing changed files there let
+  // an older window report more than this engine ever credits. With `touched` empty an older
+  // engine prices this row at max(activeMin, drafts x 10), and both of those are this row's own
+  // version-2 figures, so its report can never exceed the version-2 credit.
+  return {
+    ...row,
+    eng: ENGINE_MARK,
+    v: RULES_VERSION,
+    touched: [],
+    created: ev.created,
+    changed: ev.changed,
+    drafts: ev.drafts,
+    failed: ev.failed,
+    signals: ev.signals,
+  };
 }
 
-// ---------- ledger ----------
-function readLedger() {
+// ---------- ONE SWITCH-OVER, NO OVERLAP (10/8/26, Jacob: "Remove the overlap week") ----------
+//
+// The first time this engine runs on a machine it switches over at once. Under the engine-state
+// lock it takes ONE snapshot: v0.66.0's ledger (sessions.jsonl) plus a v0.66.0-style measure of
+// every transcript on disk right then, the later end winning for a session in both. That snapshot
+// is priced exactly as v0.66.0 prices it and frozen in activation.json, together with any gap up
+// to v0.66.0's own total over its ledger (floorExtraMin), so the switch can never lower a total.
+//
+// From then on this engine NEVER reads or writes sessions.jsonl or measured.json again. It keeps
+// its OWN files, sessions-v2.jsonl and measured-v2.json, written atomically under its own lock,
+// and measures only sessions that START at or after the switch. A chat already open when the
+// update landed earns nothing new afterwards (Jacob, 10/7). An older toolkit window still open can
+// keep writing v0.66.0's files and reporting the old way; none of it reaches this engine's total,
+// and the members portal ignores that window's reports once this machine has reported here.
+//
+//   total = the frozen snapshot + floorExtraMin + the version-2 roll-up over sessions-v2.jsonl
+//
+// A version-2 row's floor is its own previous credit in sessions-v2.jsonl (`floorMin`).
+function parseRows(text) {
   const rows = new Map();
-  try {
-    for (const line of fs.readFileSync(LEDGER, "utf8").split("\n")) {
-      if (!line.trim()) continue;
-      try {
-        const r = JSON.parse(line);
-        if (r && r.id) rows.set(r.id, r);
-      } catch { /* skip a torn line rather than lose the file */ }
-    }
-  } catch { /* no ledger yet */ }
+  for (const line of String(text).split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const r = JSON.parse(line);
+      if (r && r.id) rows.set(r.id, r);
+    } catch { /* skip a torn line rather than lose the file */ }
+  }
   return rows;
 }
-
-function writeLedger(rows) {
-  fs.mkdirSync(DATA, { recursive: true });
-  const out = [...rows.values()]
-    .sort((a, b) => String(a.start).localeCompare(String(b.start)))
-    .map((r) => JSON.stringify(r))
-    .join("\n");
-  const tmp = LEDGER + ".tmp";
-  fs.writeFileSync(tmp, out + "\n");
-  fs.renameSync(tmp, LEDGER); // atomic, so a crash mid-write never truncates the ledger
+function readRowsFrom(file) {
+  try { return parseRows(fs.readFileSync(file, "utf8")); } catch { return new Map(); }
+}
+// A FILE OF THIS ENGINE'S OWN THAT EXISTS BUT CANNOT BE READ STOPS THE RUN (Codex round 8). Treating
+// it as absent would re-switch over (activation.json) or write an empty ledger over a full one
+// (sessions-v2.jsonl). The run throws, writes and reports nothing, and the receipt says why.
+class StateUnreadable extends Error {}
+function readOwnFile(file) {
+  try { return fs.readFileSync(file, "utf8"); }
+  catch (e) { if (e && e.code === "ENOENT") return null; throw new StateUnreadable(path.basename(file) + " exists but cannot be read (" + ((e && e.code) || "error") + ")"); }
+}
+/** The v0.66.0 ledger. READ ONLY, and read only at the switch-over. */
+function readShared() { return readRowsFrom(LEDGER); }
+const laterEnd = (a, b) => String(a.end || "") > String(b.end || ""); // ISO strings compare in time order
+/** Fold `from` into `into`: missing ids are added, an id with a later end replaces. Mutates and returns `into`. */
+function mergeRows(into, from) {
+  for (const [id, r] of from) {
+    const mine = into.get(id);
+    if (!mine || laterEnd(r, mine)) into.set(id, r);
+  }
+  return into;
 }
 
-function readIndex() {
-  try { return JSON.parse(fs.readFileSync(INDEX, "utf8")); } catch { return {}; }
+/** The activated total: frozen snapshot + version-2 rows + any floor gap stored at activation. */
+function activatedTotal(v2rows, act) {
+  return rollup(rowsForTotal(v2rows, act), { extraMin: Number(act && act.floorExtraMin) || 0 });
 }
-function writeIndex(idx) {
+
+// The clock the activation rule reads. KI_NOW (epoch ms) exists for tests only.
+const nowMs = () => Number(process.env.KI_NOW) || Date.now();
+const ENGINE_MARK = engineState.ENGINE_MARK;
+
+// ---------- activation is ONE record (Codex round 9) ----------
+// activation.json holds BOTH the activation moment and the frozen legacy credits, written in one
+// atomic rename. It is the only thing that says "activated": there is no snapshot without an
+// activation or activation without a snapshot, so an interrupted activation either happened
+// completely or not at all. engine-state.json's own activatedAt is a secondary note.
+const ACTIVATION = path.join(DATA, "activation.json");
+function readActivation() {
+  const text = readOwnFile(ACTIVATION);
+  if (text === null) return null;
+  let j;
+  try { j = JSON.parse(text); } catch { throw new StateUnreadable("activation.json is not valid"); }
+  if (!(j && typeof j.activatedAt === "string" && j.rows && typeof j.rows === "object")) throw new StateUnreadable("activation.json is not valid");
+  return j;
+}
+function activatedAt() { const a = readActivation(); return a ? a.activatedAt : null; }
+/** Written ONCE, under the engine-state lock; never overwritten. */
+function writeActivation(rows, at, sharedHours = 0) {
+  if (readActivation()) return;
+  const tmp = ACTIVATION + "." + process.pid + ".tmp";
+  engineState.faultPoint("act-tmp");
+  const credits = legacyCredits(rows);
+  const floorMin = Math.max(rollup(rows).hours, Number(sharedHours) || 0) * 60;
+  const frozenMin = Object.values(credits).reduce((a, c) => a + (Number(c.c) || 0), 0);
+  const floorExtraMin = Math.max(0, Math.round((floorMin - frozenMin) * 100) / 100);
+  fs.writeFileSync(tmp, JSON.stringify({ activatedAt: at, rows: credits, ...(floorExtraMin > 0 ? { floorExtraMin } : {}) }));
+  engineState.faultPoint("act-rename");
+  // created, never replaced: an existing activation.json is never overwritten
+  engineState.assertHeld(tmp);
+  try { fs.linkSync(tmp, ACTIVATION); } finally { try { fs.rmSync(tmp, { force: true }); } catch { /* ignore */ } }
+  engineState.faultPoint("act-after");
+}
+
+/**
+ * The switch-over, once per machine (see ONE SWITCH-OVER above). Returns the activation record, or
+ * null when another run holds the lock (it is switching over right now; this run does nothing).
+ */
+async function ensureActivated() {
+  const have = readActivation();
+  if (have) return have;
+  const r = await engineState.withLockAsync(DATA, async () => {
+    if (readActivation()) return readActivation();
+    const at = new Date(nowMs()).toISOString();
+    // EVERY SOURCE IS READ ONCE, AND COMPLETELY, OR THE SWITCH WAITS (Codex round 7). v0.66.0's total
+    // is priced from this one read of its ledger (a second read could see an older window's later
+    // writes); a file that exists but cannot be read defers the switch rather than freezing a
+    // snapshot without it. After SWITCH_DEFER_MAX_MS of deferring, the switch goes ahead with what
+    // could be read, so one damaged file can never stop a machine reporting for good.
+    const problems = [];
+    const shared = readSharedStrict(problems);
+    let sharedHours = 0;
+    try { sharedHours = rollup(shared).hours; } catch { /* priced below from the rows */ }
+    const rows = new Map(shared);
+    const fresh = new Map();
+    for (const file of transcriptsStrict(problems)) {
+      try { const row = await measureFile(file, { mode: "legacy" }); if (row) fresh.set(row.id, row); }
+      catch (e) { if (!(e && e.code === "ENOENT")) problems.push(path.basename(file) + ": " + ((e && e.code) || "unreadable")); }
+    }
+    mergeRows(rows, fresh);
+    await switchPause();
+    if (problems.length && !deferredTooLong()) { noteDeferral(problems); return null; }
+    writeActivation(rows, at, sharedHours);
+    return readActivation();
+  });
+  return r && r !== engineState.BUSY ? r : null;
+}
+const SWITCH_DEFERRED = path.join(DATA, "switch-deferred.json");
+const SWITCH_DEFER_MAX_MS = 3 * 86400000;
+function deferredTooLong() {
+  try { const t = Date.parse(JSON.parse(fs.readFileSync(SWITCH_DEFERRED, "utf8")).since); return Number.isFinite(t) && nowMs() - t >= SWITCH_DEFER_MAX_MS; } catch { return false; }
+}
+function noteDeferral(problems) {
+  let since = new Date(nowMs()).toISOString();
+  try { const j = JSON.parse(fs.readFileSync(SWITCH_DEFERRED, "utf8")); if (j && j.since) since = j.since; } catch { /* first deferral */ }
+  try { writeAtomic(SWITCH_DEFERRED, JSON.stringify({ since, last: new Date(nowMs()).toISOString(), problems: problems.slice(0, 5) })); } catch { /* retried next run */ }
+}
+/** v0.66.0's ledger; a missing file is an empty ledger, any other read error is a problem. */
+function readSharedStrict(problems) {
+  let text;
+  try { text = fs.readFileSync(LEDGER, "utf8"); }
+  catch (e) { if (!(e && e.code === "ENOENT")) problems.push("sessions.jsonl: " + ((e && e.code) || "unreadable")); return new Map(); }
+  return parseRows(text); // ONE read: these rows feed both the snapshot and v0.66.0's total
+}
+/** Every transcript; a folder that exists but cannot be listed is a problem (a missing one is not). */
+function transcriptsStrict(problems) {
+  const out = [];
+  let dirs = [];
+  try { dirs = fs.readdirSync(PROJECTS); } catch (e) { if (!(e && e.code === "ENOENT")) problems.push("projects: " + ((e && e.code) || "unreadable")); return out; }
+  for (const d of dirs) {
+    const dir = path.join(PROJECTS, d);
+    let files = [];
+    try { files = fs.readdirSync(dir); } catch (e) { if (!(e && (e.code === "ENOTDIR" || e.code === "ENOENT"))) problems.push(d + ": " + ((e && e.code) || "unreadable")); continue; }
+    for (const f of files) if (f.endsWith(".jsonl")) out.push(path.join(dir, f));
+  }
+  return out;
+}
+// Test seam: KI_TEST_SWITCH_PAUSE_MS holds the switch-over inside its lock. Unset on members' machines.
+const switchPause = () => new Promise((r) => setTimeout(r, Number(process.env.KI_TEST_SWITCH_PAUSE_MS) || 0));
+
+const LEDGER_V2 = path.join(DATA, "sessions-v2.jsonl");
+const INDEX_V2 = path.join(DATA, "measured-v2.json");
+const LOCK_V2 = path.join(DATA, "sweep-v2.lock");
+function readV2() {
+  const rows = new Map();
+  const text = readOwnFile(LEDGER_V2);
+  if (text === null) return rows;
+  for (const line of text.split("\n")) {
+    if (!line.trim()) continue;
+    try { const r = JSON.parse(line); if (r && r.id && isV2Row(r)) rows.set(r.id, r); } catch { /* a torn line */ }
+  }
+  return rows;
+}
+function writeAtomic(file, text) {
   fs.mkdirSync(DATA, { recursive: true });
-  const tmp = INDEX + ".tmp";
-  fs.writeFileSync(tmp, JSON.stringify(idx));
-  fs.renameSync(tmp, INDEX);
+  const tmp = file + "." + process.pid + ".tmp";
+  fs.writeFileSync(tmp, text);
+  engineState.fencedRename(tmp, file);
+}
+function writeV2(rows) {
+  writeAtomic(LEDGER_V2, [...rows.values()].sort((a, b) => String(a.start).localeCompare(String(b.start))).map((r) => JSON.stringify(r)).join("\n") + "\n");
+}
+function readV2Index() { try { return JSON.parse(fs.readFileSync(INDEX_V2, "utf8")); } catch { return {}; } }
+function writeV2Index(idx) { writeAtomic(INDEX_V2, JSON.stringify(idx)); }
+
+/** The version-2 storage's own lock: every read-modify-write of it, sweep and close alike. Owned (engine-state.mjs). */
+async function withV2Lock(fn, waitMs = 8000) {
+  const until = Date.now() + waitMs;
+  fs.mkdirSync(DATA, { recursive: true });
+  let token = null;
+  for (;;) {
+    token = engineState.tryAcquire(LOCK_V2);
+    if (typeof token === "string") break;
+    if (token !== null || Date.now() >= until) return { busy: true };
+    await new Promise((r) => setTimeout(r, 40));
+  }
+  try { return await fn(); } finally { engineState.release(LOCK_V2, token); }
+}
+
+/** Every row the total is made of: the frozen snapshot (as rows) plus the version-2 rows. */
+function rowsForTotal(v2rows = readV2(), snap = readActivation()) {
+  const all = new Map();
+  if (snap) for (const [id, f] of Object.entries(snap.rows)) all.set("legacy:" + id, { id, start: f.s, end: f.e, frozen: f, skills: Array.isArray(f.k) ? f.k : [] });
+  for (const [id, r] of v2rows) all.set(id, r);
+  return all;
+}
+/**
+ * The total AND the engine mark it may be reported with, from ONE read of the activation record:
+ * a ki2 mark only ever rides on a total computed from the activated storage (Codex round 9).
+ */
+function currentTotalMarked() {
+  const act = readActivation();
+  return act ? { total: activatedTotal(readV2(), act), mark: act.activatedAt } : null;
+}
+/** Callers switch over first; before that (busy) there is nothing of this engine's to show. */
+function currentTotal() { const t = currentTotalMarked(); return t ? t.total : rollup(new Map()); }
+
+/**
+ * Measure one transcript into the version-2 rows (post-activation). Returns the row, or null when
+ * the session started before activation (never measured) or has nothing in it. The new row
+ * carries its own previous credit as its floor.
+ */
+async function measureV2(rows, file, actMs, frozen = null) {
+  const row = await measureFile(file, { mode: "v2" });
+  if (!row || !(Date.parse(row.start) >= actMs)) return null;
+  // A session already in the switch-over snapshot is never also measured here, whatever times its
+  // records carry (a clock that ran ahead at the switch): one session, one credit (harness, 10/8/26).
+  if (frozen && Object.prototype.hasOwnProperty.call(frozen, row.id)) return null;
+  const prev = rows.get(row.id);
+  if (prev) row.floorMin = Math.max(Number(prev.floorMin) || 0, v2Credit(prev));
+  rows.set(row.id, row);
+  return row;
 }
 
 // ---------- roll up (the ONLY place a total is computed) ----------
@@ -291,6 +550,13 @@ function cfgDir() {
 //   native_autoupdate Claude Code's own per-marketplace updater flag in settings.json
 //   recorded_bin      how the claude address was found and written down (claude-bin.json)
 //   repair            the last run of repair.mjs
+//   updates_off       true when the member switched automatic updates off and the session hook
+//                     stood down on purpose (10/2/26), false when it ran the update path, null when
+//                     no hook carrying this change has run yet. Written by auto-update.mjs to
+//                     <config>/king-intelligence/updates-off.json. An off machine's library copy
+//                     falls behind by design, so the fleet report must read this before "stuck".
+//   updates_off_source which layer decided it: user, project, local (the folder's own file),
+//                     registry or default. updates_off_at: when the hook last read it (ISO).
 // Every miss is null. An older toolkit sends nothing, and the portal treats absence as "unknown".
 function toolkitState() {
   const cfg = cfgDir();
@@ -324,6 +590,7 @@ function toolkitState() {
   const native = sEntry ? (sEntry.autoUpdate === true ? true : sEntry.autoUpdate === false ? false : null) : null;
   const bin = rj(path.join(cfg, "king-intelligence", "claude-bin.json"));
   const rep = rj(path.join(cfg, "king-intelligence", "repair.json"));
+  const uo = rj(path.join(cfg, "king-intelligence", "updates-off.json"));
   // ask_buttons_* (9/24/26): the question-buttons gate keeps its own tiny state file, separate
   // from everything above, missing on any machine older than this release. Missing => null for
   // both, same rule as every other field here.
@@ -340,6 +607,11 @@ function toolkitState() {
     native_autoupdate: native,
     recorded_bin: bin && typeof bin.how === "string" ? bin.how : null,
     repair: rep && typeof rep.verdict === "string" ? { at: String(rep.at || ""), verdict: rep.verdict } : null,
+    updates_off: uo && typeof uo.off === "boolean" ? uo.off : null,
+    // Where the deciding switch lives (user, project, local, registry, default) and when the hook
+    // last read it. Separate keys so updates_off stays a plain boolean (10/2/26 review fix).
+    updates_off_source: uo && typeof uo.source === "string" && /^(user|project|local|registry|default)$/.test(uo.source) ? uo.source : null,
+    updates_off_at: uo && typeof uo.checkedAt === "string" ? uo.checkedAt.slice(0, 32) : null,
     ask_buttons_off: askButtonsOff,
     ask_buttons_caught: askButtonsCaught,
   };
@@ -491,7 +763,7 @@ function isPortalOrigin(portal) {
   } catch { return false; }
 }
 
-function snapshotOf(r) {
+function snapshotOf(r, mark = null, generation = null) {
   const toolkit = toolkitState();
   return {
     schema_version: 3, // v3 = measured, not estimated
@@ -515,17 +787,52 @@ function snapshotOf(r) {
     skills: Object.entries(r.skills || {}).slice(0, 200).map(([slug, uses]) => ({ slug, uses })),
     first_session_at: r.firstSession,
     last_active_at: r.lastSession,
+    // THE FENCE (10/7/26). Once this machine has activated the version-2 rules, every report says
+    // so. The members portal remembers it per machine and from then on ignores any report for this
+    // machine that does not carry it: an older toolkit window that wakes up and re-prices the
+    // shared ledger the old way can no longer move the member's number. Before activation nothing
+    // is added, so the portal treats this machine exactly as before.
+    // The mark is passed in by the code that computed `r` from the activated storage, never
+    // looked up at send time, so a compat total can never go out labelled ki2 (Codex round 9).
+    ...(mark ? { hours_engine: ENGINE_MARK, activated_at: mark } : {}),
+    // THE INSTALL NUMBER (10/8/26). Issued by the portal, never derived from this computer's clock,
+    // so the portal always knows which install on this machine is the current one (see register).
+    ...(mark && generation ? { hours_engine_generation: generation } : {}),
   };
 }
 
-async function send(r) {
-  if (has("--dry-run")) return { sent: false, reason: "dry run", wouldSend: snapshotOf(r) };
-  const result = await sendOnce(r);
+// ---------- the install number (portal-issued, Codex round 6) ----------
+// A client clock cannot prove which of two installs on one machine is the newer, so the portal
+// issues the number. Before its first report an activated machine asks for one (register_install)
+// and keeps it in install-generation.json; every report carries it. The portal refuses a report
+// without a number it knows (reason_code "stale_generation"); this machine then forgets its number
+// and asks again on the next report. Registration is keyed to this install's fixed identity, so
+// asking again returns the SAME number; an install the portal knows has been replaced is told
+// "retired_install" and stops reporting for good. A portal that does not issue numbers yet
+// (any answer without one), and reports go out without one, exactly as before.
+const GEN = path.join(DATA, "install-generation.json");
+function readGeneration() {
+  try { const g = Number(JSON.parse(fs.readFileSync(GEN, "utf8")).generation); return Number.isInteger(g) && g > 0 ? g : null; } catch { return null; }
+}
+/** This install's fixed identity: its machine and the moment it switched over (Codex round 7). */
+const installId = (mark) => crypto.createHash("sha256").update(machineId() + "|" + String(mark)).digest("hex").slice(0, 32);
+/** The portal said a newer install now reports for this machine: this one stops reporting for good. */
+function retiredInstall() { try { return JSON.parse(fs.readFileSync(GEN, "utf8")).retired === true; } catch { return false; } }
+/** A portal that answered a registration without a number is not asked again for a day. */
+const NO_NUMBERS_MS = 24 * 3600000;
+function numbersUnsupportedRecently() {
+  try { const t = Date.parse(JSON.parse(fs.readFileSync(GEN, "utf8")).unsupportedAt); return Number.isFinite(t) && Date.now() - t < NO_NUMBERS_MS; } catch { return false; }
+}
+async function readReply(res) { try { return typeof res.json === "function" ? await res.json() : {}; } catch { return {}; } }
+
+async function send(r, mark = null) {
+  if (has("--dry-run")) return { sent: false, reason: "dry run", wouldSend: snapshotOf(r, mark, readGeneration()) };
+  const result = await sendOnce(r, mark);
   noteReport(result);
   return result;
 }
 
-async function sendOnce(r) {
+async function sendOnce(r, mark = null) {
   const { token, portal, isGithub, blocked, via, offOrigin } = resolveTarget();
   if (blocked) return offOrigin ? { sent: false, reason: blocked, via } : { sent: false, reason: blocked, quiet: true };
   if (!token) return { sent: false, reason: "no member token on this machine", noKey: true };
@@ -533,19 +840,54 @@ async function sendOnce(r) {
   const ti = argv.indexOf("--send-timeout-ms");
   const timeoutMs = (ti >= 0 && parseInt(argv[ti + 1], 10)) || 0;
   const url = portal.replace(/\/$/, "") + "/api/time-saved/ingest";
-  const body = JSON.stringify(snapshotOf(r));
+  const post = (payload) => transport(url, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: "Bearer " + token },
+    body: JSON.stringify(payload),
+    // A redirect is never followed with the key attached (9/26/26 review): the answer is read
+    // as a refusal and the key stays on this computer.
+    redirect: "manual",
+    ...(timeoutMs > 0 ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
+  });
+  const refused = (res) => (res.status >= 300 && res.status < 400)
+    ? { sent: false, reason: "HTTP " + res.status + " (a redirect was refused, so the key stayed on this computer)", status: res.status, via }
+    : (!res.ok ? { sent: false, reason: "HTTP " + res.status, status: res.status, via } : null);
   try {
-    const res = await transport(url, {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: "Bearer " + token },
-      body,
-      // A redirect is never followed with the key attached (9/26/26 review): the answer is read
-      // as a refusal and the key stays on this computer.
-      redirect: "manual",
-      ...(timeoutMs > 0 ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
-    });
-    if (res.status >= 300 && res.status < 400) return { sent: false, reason: "HTTP " + res.status + " (a redirect was refused, so the key stayed on this computer)", status: res.status, via };
-    if (!res.ok) return { sent: false, reason: "HTTP " + res.status, status: res.status, via };
+    if (mark && retiredInstall()) return { sent: false, reason: "a newer install of the toolkit now reports this computer's hours", quiet: true, via };
+    let generation = mark ? readGeneration() : null;
+    if (mark && !generation && !numbersUnsupportedRecently()) {
+      // one registration at a time on this machine, and only if no other run got a number first
+      const reg = await engineState.withLockAsync(DATA, async () => {
+        const have = readGeneration();
+        if (have) return { generation: have };
+        const res = await post({ schema_version: 3, register_install: true, machine_id: machineId(), install_id: installId(mark), activated_at: mark });
+        // a redirect is refused outright (the key never follows one); any other answer without a
+        // number means a portal that does not issue numbers yet (today's portal answers 400 to this
+        // request): the report goes out without one, exactly as before
+        if (res.status >= 300 && res.status < 400) return { error: refused(res) };
+        const j = res.ok ? await readReply(res) : {};
+        if (j && j.reason_code === "retired_install") { writeAtomic(GEN, JSON.stringify({ generation: null, retired: true, at: new Date().toISOString() })); return { error: { sent: false, reason: "a newer install of the toolkit now reports this computer's hours", quiet: true, via } }; }
+        const g = Number(j && j.hours_engine_generation);
+        if (Number.isInteger(g) && g > 0) { writeAtomic(GEN, JSON.stringify({ generation: g, activatedAt: mark })); return { generation: g }; }
+        try { writeAtomic(GEN, JSON.stringify({ generation: null, unsupportedAt: new Date().toISOString() })); } catch { /* ask again next time */ }
+        return { generation: null };
+      });
+      if (reg === engineState.BUSY) return { sent: false, reason: "another run is registering this computer; the next run reports", via };
+      if (reg.error) return reg.error;
+      generation = reg.generation;
+    }
+    const res = await post(snapshotOf(r, mark, generation));
+    const no = refused(res);
+    if (no) return no;
+    const j = await readReply(res);
+    if (j && j.reason_code === "retired_install") {
+      try { writeAtomic(GEN, JSON.stringify({ generation: null, retired: true, at: new Date().toISOString() })); } catch { /* told again next time */ }
+      return { sent: false, reason: "a newer install of the toolkit now reports this computer's hours", quiet: true, via };
+    }
+    if (j && j.reason_code === "stale_generation") {
+      try { fs.rmSync(GEN, { force: true }); } catch { /* ignore */ }
+      return { sent: false, reason: "this computer's install number was out of date; it asks for a new one on the next report", via };
+    }
     return { sent: true, via };
   } catch (e) {
     // an error message can echo a URL; strip any credential before it goes anywhere
@@ -572,7 +914,10 @@ async function transport(url, init) {
     body_bytes: Buffer.byteLength(String(init.body || "")),
   }) + "\n");
   const status = parseInt(process.env.KI_SEND_TRANSPORT_STATUS || "200", 10) || 200;
-  return { status, ok: status >= 200 && status < 300 };
+  // KI_SEND_TRANSPORT_REPLY: the JSON answer (registrations read KI_SEND_TRANSPORT_REGISTER_REPLY first)
+  const isReg = /"register_install":true/.test(String(init.body || ""));
+  const reply = (isReg && process.env.KI_SEND_TRANSPORT_REGISTER_REPLY) || process.env.KI_SEND_TRANSPORT_REPLY || "{}";
+  return { status, ok: status >= 200 && status < 300, json: async () => JSON.parse(reply) };
 }
 
 /**
@@ -632,102 +977,86 @@ function allTranscripts() {
   return out;
 }
 
-const LOCK = path.join(DATA, "sweep.lock");
-const LOCK_STALE_MS = 15 * 60 * 1000;
+// v0.66.0's sweep.lock is not taken or removed: it is that version's file. Two runs of THIS engine
+// are kept apart by the engine-state lock.
 
-function takeLock() {
-  try {
-    fs.mkdirSync(DATA, { recursive: true });
-    try {
-      const st = fs.statSync(LOCK);
-      if (Date.now() - st.mtimeMs < LOCK_STALE_MS) return false; // someone else is sweeping
-      fs.rmSync(LOCK, { force: true }); // a crashed sweep must not lock the owner out forever
-    } catch { /* no lock held */ }
-    fs.writeFileSync(LOCK, String(process.pid), { flag: "wx" });
-    return true;
-  } catch { return false; }
-}
-function dropLock() { try { fs.rmSync(LOCK, { force: true }); } catch { /* ignore */ } }
+// Test seam: KI_TEST_SEND_PAUSE_MS waits between measuring and building the report. Unset on members' machines.
+const sendPause = () => new Promise((r) => setTimeout(r, Number(process.env.KI_TEST_SEND_PAUSE_MS) || 0));
 
 async function doSweep() {
-  if (!has("--no-lock") && !takeLock()) return { skippedLocked: true, ...rollup(readLedger()) };
-  const rows = readLedger();
-  const idx = has("--full") ? {} : readIndex();
-  let measured = 0, skipped = 0;
-  // Counted because "measured: 0" alone cannot be read (8/27/26). It means one of three
-  // completely different things: nobody worked, every session was already counted, or
-  // every transcript failed to read. A machine in the third state looks exactly like a
-  // quiet member, forever, and three members currently report nothing at all. The index
-  // is only stamped on success, so a permanently unreadable transcript is retried every
-  // sweep and fails every time, which is precisely the case that needs a name.
-  let unreadable = 0, empty = 0;
-  const firstProblem = { file: null, why: null };
+  if (!(await ensureActivated())) return { skippedLocked: true, switchingOver: true, ...currentTotal() };
+  return doSweepV2();
+}
 
-  for (const file of allTranscripts()) {
-    let st;
-    try { st = fs.statSync(file); } catch { continue; }
-    const stamp = st.mtimeMs + ":" + st.size;
-    if (idx[file] === stamp && rows.has(path.basename(file, ".jsonl"))) { skipped += 1; continue; }
-    try {
-      const row = await measureFile(file);
-      if (row) { rows.set(row.id, row); measured += 1; }
-      else {
-        // A transcript with nothing measurable in it. Common and harmless on its own;
-        // only interesting when it is ALL of them.
-        empty += 1;
-        if (!firstProblem.file) { firstProblem.file = path.basename(file); firstProblem.why = "nothing measurable in it"; }
-      }
-      idx[file] = stamp;
-    } catch (e) {
-      // One bad transcript never stops the sweep, but it is no longer invisible.
-      unreadable += 1;
-      if (!firstProblem.file) {
-        firstProblem.file = path.basename(file);
-        firstProblem.why = String((e && e.message) || e).slice(0, 160);
+async function doSweepV2() {
+  const actMs = Date.parse(activatedAt());
+  const frozenRows = (readActivation() || {}).rows || {};
+  const r = await withV2Lock(async () => {
+    const rows = readV2();
+    const idx = has("--full") ? {} : readV2Index();
+    let measured = 0, skipped = 0, unreadable = 0, empty = 0;
+    const firstProblem = { file: null, why: null };
+    for (const file of allTranscripts()) {
+      let st;
+      try { st = fs.statSync(file); } catch { continue; }
+      const stamp = st.mtimeMs + ":" + st.size;
+      const id = path.basename(file, ".jsonl");
+      if (idx[file] === "pre:" + stamp || (idx[file] === stamp && rows.has(id))) { skipped += 1; continue; }
+      try {
+        const row = await measureV2(rows, file, actMs, frozenRows);
+        if (row) { measured += 1; idx[file] = stamp; }
+        else { skipped += 1; idx[file] = "pre:" + stamp; } // started before activation, or empty: never credited
+      } catch (e) {
+        unreadable += 1;
+        if (!firstProblem.file) { firstProblem.file = id; firstProblem.why = String((e && e.message) || e).slice(0, 160); }
       }
     }
-  }
-
-  // A transcript Claude Code has deleted keeps its ledger line: the record outlives the source.
-  writeLedger(rows);
-  writeIndex(idx);
-  dropLock();
-  const total = rollup(rows);
-  return {
-    measured,
-    skipped,
-    unreadable,
-    empty,
-    ...(firstProblem.file ? { firstProblem } : {}),
-    ...total,
-    ...(has("--send") ? { send: await send(total) } : {}),
-  };
+    writeV2(rows);
+    writeV2Index(idx);
+    return { measured, skipped, unreadable, empty, ...(firstProblem.file ? { firstProblem } : {}), rows };
+  });
+  if (r.busy) return { skippedLocked: true, ...currentTotal() };
+  const { rows, ...counts } = r;
+  const act = readActivation();
+  const total = activatedTotal(rows, act);
+  return { ...counts, ...total, ...(has("--send") ? { send: await send(total, act.activatedAt) } : {}) };
 }
 
 async function doSession(id) {
   if (!id) return { error: "no session id" };
-  const rows = readLedger();
-  const idx = readIndex();
-  for (const file of allTranscripts()) {
-    if (path.basename(file, ".jsonl") !== id) continue;
-    const row = await measureFile(file);
-    if (row) rows.set(row.id, row);
-    try { const st = fs.statSync(file); idx[file] = st.mtimeMs + ":" + st.size; } catch { /* ignore */ }
-    writeLedger(rows);
-    writeIndex(idx);
-    const total = rollup(rows);
-    return { measured: row ? 1 : 0, ...total, ...(has("--send") ? { send: await send(total) } : {}) };
-  }
-  const total = rollup(rows);
-  return { measured: 0, ...total, ...(has("--send") ? { send: await send(total) } : {}) };
+  if (!(await ensureActivated())) return { measured: 0, deferredToSweep: true, ...currentTotal() };
+  const actMs = Date.parse(activatedAt());
+  const frozenRows = (readActivation() || {}).rows || {};
+  const r = await withV2Lock(async () => {
+    const rows = readV2();
+    const idx = readV2Index();
+    let row = null;
+    for (const file of allTranscripts()) {
+      if (path.basename(file, ".jsonl") !== id) continue;
+      row = await measureV2(rows, file, actMs, frozenRows);
+      try { const st = fs.statSync(file); idx[file] = (row ? "" : "pre:") + st.mtimeMs + ":" + st.size; } catch { /* ignore */ }
+      writeV2(rows);
+      writeV2Index(idx);
+      break;
+    }
+    return { rows, row };
+  });
+  if (r.busy) return { measured: 0, deferredToSweep: true, ...currentTotal() };
+  const act = readActivation();
+  const total = activatedTotal(r.rows, act);
+  return { measured: r.row ? 1 : 0, ...total, ...(has("--send") ? { send: await send(total, act.activatedAt) } : {}) };
 }
 
 async function main() {
   let result;
   if (cmd === "sweep") result = await doSweep();
   else if (cmd === "session") result = await doSession(arg(1));
-  else if (cmd === "total") result = rollup(readLedger());
-  else if (cmd === "send") result = { ...rollup(readLedger()), send: await send(rollup(readLedger())) };
+  else if (cmd === "total") { await ensureActivated(); result = currentTotal(); }
+  else if (cmd === "send") {
+    await ensureActivated();
+    const m = currentTotalMarked();
+    result = m ? { ...m.total, send: await send(m.total, m.mark) } : { ...currentTotal(), send: { sent: false, reason: "switching over on this machine right now; the next run reports" } };
+  }
   else if (cmd === "verify") {
     // Two separate claims, proven separately. A live session is still being written while this
     // runs, so comparing two whole sweeps would report a few seconds of real growth as a defect.
@@ -735,11 +1064,13 @@ async function main() {
     //    system got wrong (model-written session ids collided and double-booked 1,455 minutes).
     // 2. The MEASUREMENT is stable: re-reading a transcript that has not changed on disk gives
     //    back the identical row, so a re-measure can only ever replace, never stack.
-    const ledger = readLedger();
-    const r1 = JSON.stringify(rollup(ledger));
-    const r2 = JSON.stringify(rollup(readLedger()));
+    await ensureActivated();
+    const v2 = true;
+    const ledger = readV2();
+    const r1 = JSON.stringify(currentTotal());
+    const r2 = JSON.stringify(currentTotal());
 
-    const idx = readIndex();
+    const idx = readV2Index();
     let checked = 0, drifted = 0;
     const drift = [];
     for (const file of allTranscripts()) {
@@ -749,13 +1080,15 @@ async function main() {
       let st;
       try { st = fs.statSync(file); } catch { continue; }
       if (idx[file] !== st.mtimeMs + ":" + st.size) continue; // grew since; not a fair comparison
-      const fresh = await measureFile(file);
+      const fresh = await measureFile(file, { mode: isV2Row(old) ? "v2" : "legacy" });
       checked += 1;
       if (!fresh) { drifted += 1; drift.push(id); continue; }
+      const sorted = (a) => JSON.stringify([...(a || [])].sort());
       const same =
         fresh.activeMin === old.activeMin &&
         fresh.drafts === old.drafts &&
-        JSON.stringify([...fresh.touched].sort()) === JSON.stringify([...(old.touched || [])].sort());
+        sorted(fresh.touched) === sorted(old.touched) &&
+        (!isV2Row(old) || (sorted(fresh.created) === sorted(old.created) && sorted(fresh.changed) === sorted(old.changed)));
       if (!same) { drifted += 1; if (drift.length < 5) drift.push(id); }
       if (checked >= 200) break;
     }
@@ -766,7 +1099,7 @@ async function main() {
       transcriptsThatDrifted: drifted,
       drift: drift.slice(0, 5),
       stable: r1 === r2 && drifted === 0,
-      total: rollup(ledger),
+      total: currentTotal(),
     };
     delete result.total.skills;
   } else {
@@ -818,9 +1151,7 @@ try {
   });
 } catch (e) {
   writeReceipt({ ok: false, error: String((e && e.message) || e).slice(0, 300) });
-} finally {
-  try { dropLock(); } catch { /* ignore */ }
-}
+} finally { /* nothing to release: every lock is released where it was taken */ }
 // A natural exit, never a hard process.exit(): on Node 24 / Windows a hard exit right after the
 // fetch() above aborts the process ("Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)")
 // while undici is still closing the connection. The work is done by then; only the exit code was

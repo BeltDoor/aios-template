@@ -26,6 +26,26 @@
 //     timeout, and a step skipped for want of budget says so rather than dying anonymously;
 //   - the member's line asks only whether the version MOVED since we last looked, so an update
 //     that landed through Claude Code's own rail is narrated too.
+//
+// 10/2/26 - ONE OFF SWITCH. Members could not turn automatic updates off: Claude Code's own
+// per-library switch (/plugin, Marketplaces tab, king-intelligence, "Disable auto-update") only
+// stopped Claude Code's rail, and this hook kept updating them every ~20 hours regardless. Now,
+// when that switch reads FALSE for king-intelligence, this hook stands down too. What stands down
+// is only what pulls new plugin code onto the computer: the library refresh, the git last resort
+// and the install. Everything else still runs every session, because none of it fetches code:
+//   - loaded.json (a note of what is running), the skill opt-out prune, the levelling of the
+//     member's own script copies (copied from toolkits ALREADY installed, never fetched; the one
+//     call that may read the freshly fetched clone lives inside the git last resort, which stands
+//     down with the refresh), and switching Claude Code's rail on (it never overrides a false);
+//   - the membership check and kill switch, because they enforce access rather than deliver code,
+//     and an off switch must never become a way to keep a toolkit after a membership ends;
+//   - the once-a-day suggestions line, which only reads rules already on disk.
+// A manual /king-intelligence:update runs its own commands and never passes through this file, so
+// it still works with the switch off. The stand-down is silent: no line to the member. It leaves
+// <config>/king-intelligence/updates-off.json for the heartbeat and clears any stale failure note,
+// so the fleet report reads an off machine as off, not as failing. Nothing in this toolkit ever
+// writes that switch to false (the kill switch stopped doing so 10/2/26, see its block below), so
+// a false means exactly one thing: the member chose off.
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, rmSync, copyFileSync, renameSync } from "node:fs";
 // (rmSync + existsSync are also used by the update-failure record added 8/21/26)
 import { join } from "node:path";
@@ -257,14 +277,102 @@ try {
   // IS THE SECOND ROUTE SWITCHED ON? Read, never written here. It rides in every failure note so
   // the fleet report can tell "one route down, the other covering" from "this machine has no
   // working way to update at all", which are two different urgencies.
-  const nativeFlagState = () => {
+  //
+  // 10/2/26: read the way Claude Code itself decides. The settings file first (the /plugin toggle
+  // writes there when the library is declared in settings, which a portal install always is),
+  // then Claude Code's own registry of libraries, which the toggle also writes and which is the
+  // only place a library NOT declared in settings keeps its switch. Proven from the Claude Code
+  // program text 10/2/26 (the toggle's writer updates the registry, then the settings source).
+  // Claude Code never writes an explicit false on its own: an untouched library has no key at all.
+  //
+  // PER FOLDER, THE WAY CLAUDE CODE RESOLVES IT (10/2/26, read from the program text of 2.1.287).
+  // Settings merge user, then the project's .claude/settings.json, then its
+  // .claude/settings.local.json, and for extraKnownMarketplaces a later file's entry REPLACES the
+  // earlier entry whole (a plain {...a, ...b} per library name). The decision then takes that
+  // winning entry's autoUpdate if it has one, else the registry's. This matters for a member whose
+  // downloaded folder carries its own settings.local.json declaring this library with autoUpdate
+  // true: the /plugin toggle writes false into the FIRST of local, project, user that declares the
+  // library, so inside that folder it lands in the local file, and the user file may still say
+  // true. Reading only the user file would keep this hook updating a member who switched it off.
+  const flagOf = (e) => (e && typeof e === "object" ? (e.autoUpdate === true ? true : e.autoUpdate === false ? false : null) : null);
+  // The entry for this library in ONE settings file, or undefined when that file does not declare
+  // it. `knownMarketplaces` is the documented older spelling; Claude Code reads either.
+  const entryIn = (file) => {
+    let found;
     try {
-      const s = JSON.parse(readFileSync(join(configDir(), "settings.json"), "utf8"));
-      const k = s.extraKnownMarketplaces ? "extraKnownMarketplaces" : s.knownMarketplaces ? "knownMarketplaces" : null;
-      const e = k && s[k] ? s[k]["king-intelligence"] : null;
-      if (!e) return null;
-      return e.autoUpdate === true ? true : e.autoUpdate === false ? false : null;
-    } catch { return null; }
+      const s = JSON.parse(readFileSync(file, "utf8"));
+      for (const k of ["knownMarketplaces", "extraKnownMarketplaces"]) {
+        const c = s && s[k];
+        if (c && typeof c === "object" && Object.prototype.hasOwnProperty.call(c, "king-intelligence")) found = c["king-intelligence"];
+      }
+    } catch { /* a missing or unreadable file declares nothing */ }
+    return found;
+  };
+  const USER_SETTINGS = join(configDir(), "settings.json");
+  const REGISTRY = join(configDir(), "plugins", "known_marketplaces.json");
+  // The switch as it stands in exactly one place: true, false, "absent" (declared, no switch) or
+  // null (not declared there at all, or unreadable).
+  const switchIn = (file) => {
+    if (file === REGISTRY) {
+      try { const km = JSON.parse(readFileSync(REGISTRY, "utf8")); const e = km && km["king-intelligence"]; if (!e || typeof e !== "object") return null; const f = flagOf(e); return f === null ? "absent" : f; } catch { return null; }
+    }
+    const e = entryIn(file);
+    if (e === undefined || !e || typeof e !== "object") return null;
+    const f = flagOf(e); return f === null ? "absent" : f;
+  };
+  // The merged answer for this session's folder, and WHICH layer decided it: user, project,
+  // local, registry, or "default" when nothing sets it (Claude Code's default for an outside
+  // library is off, but the hook's default is on, which is the whole reason it exists).
+  const nativeFlagDetail = () => {
+    const proj = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const sources = [
+      ["user", USER_SETTINGS],
+      ["project", join(proj, ".claude", "settings.json")],
+      ["local", join(proj, ".claude", "settings.local.json")],
+    ];
+    let winner, from = null; // the entry from the LAST file that declares the library, replaced whole
+    for (const [label, f] of sources) {
+      const e = entryIn(f);
+      if (e !== undefined) { winner = e; from = label; }
+    }
+    const fromSettings = winner === undefined ? null : flagOf(winner);
+    if (fromSettings !== null) return { value: fromSettings, source: from };
+    const reg = switchIn(REGISTRY);
+    if (reg === true || reg === false) return { value: reg, source: "registry" };
+    return { value: null, source: "default" };
+  };
+  const nativeFlagState = () => nativeFlagDetail().value;
+
+  // THE ONE OFF SWITCH (10/2/26). Off means the member set Claude Code's own per-library switch to
+  // false, resolved for this session's folder the way Claude Code resolves it. Nothing in the
+  // toolkit writes false there, so there is no "was it really them?" question to answer.
+  const KI_STATE_DIR = join(configDir(), "king-intelligence");
+  const OFF_NOTE = join(KI_STATE_DIR, "updates-off.json");
+  // The note the heartbeat reads (measure-sessions.mjs: toolkit.updates_off, updates_off_source,
+  // updates_off_at). Refreshed on EVERY session start, outside the twenty-hour wait (review fix,
+  // 10/2/26): a member who flips the switch and opens another session the same day used to leave
+  // the old answer standing for up to a day. Rewritten when the answer or the deciding layer
+  // changes, or when the last reading is over an hour old, so a quiet day costs one small write an
+  // hour at most. `folder` stays on this computer; only the layer name and the time go up.
+  const recordOff = (off, source) => {
+    try {
+      let prev = null; try { prev = JSON.parse(readFileSync(OFF_NOTE, "utf8")); } catch {}
+      const nowIso = new Date().toISOString();
+      const folder = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+      const same = prev && prev.off === off && prev.source === source && prev.folder === folder;
+      const fresh = same && typeof prev.checkedAt === "string" && (Date.now() - Date.parse(prev.checkedAt)) < 60 * 60 * 1000;
+      if (fresh) return;
+      const since = same && typeof prev.since === "string" ? prev.since : nowIso;
+      mkdirSync(KI_STATE_DIR, { recursive: true });
+      const tmp = `${OFF_NOTE}.${process.pid}.tmp`;
+      writeFileSync(tmp, JSON.stringify({
+        off, source, folder, since, checkedAt: nowIso,
+        reason: off
+          ? "the member switched automatic updates off for this library in Claude Code, so the session hook stands down too"
+          : "automatic updates are on",
+      }) + "\n", { mode: 0o600 });
+      renameSync(tmp, OFF_NOTE);
+    } catch { /* a note we could not write is not a hook failure */ }
   };
 
   // ---- TIME BUDGET ----
@@ -321,6 +429,16 @@ try {
     const nat = await import("./native-autoupdate.mjs");
     nat.ensureNativeAutoUpdate();
   } catch { /* the hook rail still works on its own */ }
+
+  // Read AFTER the line above on purpose: that call can turn an undefined flag on, and it never
+  // turns a false into anything else.
+  // ONE snapshot gives both the answer and the layer that decided it, and it is recorded HERE,
+  // before the throttle and before the membership check (review fix, 10/2/26): the membership
+  // check can leave early (a rotated key, an ending membership) and used to skip the record, so a
+  // member who switched back on kept reading as "off on purpose" for as long as those exits lasted.
+  let pref = nativeFlagDetail();
+  let updatesOff = pref.value === false;
+  if (!DRY) recordOff(updatesOff, pref.source);
 
   // throttle
   const marker = join(data, ".last-autocheck");
@@ -521,17 +639,14 @@ try {
           // their setup exactly). The starter marketplace (king-intelligence-starter) is not
           // touched either; a machine on it never reaches this code (no portal token).
           if (!DRY) {
-            // Switch Claude Code's own background updater OFF for this marketplace first, through
-            // the same locked writer. It SETS ONE BOOLEAN. It does not delete the entry and does
-            // not touch enabledPlugins: the promise a few lines above is that a rejoin restores
-            // the member's setup exactly, and that file also holds their env, model, theme and
-            // permissions. The real enforcement is server-side anyway, because the library
-            // answers 401 to a revoked token, so no code can reach the machine either way.
-            try {
-              const nat = await import("./native-autoupdate.mjs");
-              const res = nat.ensureNativeAutoUpdate({ want: false, onlyIfUndefined: false });
-              if (res && res.error) noteFailure("kill-switch-settings", { code: res.error });
-            } catch (e) { noteFailure("kill-switch-settings", { code: String((e && e.message) || e) }); }
+            // NO WRITE TO CLAUDE CODE'S auto-update SWITCH (10/2/26). Until this date the kill switch
+            // set it to false first. All that write ever did was quiet Claude Code's own background
+            // refresh on a dead key, and that refresh fails anyway: the library's gatekeeper
+            // (members-portal marketplace.git route) answers 401 to any key that is not keyed and
+            // entitled, on every fetch. Access is enforced by the dead key, not by this switch. Now
+            // that false means "the member turned updates off", a false written here would have had
+            // to be told apart from the member's own and undone on a rejoin, which is where five
+            // review findings in two rounds came from. Removed at the source instead.
 
             const un = runCli(["plugin", "uninstall", "king-intelligence@king-intelligence"], CAP_KILL);
             if (!un.ok) {
@@ -577,9 +692,25 @@ try {
       }
     }
 
+    // THE OFF SWITCH, RE-READ after the membership check (10/2/26): a slow check is time in
+    // which the member may have flipped it.
+    pref = nativeFlagDetail();
+    updatesOff = pref.value === false;
+
     // refresh the catalog (gate: a free-starter / offline client makes this fail, so we fall back
     // to the unseen-suggestion path and never apply anything).
-    if (DRY) { catalogRefreshed = true; }
+    //
+    // THE STAND-DOWN (10/2/26). The member switched automatic updates off, so nothing that pulls
+    // new plugin code runs: no library refresh (it fetches the new release onto the computer), no
+    // git last resort (it fast-forwards the library copy), and so no install. Quiet: nothing is said
+    // to the member. Any failure note left from when updates were on is cleared, because the fleet
+    // report would otherwise keep calling a machine that is off on purpose a failing one, and the
+    // reason is written where the heartbeat reads it. The rehearsal stands down the same way and
+    // writes nothing.
+    if (updatesOff) {
+      if (!DRY) clearFailure();
+    }
+    else if (DRY) { catalogRefreshed = true; }
     else if (!haveBudget()) {
       noteFailure("budget", { code: "the session-start budget ran out before the library refresh" });
     } else {
@@ -664,6 +795,13 @@ try {
     if (catalogRefreshed && !failedStage) clearFailure();
   }
 
+  // THE PREFERENCE, RECORDED ON EVERY SESSION, OUTSIDE THE THROTTLE (review fix, 10/2/26). On or
+  // off, so a member who switches back on stops reading as off the same day. The rehearsal writes
+  // nothing, as everywhere else.
+  // Recorded again from the re-read snapshot, in case the member flipped it during slow work. A
+  // record that has not changed within the hour writes nothing.
+  if (!DRY) recordOff(updatesOff, pref.source);
+
   // ---- WHAT THE MEMBER HEARS ----
   // One line, plain, no command to type. The update landed in the background either way; which
   // rail carried it is our business, not theirs.
@@ -673,10 +811,15 @@ try {
   // background", and recording the applied version below is what stops the member hearing it twice.
   if (versionMoved || appliedVersion) {
     const whatsNew = latestWhatsNew();
-    msg =
-      "Your King Intelligence tools updated themselves in the background, so you're current." +
-      (whatsNew ? ` What's new: ${whatsNew}` : "") +
-      " Nothing you set up was changed, and the new pieces switch on the next time you open Claude Code.";
+    msg = updatesOff
+      // With the switch off the only way the version moves is an update the member asked for, so
+      // "updated themselves" would be false. Same one line, honest wording.
+      ? "Your King Intelligence tools are on the newer version you installed." +
+        (whatsNew ? ` What's new: ${whatsNew}` : "") +
+        " Nothing you set up was changed."
+      : "Your King Intelligence tools updated themselves in the background, so you're current." +
+        (whatsNew ? ` What's new: ${whatsNew}` : "") +
+        " Nothing you set up was changed, and the new pieces switch on the next time you open Claude Code.";
   }
   // THE SUGGESTIONS HALF IS THROTTLED, THE UPDATE HALF IS NOT (fixed 9/16/26). The update line
   // latches itself: the version is written down every run, so it cannot repeat. The suggestion
@@ -717,7 +860,12 @@ try {
     }
   } catch { /* a line we could not compose is not worth a crash */ }
 
-  if (msg) emit(msg + " " + MODEL_INSTRUCTION);
+  // With the switch off, a yes to the suggestions must not quietly become an update: the update
+  // command pulls the newest toolkit as its first step.
+  const OFF_INSTRUCTION = updatesOff
+    ? " They switched automatic updates off on purpose: never raise updates yourself, and if they say yes to the suggestions, tell them first that /king-intelligence:update also brings their tools to the newest version, and run it only once they agree to that."
+    : "";
+  if (msg) emit(msg + " " + MODEL_INSTRUCTION + OFF_INSTRUCTION);
 
   // record + stamp only after emitting, so a write failure never silences the next session.
   // A rehearsal writes NOTHING: it must not be able to silence the real check for twenty hours.
@@ -727,7 +875,9 @@ try {
       // answered. A refresh that worked and an install that failed is a machine that needs to try
       // again within the hour, and it used to be stamped for twenty.
       const clean = !failedStage;
-      stamp(clean && (catalogRefreshed || !onKeyedRail) ? TWENTY_H : ONE_H);
+      // Standing down is a clean run, not a failed one: a full day's wait, so the suggestions line
+      // stays once a day and nothing retries hourly against a switch the member chose.
+      stamp(clean && (catalogRefreshed || !onKeyedRail || updatesOff) ? TWENTY_H : ONE_H);
     }
     if (!DRY) {
       // SEED FIRST, THEN MERGE (fixed 9/16/26). This block creates config.json when it is missing,

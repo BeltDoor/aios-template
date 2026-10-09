@@ -32,9 +32,9 @@
 //   7. Preserve the file mode. settings.json holds the env block; a member whose file is 0600
 //      must not have it silently widened to 0644.
 //
-// The kill switch calls the same writer with want:false. It sets one boolean. It never deletes a
-// key and never touches enabledPlugins: the file also holds env, model, theme and permissions,
-// and the promise in auto-update.mjs is that a rejoin restores the member's setup exactly.
+// want:false is still supported by the writer, but since 10/2/26 nothing calls it: the kill switch
+// no longer touches this switch (access is enforced by the library refusing a dead key), so a false
+// here means exactly one thing, the member turned automatic updates off.
 //
 //   node native-autoupdate.mjs          run it (this is also its own session-start hook entry)
 //   node native-autoupdate.mjs --print  print what it would do, change nothing
@@ -72,8 +72,7 @@ const LOCK_STALE_MS = 5 * 60 * 1000;
 export function planAutoUpdate(settings, opts = {}) {
   const name = typeof opts.name === "string" && opts.name ? opts.name : MARKETPLACE;
   const want = opts.want === false ? false : true;
-  // The kill switch passes onlyIfUndefined:false, because switching a revoked machine off is not
-  // a preference question. Everything else leaves a member's own choice alone.
+  // onlyIfUndefined:false overrides a member's choice; no caller uses it since 10/2/26.
   const onlyIfUndefined = opts.onlyIfUndefined !== false;
 
   if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
@@ -96,6 +95,14 @@ export function planAutoUpdate(settings, opts = {}) {
   if (entry.autoUpdate === want) return { write: false, reason: "already set the way we want it", key, want };
   if (onlyIfUndefined && entry.autoUpdate !== undefined) {
     return { write: false, reason: "the member set this themselves, so it is left alone", key, want };
+  }
+  // 10/2/26: the member's switch can live in Claude Code's own registry of libraries instead of
+  // the settings file (the /plugin toggle writes the registry, and writes settings only where the
+  // library is declared there). Claude Code reads settings first, so writing true into an empty
+  // settings slot would quietly overrule a member who switched it off. Claude Code never writes an
+  // explicit false on its own (an untouched library has no key at all), so a false there is a choice.
+  if (onlyIfUndefined && opts.registryAutoUpdate === false) {
+    return { write: false, reason: "the member switched it off in Claude Code's own list, so it is left alone", key, want };
   }
   return { write: true, reason: want ? "switch it on" : "switch it off", key, want };
 }
@@ -132,6 +139,15 @@ export function ensureNativeAutoUpdate(opts = {}) {
     try { parsed = JSON.parse(raw); }
     catch { out.reason = "the settings file does not parse, so nothing was touched"; out.error = "unparseable"; return out; }
 
+    // The registry's own switch for this library, if it carries one (see planAutoUpdate). A caller
+    // may pass it; otherwise it is read here. Unreadable reads as "no switch", never as false.
+    if (opts.registryAutoUpdate === undefined) {
+      try {
+        const km = JSON.parse(fs.readFileSync(path.join(dir, "plugins", "known_marketplaces.json"), "utf8"));
+        const e = km && km[typeof opts.name === "string" && opts.name ? opts.name : MARKETPLACE];
+        if (e && typeof e.autoUpdate === "boolean") opts = { ...opts, registryAutoUpdate: e.autoUpdate };
+      } catch { /* no registry, no switch */ }
+    }
     const plan = planAutoUpdate(parsed, opts);
     out.key = plan.key;
     out.reason = plan.reason;

@@ -107,7 +107,7 @@ Saying "the claude command isn't on this shell's PATH" to me is a failure. It me
 
 ## 5c. The setup install gets pasted into this chat. Run all of it.
 
-The tool install from my Get Started page is meant to be pasted right here, into this chat. **Run it. Never hand it back to me, never put a menu in front of me, and never send me to the terminal.** Anything I would have to type into a terminal, you run for me instead.
+The tool install from my Get Started page is meant to be pasted right here, into this chat. **Run it. Never hand it back to me, never put a menu in front of me, and never send me to the terminal.** Anything I would have to type into a terminal, you run for me instead. This rule keeps setup simple for someone who is not technical, and I can still see everything: whenever I ask what the setup changed, show me the exact files and explain each one in plain words.
 
 Specifically:
 
