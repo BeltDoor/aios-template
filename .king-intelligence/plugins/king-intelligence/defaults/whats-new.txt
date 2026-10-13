@@ -1,3 +1,11 @@
+New: /improve-skill makes a skill better after a run of it went wrong. Type it right after a skill misses something. For a skill you built yourself, it fixes the skill. For a King Intelligence skill, it saves your fix as personal notes that the skill reads every time and that updates never erase.
+
+New: /ab-test can show three designs side by side. Ask for a few options and it builds three different directions on the same content, and you press 1, 2 or 3 to pick. Your pick goes into your record of past picks.
+
+Fixed: each skill now shows up once in your slash menu. We removed the second copy marked "(MCP)".
+
+Improved: we grouped the skills list on your Your System page into six groups by job and added a search box at the top. The setup prompts now sit below it.
+
 Fixed: your time-saved number is more accurate. Scratch files Claude makes while it works no longer count as documents you made, on Windows too, and an old file that was only opened is no longer priced as new work. Your total never goes down because of this change: the hours you already have stay, and new time counts by the new rules from your first session after this update.
 
 New: you can switch automatic updates off. Open Claude Code in your King Intelligence folder, type /plugin, go to Marketplaces, pick king-intelligence, and choose Disable auto-update. Your toolkit then stays on its current version until you turn updates back on the same way.
@@ -6,7 +14,7 @@ Updated: /codex-ready now works on Windows with the VS Code extension, tested on
 
 Updated: /codex-ready was rebuilt after the 9/30 members call. It asks whether you have ChatGPT, installs Codex for you right from the chat, and copies every CLAUDE.md into a matching AGENTS.md that stays in step as you edit. Claude can now hand ChatGPT a job in the background, and it asks you before any ChatGPT review. It is proven on Mac; Windows has not been tested yet.
 
-Removed: /post-social is out of the library. Jacob only ever switched it on by hand, for a few accounts.
+Removed: /post-social is out of the library. Post with Upload-Post or your browser instead.
 
 The end-of-session close now finishes with a ready-to-paste prompt in a copy box, so you can start the next window right where you left off.
 

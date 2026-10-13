@@ -21,6 +21,7 @@ When a skill I run hits real friction — a hand-edit it should have done itself
 - **Ground every suggestion in what actually happened.** Point at the specific friction from this run, not generic advice. If nothing real surfaced, say "that ran clean, nothing worth changing" instead of inventing improvements. Padding to hit a count is fabrication.
 - **Let me triage, then apply.** Show the suggestions, let me pick which to do now, which to shelve, and which need explaining. Write the ones I approve back into the skill's own instructions, and shelve the rest somewhere durable so they're not lost.
 - **Only edit skills I own.** Never modify a borrowed, mirrored, or auto-synced skill (its edits get overwritten, or its real master lives elsewhere). Read those as the quality standard to judge against, never as a target.
+- **On a yes, run `/improve-skill`** (in a King Intelligence member folder: `/king-intelligence:improve-skill`). A skill I own gets edited directly. A King Intelligence skill gets the fix saved as personal notes in `.claude/skill-notes/<name>.md`, which the skill reads on every run and no update touches.
 
 ## Merge guidance
 
