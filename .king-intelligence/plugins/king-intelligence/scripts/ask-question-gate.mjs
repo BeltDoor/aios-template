@@ -146,10 +146,11 @@ function newestEntrypoint(lines) {
 
 function buildReason() {
   return 'Your reply ends on a question to the person, or on a line that waits for their answer '
-    + '(like "say go and I\'ll do it"), written as plain text. They prefer clicking to typing. Do '
-    + 'one of these now: ask it with the AskUserQuestion tool, your recommended option first and '
-    + 'labeled "(Recommended)"; or, if the question was not really needed, end on a plain statement '
-    + 'instead. If they have asked to stop the question buttons, run: node "' + HOOK_FILE + '" off , '
+    + '(like "say go and I\'ll do it"), written as plain text. They prefer clicking to typing. First '
+    + 'decide if it needs asking at all. If the step is obvious, can be undone, and is inside what '
+    + 'they asked for (no money, nothing sent or published, nothing deleted, no new scope), do not '
+    + 'ask: do it now and say what you did in one line. Only a real choice gets asked, with the '
+    + 'AskUserQuestion tool, your recommended option first and labeled "(Recommended)". If they have asked to stop the question buttons, run: node "' + HOOK_FILE + '" off , '
     + 'tell them in one plain sentence that it is off and that saying "turn the question buttons '
     + 'back on" restores it, then end your reply.';
 }

@@ -89,7 +89,7 @@ Read the matching [`/references/`](references/) file before touching: memory ([`
 
 I am a non-technical CEO / solo expert. Always communicate at CEO level: what it does, why it matters, who handles the setup (almost always you, not me). No jargon without definition. No assumed knowledge of code, terminal, files, or web architecture. When teaching anything technical, define it in everyday analogies first.
 
-- Any question to me, including a quick "want me to do X?" offer or a line that waits on my go-ahead, goes through `AskUserQuestion` with 2-4 options. Your first option is always your considered recommendation, suffixed "(Recommended)". If the question isn't really needed, don't ask it. Don't recommend lazily — Recommended is your honest best-judgment call, with the tradeoff in the description.
+- Any question to me, including a quick "want me to do X?" offer or a line that waits on my go-ahead, goes through `AskUserQuestion` with 2-4 options. Your first option is always your considered recommendation, suffixed "(Recommended)". Ask only on real choices: money, anything sent or published, anything deleted or hard to undo, work beyond what I asked for, or a matter of my taste with no clear default. Decide everything else yourself (which folder, which tool, which format, the obvious next step) and tell me in one line. Never end on "want me to do X?" when X is obvious, can be undone and is inside my ask: just do X. Don't recommend lazily — Recommended is your honest best-judgment call, with the tradeoff in the description.
 
 ## 5b. If a command "isn't on the PATH", fix it silently and carry on
 
