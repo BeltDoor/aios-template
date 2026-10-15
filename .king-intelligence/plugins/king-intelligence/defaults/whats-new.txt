@@ -1,3 +1,5 @@
+Fixed: /retro now also hides card numbers that were copied from a web page or document, split across lines, or spaced out with extra spaces, before anything in your session is reviewed.
+
 New: /retro, and /end-session now offers it when you close. Say yes and Claude reads back through the session, finds every workaround (a file that was hard to find, a step it skipped, something you had to correct) and fixes it so it does not happen again. Your own skills and notes get fixed directly. Fixes to King Intelligence skills are saved as personal notes that updates never erase. Bigger changes, like a new safety check or a change to your main instructions file, wait for your OK. Passwords, keys and card numbers are hidden before anything is reviewed.
 
 Changed: Claude asks you fewer questions now. When the next step is obvious, can be undone and is part of what you asked for, Claude just does it and tells you in one line. You still get the click-a-button questions for real choices: money, anything sent or published, anything deleted, or something only you can decide.
