@@ -1,3 +1,5 @@
+New: /unslop. Point it at a page or app screen that looks AI-made, and it finds a direction from your product and fixes spacing, color, icons, copy, type, layout and motion, in that order. It follows your own brand when you have one. Made by Damir Sokolovsky and shared under his open license.
+
 Fixed: /retro now also hides card numbers that were copied from a web page or document, split across lines, or spaced out with extra spaces, before anything in your session is reviewed.
 
 New: /retro, and /end-session now offers it when you close. Say yes and Claude reads back through the session, finds every workaround (a file that was hard to find, a step it skipped, something you had to correct) and fixes it so it does not happen again. Your own skills and notes get fixed directly. Fixes to King Intelligence skills are saved as personal notes that updates never erase. Bigger changes, like a new safety check or a change to your main instructions file, wait for your OK. Passwords, keys and card numbers are hidden before anything is reviewed.
