@@ -15,7 +15,15 @@
 // BRAIN_DOOR_HOST (127.0.0.1), BRAIN_DOOR_HOME (~/.second-brain-door, holds the
 // audit log and job records), BRAIN_DOOR_ENV_FILE (a KEY=VALUE file loaded into
 // job runs), BRAIN_DOOR_CLAUDE (path to the claude binary), BRAIN_DOOR_DENY
-// (comma-separated extra folder names to refuse, on top of the built-in list).
+// (comma-separated extra folder names to refuse, on top of the built-in list),
+// BRAIN_DOOR_JOB_LOCK (the machine-wide one-job lock file, ~/.claude-job.lock,
+// shared with the scheduled morning job).
+//
+// What the door confines and what it does not: the file tools (list_dir,
+// read_file, search, write_file, edit_file) are held inside BRAIN_DOOR_ROOT by
+// the rules below. start_job is NOT confined: it runs ordinary Claude Code as
+// this machine's user, which can read anything that user can read and run any
+// program that user can run.
 //
 // Needs @modelcontextprotocol/sdk installed beside it (npm install in BRAIN_DOOR_HOME).
 
@@ -24,7 +32,7 @@ import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {
@@ -183,30 +191,182 @@ function jobEnv() {
   return env;
 }
 
+// JOB-LOCK-START
+// One Claude job at a time on this whole machine. The door's jobs and the
+// scheduled morning job (~/bin/morning-job.sh) share ONE lock file, so a door
+// job never starts on top of the morning job, or the other way round.
+// Linux: the kernel holds the lock (flock) for exactly as long as the job runs
+// and frees it the moment the job ends, even after a crash or a reboot.
+// flock runs with -o, so the lock is NOT handed down to the job's own child
+// processes: a helper the job leaves behind can never keep the lock after the
+// job itself has ended.
+// Mac and Windows (no flock): the file holds the running job's process id, and
+// an id that is no longer alive is cleared. Age alone never clears it. Only a
+// clean "yes, that process exists" counts as alive: after a reboot an old id
+// can belong to someone else's process (EPERM), and that is not our job.
+// A stale lock is removed by renaming it aside first and checking it is still
+// the same dead holder, so a lock another job just took is never deleted.
+const JOB_LOCK = process.env.BRAIN_DOOR_JOB_LOCK || path.join(HOME, '.claude-job.lock');
+const LOCK_MODE = process.env.BRAIN_DOOR_LOCK_MODE || (process.platform === 'linux' ? 'flock' : 'pid');
+const BUSY_EXIT = 75;
+const BUSY_MESSAGE =
+  'Another Claude job is still running on this machine (a door job or the scheduled morning job). ' +
+  'One job at a time: check it with list_jobs, and start this one when it is done. No job was started.';
+
+function pidAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false; // ESRCH (gone) and EPERM (someone else's process) both mean: not our job
+  }
+}
+
+// Remove the lock only if it still names `holder` (the dead id we just read).
+// Rename is atomic, so between reading and deleting nobody else's fresh lock
+// can be swept away; if the renamed file turns out to be someone else's, it
+// goes straight back.
+function clearStaleLock(holder) {
+  const aside = `${JOB_LOCK}.${process.pid}.stale`;
+  try {
+    fsSync.renameSync(JOB_LOCK, aside);
+  } catch (e) {
+    if (e.code === 'ENOENT') return; // already gone
+    throw e;
+  }
+  let now = '';
+  try { now = fsSync.readFileSync(aside, 'utf8').trim(); } catch {}
+  if (now !== String(holder)) {
+    try { fsSync.linkSync(aside, JOB_LOCK); } catch {} // put the live lock back
+  }
+  fsSync.rmSync(aside, { force: true });
+}
+
+// Start `bin args` only when no other Claude job holds the machine-wide lock.
+// Throws BUSY_MESSAGE when one does. Returns the child process.
+function spawnUnderJobLock(bin, args, opts) {
+  if (LOCK_MODE === 'flock') {
+    const probe = spawnSync('flock', ['-n', '-E', String(BUSY_EXIT), JOB_LOCK, 'true']);
+    if (probe.status === BUSY_EXIT) throw new Error(BUSY_MESSAGE);
+    if (probe.status !== 0) {
+      throw new Error(`Could not check the one-job lock (${probe.error ? probe.error.message : `flock exit ${probe.status}`}). No job was started.`);
+    }
+    // flock holds the lock while the job runs; if another job won the race
+    // since the probe, it exits BUSY_EXIT without running anything.
+    // -o: the job and anything it starts do not inherit the lock; flock itself
+    // holds it until the job exits.
+    return spawn('flock', ['-n', '-o', '-E', String(BUSY_EXIT), JOB_LOCK, bin, ...args], opts);
+  }
+  // pid mode: the lock file is created already holding a process id (a hard
+  // link of a finished file), so nobody ever reads it half-written.
+  const claim = () => {
+    const tmp = `${JOB_LOCK}.${process.pid}.claim`;
+    fsSync.writeFileSync(tmp, String(process.pid));
+    try {
+      fsSync.linkSync(tmp, JOB_LOCK);
+      return true;
+    } catch (e) {
+      if (e.code === 'EEXIST') return false;
+      throw e;
+    } finally {
+      fsSync.rmSync(tmp, { force: true });
+    }
+  };
+  if (!claim()) {
+    let raw = '';
+    try { raw = fsSync.readFileSync(JOB_LOCK, 'utf8').trim(); } catch {}
+    if (pidAlive(Number(raw))) throw new Error(BUSY_MESSAGE);
+    clearStaleLock(raw); // its holder is dead
+    if (!claim()) throw new Error(BUSY_MESSAGE);
+  }
+  let child;
+  try {
+    child = spawn(bin, args, opts);
+  } catch (e) {
+    fsSync.rmSync(JOB_LOCK, { force: true });
+    throw e;
+  }
+  const owner = String(child.pid || process.pid);
+  if (child.pid) {
+    const tmp = `${JOB_LOCK}.${process.pid}.handover`;
+    fsSync.writeFileSync(tmp, owner);
+    fsSync.renameSync(tmp, JOB_LOCK); // atomic: the lock now names the job itself
+  }
+  const release = () => {
+    try {
+      if (fsSync.readFileSync(JOB_LOCK, 'utf8').trim() === owner) fsSync.rmSync(JOB_LOCK, { force: true });
+    } catch {}
+  };
+  child.once('exit', release);
+  child.once('error', release);
+  return child;
+}
+// JOB-LOCK-END
+
+// A hung job would hold the one-job lock forever. On Linux every job runs
+// under `timeout`, which stops it after 3 hours (and force-stops it 5 minutes
+// later if it ignores that). Everywhere, list_jobs and check_job flag a job
+// still "running" past 3 hours, from the start time the door writes down.
+const JOB_LIMIT_HOURS = 3;
+const TIMEOUT_EXIT = 124;
+const useTimeout = LOCK_MODE === 'flock';
+
+function overLimitNote(dir, status) {
+  if (status !== 'running') return '';
+  let started = NaN;
+  try { started = Date.parse(fsSync.readFileSync(path.join(dir, 'started'), 'utf8').trim()); } catch {}
+  if (!Number.isFinite(started)) return '';
+  const hours = (Date.now() - started) / 3.6e6;
+  return hours > JOB_LIMIT_HOURS
+    ? ` (WARNING: running for ${hours.toFixed(1)} hours, over the ${JOB_LIMIT_HOURS}-hour limit; it may be stuck and is holding the one-job lock)`
+    : '';
+}
+
 function startJob(prompt, continueThread) {
   const id = `${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}-${Math.floor(Math.random() * 1e4)}`;
   const dir = path.join(JOBS, id);
-  fsSync.mkdirSync(dir, { recursive: true });
-  fsSync.writeFileSync(path.join(dir, 'prompt.txt'), prompt);
-  fsSync.writeFileSync(path.join(dir, 'status'), 'running');
-
-  const out = fsSync.openSync(path.join(dir, 'out.txt'), 'a');
 
   // The prompt travels as a spawn argument, never through a shell, so nothing
   // inside it can be interpreted as a command.
-  const args = ['-p', prompt];
+  let args = ['-p', prompt];
   if (continueThread) args.push('--continue');
+  let bin = claudeBin();
+  if (useTimeout) {
+    args = ['-k', '5m', `${JOB_LIMIT_HOURS}h`, bin, ...args];
+    bin = 'timeout';
+  }
 
-  const child = spawn(claudeBin(), args, {
-    cwd: ROOT,
-    detached: process.platform !== 'win32',
-    stdio: ['ignore', out, out],
-    env: jobEnv(),
-  });
+  fsSync.mkdirSync(dir, { recursive: true });
+  const out = fsSync.openSync(path.join(dir, 'out.txt'), 'a');
+  let child;
+  try {
+    child = spawnUnderJobLock(bin, args, {
+      cwd: ROOT,
+      detached: process.platform !== 'win32',
+      stdio: ['ignore', out, out],
+      env: jobEnv(),
+    });
+  } catch (e) {
+    fsSync.closeSync(out);
+    fsSync.rmSync(dir, { recursive: true, force: true });
+    throw e;
+  }
+  fsSync.writeFileSync(path.join(dir, 'prompt.txt'), prompt);
+  fsSync.writeFileSync(path.join(dir, 'started'), new Date().toISOString());
+  fsSync.writeFileSync(path.join(dir, 'status'), 'running');
 
   child.on('exit', (code) => {
     try {
-      fsSync.writeFileSync(path.join(dir, 'status'), code === 0 ? 'done' : `failed (exit ${code})`);
+      const status =
+        code === 0
+          ? 'done'
+          : LOCK_MODE === 'flock' && code === BUSY_EXIT
+            ? 'refused (another Claude job started first; nothing ran)'
+            : useTimeout && (code === TIMEOUT_EXIT || code === 137)
+              ? `stopped (it ran past the ${JOB_LIMIT_HOURS}-hour limit)`
+              : `failed (exit ${code})`;
+      fsSync.writeFileSync(path.join(dir, 'status'), status);
     } catch {}
   });
   child.on('error', (e) => {
@@ -224,7 +384,7 @@ async function readJob(id) {
   const status = await fs.readFile(path.join(dir, 'status'), 'utf8').catch(() => 'unknown');
   const out = await fs.readFile(path.join(dir, 'out.txt'), 'utf8').catch(() => '');
   const body = out.length > MAX_READ ? out.slice(-MAX_READ) : out;
-  return { status: status.trim(), out: body };
+  return { status: status.trim() + overLimitNote(dir, status.trim()), out: body };
 }
 
 // -------------------------------------------------------------------- tools
@@ -292,7 +452,7 @@ const TOOLS = [
   {
     name: 'start_job',
     description:
-      'Run a real Claude Code job on the always-on machine, inside the second brain, with every installed skill and tool available. Use this for anything that needs the terminal, a skill, or work too long for a chat reply. Returns a job id straight away; the job keeps running after you answer. Poll it with check_job. Tell the user the job started and roughly what it will do.',
+      'Run a real Claude Code job on the always-on machine, inside the second brain, with every installed skill and tool available. Use this for anything that needs the terminal, a skill, or work too long for a chat reply. Only one Claude job runs on the machine at a time (door jobs and the scheduled morning job share one lock); if one is still running this refuses and nothing starts. Returns a job id straight away; the job keeps running after you answer. Poll it with check_job. Tell the user the job started and roughly what it will do.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -322,7 +482,7 @@ const TOOLS = [
   },
   {
     name: 'list_jobs',
-    description: 'List the most recent jobs on the always-on machine, newest first, with their status.',
+    description: 'List the most recent jobs on the always-on machine, newest first, with their status. A job still running after 3 hours is marked with a warning: it may be stuck and is holding the one-job lock.',
     inputSchema: { type: 'object', properties: {} },
   },
 ];
@@ -398,8 +558,8 @@ async function callTool(name, args) {
       if (!ids.length) return 'No jobs have been run yet.';
       const rows = await Promise.all(
         ids.map(async (id) => {
-          const s = await fs.readFile(path.join(JOBS, id, 'status'), 'utf8').catch(() => 'unknown');
-          return `${id} — ${s.trim()}`;
+          const s = (await fs.readFile(path.join(JOBS, id, 'status'), 'utf8').catch(() => 'unknown')).trim();
+          return `${id} — ${s}${overLimitNote(path.join(JOBS, id), s)}`;
         })
       );
       return rows.join('\n');
