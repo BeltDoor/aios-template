@@ -1,3 +1,5 @@
+New: /install-long-chats. Run it once and a very long chat comes back whole after a break. It turns off the summary Claude writes while you are away, and keeps the chat's short-term memory alive with up to four small check-ins per break. Nothing changes for you until you run it.
+
 New: /install-signature. Claude reads your website and builds a small moving card that sits under your name in your emails: four slides in your own words, with your real photos and logo. Then Claude helps you add it to Gmail or Outlook. It starts on replies and forwards only, and you finish by emailing yourself to see it move.
 
 Fixed: /install-always-on-server, the setup for a computer that keeps working while yours sleeps. Before anything runs, it lists the few steps only your hands can do. It now picks a server with 8 GB of memory (about $10 a month before VAT at Hetzner, with DigitalOcean as the backup), checks that the private way in works before it closes the public one so you can't lock yourself out, and runs one Claude job at a time on that machine.
