@@ -1,3 +1,5 @@
+New: /install-signature. Claude reads your website and builds a small moving card that sits under your name in your emails: four slides in your own words, with your real photos and logo. Then Claude helps you add it to Gmail or Outlook. It starts on replies and forwards only, and you finish by emailing yourself to see it move.
+
 Fixed: /install-always-on-server, the setup for a computer that keeps working while yours sleeps. Before anything runs, it lists the few steps only your hands can do. It now picks a server with 8 GB of memory (about $10 a month before VAT at Hetzner, with DigitalOcean as the backup), checks that the private way in works before it closes the public one so you can't lock yourself out, and runs one Claude job at a time on that machine.
 
 New: /unslop. Point it at a page or app screen that looks AI-made, and it finds a direction from your product and fixes spacing, color, icons, copy, type, layout and motion, in that order. It follows your own brand when you have one. Made by Damir Sokolovsky and shared under his open license.
