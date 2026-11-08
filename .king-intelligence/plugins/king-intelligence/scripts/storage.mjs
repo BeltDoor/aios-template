@@ -86,9 +86,19 @@ function main() {
     return { totalBytes: Number(line[1]) * 1024, freeBytes: Number(line[3]) * 1024 };
   }
 
+  // Claude Code reads settings project-local first, then project, then personal; the first file
+  // that sets cleanupPeriodDays wins. Its default is 30.
   function autoCleanDays() {
-    try { const v = JSON.parse(fs.readFileSync(P.settings, 'utf8')).cleanupPeriodDays; return Number.isFinite(v) ? v : 30; }
-    catch { return 30; }
+    const files = [];
+    for (const dir of [...new Set([REPO, process.cwd()].filter(Boolean))]) {
+      files.push(path.join(dir, '.claude/settings.local.json'), path.join(dir, '.claude/settings.json'));
+    }
+    files.push(P.settings);
+    for (const f of files) {
+      try { const v = JSON.parse(fs.readFileSync(f, 'utf8')).cleanupPeriodDays; if (Number.isFinite(v)) return v; }
+      catch { /* missing or unreadable: try the next one */ }
+    }
+    return 30;
   }
 
   // Every chat record: <project>/<id>.jsonl plus an optional <project>/<id>/ side folder.

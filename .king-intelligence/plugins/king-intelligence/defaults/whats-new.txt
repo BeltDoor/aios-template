@@ -1,3 +1,5 @@
+Fixed: /storage now shows the right number of days Claude keeps your chats when your project folder sets its own.
+
 New: /storage. See how much space Claude takes up on your Mac, then clear leftovers like old side copies of your project. You see the full list first, and nothing goes until you say yes. Old chats stay unless you pick them. Mac only for now.
 
 New: /install-long-chats. Run it once and a very long chat comes back whole after a break. It turns off the summary Claude writes while you are away, and keeps the chat's short-term memory alive with up to four small check-ins per break. Nothing changes for you until you run it.
