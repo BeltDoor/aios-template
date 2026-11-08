@@ -1,3 +1,5 @@
+Improved: /retro now applies every fix it finds in the same run, new safety checks and rule changes included, instead of parking some on a waiting list. Each new safety check has to pass its own test first, and anything that would send, post, charge or write to your CRM is set up switched off until you turn it on. Fixes still waiting from before show up once on your next /retro so you can pick.
+
 Fixed: /storage now shows the right number of days Claude keeps your chats when your project folder sets its own.
 
 New: /storage. See how much space Claude takes up on your Mac, then clear leftovers like old side copies of your project. You see the full list first, and nothing goes until you say yes. Old chats stay unless you pick them. Mac only for now.
