@@ -1,3 +1,5 @@
+New: /storage. See how much space Claude takes up on your Mac, then clear leftovers like old side copies of your project. You see the full list first, and nothing goes until you say yes. Old chats stay unless you pick them. Mac only for now.
+
 New: /install-long-chats. Run it once and a very long chat comes back whole after a break. It turns off the summary Claude writes while you are away, and keeps the chat's short-term memory alive with up to four small check-ins per break. Nothing changes for you until you run it.
 
 New: /install-signature. Claude reads your website and builds a small moving card that sits under your name in your emails: four slides in your own words, with your real photos and logo. Then Claude helps you add it to Gmail or Outlook. It starts on replies and forwards only, and you finish by emailing yourself to see it move.
