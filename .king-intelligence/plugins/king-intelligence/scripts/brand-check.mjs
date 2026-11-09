@@ -158,7 +158,8 @@ const matchesAny = (rel, list) => list.some((re) => re.test(rel));
 // wrong for anyone who named it something else and they never find out why.
 function carveOutRegexes(cfg) {
   return (cfg?.carveOut || []).map((dir) => {
-    const clean = String(dir).replace(/^[./]+|\/+$/g, "");
+    // A folder named on Windows can arrive as clients\acme; rel is always "/"-joined (11/9/26).
+    const clean = String(dir).replace(/\\/g, "/").replace(/^[./]+|\/+$/g, "");
     if (!clean) return null;
     const esc = clean.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     return new RegExp(`(^|\\/)${esc}(\\/|$)`);
@@ -173,7 +174,7 @@ function isSkipped(rel, cfg) {
   // them, and a checker reading its own dead list screams on every run.
   for (const p of [cfg?.guidePath, cfg?.snapshotDir, cfg?.ratingFilePath]) {
     if (!p) continue;
-    const clean = String(p).replace(/^[./]+/, "");
+    const clean = String(p).replace(/\\/g, "/").replace(/^[./]+/, "");
     if (clean && (rel === clean || rel.startsWith(clean.replace(/\/$/, "") + "/"))) return true;
   }
   return false;

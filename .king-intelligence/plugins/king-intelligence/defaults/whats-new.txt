@@ -1,3 +1,5 @@
+Fixed: on Windows, the brand tools from /install-brand now work. The brand check runs before anything visual gets made, a look at your brand guide counts with either kind of slash in the path, and the guide pictures build again. Also fixed on Windows: the notetaker's watchdog now starts. Thanks to a member who found these and reported them clearly.
+
 Improved: /retro now applies every fix it finds in the same run, new safety checks and rule changes included, instead of parking some on a waiting list. Each new safety check has to pass its own test first, and anything that would send, post, charge or write to your CRM is set up switched off until you turn it on. Fixes still waiting from before show up once on your next /retro so you can pick.
 
 Fixed: /storage now shows the right number of days Claude keeps your chats when your project folder sets its own.

@@ -29,10 +29,17 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 if (process.env.DISABLE_BRAND_GATE === "1") process.exit(0);
 
-const HERE = path.dirname(new URL(import.meta.url).pathname);
+// WINDOWS (fixed 11/9/26, reported by a member on Windows). This was
+// `path.dirname(new URL(import.meta.url).pathname)`, which on Windows gives "/C:/...", and the
+// import below was handed a bare path built from it. import() only takes a URL or a relative
+// specifier, so on Windows it threw, the catch read that as "brand module unavailable", and the
+// gate let every visual job through without ever firing. Paths come from fileURLToPath, and the
+// import gets a file:// URL. tests/brand-windows.test.mjs runs both lines under Windows rules.
+const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 /* ── TIGHT DETECTOR ──────────────────────────────────────────────────────────
    If this ever false-positives, TIGHTEN THIS FUNCTION. Do not widen the escape hatch
@@ -101,7 +108,9 @@ function hasLookedAtGuide(transcriptPath, cfg, required) {
   } catch {
     return null;
   }
-  const dir = (cfg.snapshotDir || "").replace(/^[./]+|\/+$/g, "");
+  // Separators are compared as "/" whichever way they were written (see WINDOWS below).
+  const norm = (p) => String(p).replace(/\\/g, "/").replace(/\/{2,}/g, "/");
+  const dir = norm(cfg.snapshotDir || "").replace(/^[./]+|\/+$/g, "");
   // A MENTION IS NOT A LOOK (fixed 8/28/26). This was `text.includes(dir + "/" + f)`, and the
   // thing that most reliably puts that exact string into a transcript is THIS GATE'S OWN
   // REFUSAL, which lists the files it wants by path. So the sequence was: try to build
@@ -112,9 +121,22 @@ function hasLookedAtGuide(transcriptPath, cfg, required) {
   // Any other mention did it too: a search result, a line of a config file, a sentence about
   // the brand guide. What counts now is a Read tool call naming the file, which is the only
   // thing that means the picture actually reached the model's eyes.
+  //
+  // WINDOWS (fixed 11/9/26). The match used to be a regex on the raw transcript with "/" between
+  // folder and file. A Read on Windows is logged as brand\\guide-snapshots\\00-overview.png
+  // (backslashes, JSON-escaped), so a real look never counted and the gate fired all session.
+  // Every "file_path" value is now decoded and its separators normalised before comparing.
+  const opened = [];
+  for (const m of text.matchAll(/"file_path"\s*:\s*("(?:[^"\\]|\\.)*")/g)) {
+    try {
+      opened.push(norm(JSON.parse(m[1])));
+    } catch {
+      // a value that does not decode is not a look
+    }
+  }
   return required.every((f) => {
-    const needle = `${dir}/${f}`.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return new RegExp(`"file_path"\\s*:\\s*"[^"]*${needle}"`).test(text);
+    const want = dir ? `${dir}/${f}` : f;
+    return opened.some((p) => p === want || p.endsWith(`/${want}`));
   });
 }
 
@@ -133,7 +155,7 @@ process.stdin.on("end", async () => {
   // guessing at scope is how a gate starts firing on unrelated work.
   let mod, cfg;
   try {
-    mod = await import(path.join(HERE, "brand-check.mjs"));
+    mod = await import(pathToFileURL(path.join(HERE, "brand-check.mjs")).href);
     cfg = mod.brandConfig();
   } catch {
     process.exit(0);
@@ -164,7 +186,7 @@ process.stdin.on("end", async () => {
   if (looked === null || looked === true) process.exit(0);
 
   const stale = snapshotProblem(cfg, workspace, required);
-  const dir = (cfg.snapshotDir || "brand/guide-snapshots").replace(/\/+$/, "");
+  const dir = (cfg.snapshotDir || "brand/guide-snapshots").replace(/[\\/]+$/, "");
   const lines = [];
   lines.push("BRAND GUIDE GATE — stop. This is visual work and the brand guide has not been looked at yet.");
   lines.push("");

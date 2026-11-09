@@ -28,7 +28,7 @@ import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
 import { createRequire } from "node:module";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { brandConfig, WORKSPACE } from "./brand-check.mjs";
 
 // FINDING PLAYWRIGHT — this script lives in the plugin folder, so a bare
@@ -44,7 +44,7 @@ async function loadChromium() {
     WORKSPACE,
     process.cwd(),
     process.env.CLAUDE_PLUGIN_ROOT,
-    path.dirname(new URL(import.meta.url).pathname),
+    path.dirname(fileURLToPath(import.meta.url)),
   ].filter(Boolean);
 
   // playwright is CommonJS, so importing it from ESM puts everything under .default.
@@ -202,7 +202,19 @@ async function main() {
   process.stdout.write(`\nWrote ${CHAPTERS.length} snapshot(s) to ${path.relative(WORKSPACE, OUT_DIR)}/\n`);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// WINDOWS (fixed 11/9/26, reported by a member on Windows). This was
+// `import.meta.url === \`file://${process.argv[1]}\``. On Windows import.meta.url is
+// file:///C:/... and argv[1] is C:\..., so the two strings never matched, main() never ran,
+// and the script exited 0 having rendered nothing. Compare real file paths instead (realpath,
+// so a symlinked launch still counts). tests/brand-windows.test.mjs runs this under Windows rules.
+const realPath = (p) => {
+  try {
+    return fs.realpathSync(p);
+  } catch {
+    return path.resolve(p);
+  }
+};
+if (process.argv[1] && realPath(process.argv[1]) === realPath(fileURLToPath(import.meta.url))) {
   main().catch((e) => {
     process.stderr.write(`brand-snapshots failed: ${e.message}\n`);
     process.exit(1);
